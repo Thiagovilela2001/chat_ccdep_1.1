@@ -1,0 +1,28 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Variáveis de ambiente (chaves de API, senhas)
+.env
+
+# Banco de dados vetorial gerado localmente
+chroma_db/
+
+# Dados locais (PDFs, documentos)
+data/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# VSCode
+.vscode/
+
+# Arquivos temporários
+*.tmp
+*.log
+
+# PDFs na raiz
+*.pdf

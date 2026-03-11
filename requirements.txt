@@ -1,0 +1,13 @@
+llama-index
+llama-index-embeddings-huggingface
+llama-index-llms-openai
+llama-index-vector-stores-chroma
+pandas
+openpyxl
+xlrd
+pymupdf
+camelot-py[cv]
+tabulate
+python-dotenv
+chromadb
+sentence-transformers

@@ -1,0 +1,49 @@
+# Walkthrough: RAG para Documentos Estatísticos
+
+A pipeline foi implementada com sucesso no diretório `c:\Users\Thiago\Documents\rag_ccdep` empregando a arquitetura escolhida (LlamaIndex + HuggingFace Embeddings locais + OpenAI GPT-4o).
+
+## 1. O que foi feito
+
+### 1.1 Ingestão e Processamento
+* **`src/ingestion.py`**: Carrega nativamente textos de `.pdf`, `.txt`, `.csv`, `.xlsx`.
+* **`src/processing.py`**: Organiza os nós de texto com `SentenceSplitter`, e extrai métricas importantes como `TitleExtractor` e `KeywordExtractor` para maior eficiência na busca cruzada em tabelas e texto.
+
+### 1.2 Indexação e Retenção
+* **`src/indexing.py`**: Indexa de maneira local no ChromaDB, usando embeddings `BAAI/bge-small-en-v1.5` gerados localmente para não compartilhar os dados cruciais com APIs de terceiros.
+
+### 1.3 LLM e Consulta Central
+* **`src/qa_chain.py`**: Configurado com GPT-4o (`temperature=0.0`) focando em fatos e formatação do "modo compacto".
+* **`main.py`**: Orquestrador final iterativo em terminal. Todo o pipeline e suas validações estão acessíveis ao executar as perguntas aqui.
+
+## 2. Como Validar e Executar
+
+Como não tínhamos o binário do "conda" reconhecido dentro do nosso prompt interno, os passos para você finalizar a configuração e rodar o projeto são os seguintes:
+
+### Passo 1: Configurar a Chave da OpenAI
+1. Na pasta `rag_ccdep`, renomeie o arquivo `.env.example` para `.env`
+2. Insira a sua chave (API Key) real da OpenAI no arquivo:
+```env
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxx
+```
+
+### Passo 2: Inicializar o Ambiente
+Abra o **Anaconda Prompt** e rode os seguintes comandos:
+```powershell
+cd c:\Users\Thiago\Documents\rag_ccdep
+conda create -y -n rag_ccdep python=3.10
+conda activate rag_ccdep
+pip install -r requirements.txt
+```
+
+### Passo 3: Colocar Documentos
+Crie uma pasta chamada `data` (`c:\Users\Thiago\Documents\rag_ccdep\data`) e jogue nela seus relatórios brutos (PDFs, Tabelas e Planilhas do Excel).
+
+### Passo 4: Rodar
+No Anaconda Prompt, execute:
+```powershell
+python main.py
+```
+
+> **Atenção (1ª Execução):** Ele fará o download do modelo local da HuggingFace (BAAI/bge-small-en, em torno de 130MB), podendo demorar um ou dois minutos.
+
+O programa solicitará uma pergunta estadística e então analisará os dados locais. Ao final, a resposta do LLM e os **Arquivos Referenciados (Validação Original)** e seu grau de confiança aparecerão.
