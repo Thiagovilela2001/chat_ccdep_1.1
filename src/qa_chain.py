@@ -9,7 +9,7 @@ def setup_llm():
     """Configura o gerador OpenAI (GPT-4o) para elaborar as respostas com temperatura baixa (0.0)
     Evita alucinações ao buscar dados de documentos estatísticos focando em fatos e números exatos do texto base."""
     # Exige OPENAI_API_KEY no .env
-    llm = OpenAI(model="gpt-4o", temperature=0.0)
+    llm = OpenAI(model="gpt-5", temperature=0.0)
     Settings.llm = llm
     return llm
 

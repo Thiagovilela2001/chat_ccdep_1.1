@@ -110,7 +110,9 @@ def save_intermediate(documents_dir: Path, text_chunks: list, tables: list, file
         json.dump(text_chunks, f, ensure_ascii=False, indent=2)
 
     if tables:
-        pd.DataFrame(tables).to_parquet(documents_dir / "tables.parquet", index=False)
+        df_tables = pd.DataFrame(tables)
+        df_tables["page"] = df_tables["page"].astype(str)
+        df_tables.to_parquet(documents_dir / "tables.parquet", index=False)
 
     with open(documents_dir / "metadata.json", "w", encoding="utf-8") as f:
         json.dump(

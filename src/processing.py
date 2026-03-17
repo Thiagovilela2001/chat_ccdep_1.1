@@ -2,7 +2,7 @@ import json
 import re
 import pandas as pd
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from llama_index.core.node_parser import LangchainNodeParser
 from llama_index.core.extractors import TitleExtractor, KeywordExtractor
 from llama_index.core.ingestion import IngestionPipeline
