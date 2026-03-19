@@ -2,9 +2,10 @@ import os
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core import get_response_synthesizer
-from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.retrievers import VectorIndexRetriever, QueryFusionRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.prompts import PromptTemplate
+from llama_index.retrievers.bm25 import BM25Retriever
 
 QA_PROMPT = PromptTemplate(
     "Você é um analista especialista em dados econômicos e estatísticos. "
@@ -37,20 +38,41 @@ def setup_llm():
     Settings.llm = llm
     return llm
 
-def get_query_engine(index):
+def get_query_engine(index, nodes=None):
     """
-    Constrói a engine de perguntas e respostas (RAG).
-    A engine é composta de um Retriever (Buscador Similar) e um Synthesizer (LLM formatando a resposta final).
+    Constrói a engine de perguntas e respostas com retrieval híbrido (Vector + BM25).
+    - Vector: captura similaridade semântica
+    - BM25: captura termos exatos (anos, indicadores, valores numéricos)
+    - Fusão via Reciprocal Rank Fusion (RRF)
     """
     setup_llm()
 
-    # 1. Recupera o top-k blocos com maior semelhança (embeddings)
-    retriever = VectorIndexRetriever(
+    # 1. Retriever denso (embeddings / similaridade semântica)
+    vector_retriever = VectorIndexRetriever(
         index=index,
         similarity_top_k=30,
     )
 
-    # 2. tree_summarize sintetiza respostas hierarquicamente sobre múltiplos chunks/documentos
+    # 2. Retriever esparso (BM25 / termos exatos)
+    if nodes:
+        bm25_retriever = BM25Retriever.from_defaults(
+            nodes=nodes,
+            similarity_top_k=30,
+        )
+        # 3. Fusão híbrida via Reciprocal Rank Fusion
+        retriever = QueryFusionRetriever(
+            retrievers=[vector_retriever, bm25_retriever],
+            similarity_top_k=30,
+            num_queries=1,
+            mode="reciprocal_rerank",
+            use_async=False,
+        )
+        print("  Modo: Retrieval Híbrido (Vector + BM25)")
+    else:
+        retriever = vector_retriever
+        print("  Modo: Retrieval Vetorial (BM25 indisponível — nodes não encontrados)")
+
+    # 4. tree_summarize sintetiza respostas hierarquicamente sobre múltiplos chunks/documentos
     response_synthesizer = get_response_synthesizer(
         response_mode="tree_summarize",
         text_qa_template=QA_PROMPT,

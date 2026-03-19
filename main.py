@@ -12,7 +12,7 @@ if sys.stderr.encoding != "utf-8":
 import chromadb
 from src.ingestion import load_documents
 from src.processing import process_documents
-from src.indexing import create_or_load_index
+from src.indexing import create_or_load_index, load_nodes_cache
 from src.qa_chain import get_query_engine, answer_question
 
 MANIFEST_FILE = "chroma_db/indexed_manifest.json"
@@ -114,7 +114,8 @@ def main():
 
     # 5. RAG Motor de Busca
     print("\n4. Inicializando Motor de Consulta...")
-    query_engine = get_query_engine(index)
+    bm25_nodes = load_nodes_cache()
+    query_engine = get_query_engine(index, nodes=bm25_nodes)
 
     print("\n" + "="*50)
     print(" RAG PRONTO PARA USO!")
