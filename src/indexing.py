@@ -10,8 +10,8 @@ def setup_embeddings():
     Configura Embeddings Locais (HuggingFace) para não enviar dados sensíveis p/ nuvem na vetorização.
     Utilizando modelo aberto super leve (BGE pequenos ou similar) adequado para buscas em PT-BR/EN.
     """
-    print("Configurando modelo de embeddings local (BAAI/bge-small-en-v1.5) ...")
-    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    print("Configurando modelo de embeddings local (intfloat/multilingual-e5-small) ...")
+    embed_model = HuggingFaceEmbedding(model_name="intfloat/multilingual-e5-small")
     Settings.embed_model = embed_model
     return embed_model
 
