@@ -5,6 +5,7 @@ from llama_index.core import get_response_synthesizer
 from llama_index.core.retrievers import VectorIndexRetriever, QueryFusionRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.postprocessor import SentenceTransformerRerank
 from llama_index.retrievers.bm25 import BM25Retriever
 
 QA_PROMPT = PromptTemplate(
@@ -18,6 +19,12 @@ QA_PROMPT = PromptTemplate(
     "- Se houver evidência parcial, responda apenas com o que está documentado e explicite a limitação.\n"
     "- Quando citar dados, mantenha o sentido original e preserve o recorte temporal, geográfico ou setorial.\n"
     "- Evite linguagem vaga. Seja específico.\n\n"
+    "Citação de fontes (obrigatório):\n"
+    "- Toda afirmação com dado numérico, estatística ou fato específico deve ser seguida de uma citação inline.\n"
+    "- Formato: (Fonte: [nome_do_arquivo], p. [página])\n"
+    "- Use exatamente o nome do arquivo e o número de página que aparecem nos metadados do contexto.\n"
+    "- Se a página não estiver disponível, cite apenas o nome do arquivo.\n"
+    "- Exemplo: 'O PIB cresceu 2,3% em 2022 (Fonte: Boletim_Conjuntura_3Trim.pdf, p. 14).'\n\n"
     "Estilo da resposta:\n"
     "- Linguagem clara, direta e acessível.\n"
     "- Tom analítico e profissional.\n"
@@ -44,35 +51,44 @@ def get_query_engine(index, nodes=None):
     - Vector: captura similaridade semântica
     - BM25: captura termos exatos (anos, indicadores, valores numéricos)
     - Fusão via Reciprocal Rank Fusion (RRF)
+    - Reranker cross-encoder (bge-reranker-large): top 20 → top 5
+
+    Retorna (query_engine, retriever, reranker) para reuso pelo CalculationEngine.
     """
     setup_llm()
 
     # 1. Retriever denso (embeddings / similaridade semântica)
     vector_retriever = VectorIndexRetriever(
         index=index,
-        similarity_top_k=30,
+        similarity_top_k=20,
     )
 
     # 2. Retriever esparso (BM25 / termos exatos)
     if nodes:
         bm25_retriever = BM25Retriever.from_defaults(
             nodes=nodes,
-            similarity_top_k=30,
+            similarity_top_k=20,
         )
         # 3. Fusão híbrida via Reciprocal Rank Fusion
         retriever = QueryFusionRetriever(
             retrievers=[vector_retriever, bm25_retriever],
-            similarity_top_k=30,
+            similarity_top_k=20,
             num_queries=1,
             mode="reciprocal_rerank",
             use_async=False,
         )
-        print("  Modo: Retrieval Híbrido (Vector + BM25)")
+        print("  Modo: Retrieval Híbrido (Vector + BM25) → Reranking (bge-reranker-large) → top 5")
     else:
         retriever = vector_retriever
-        print("  Modo: Retrieval Vetorial (BM25 indisponível — nodes não encontrados)")
+        print("  Modo: Retrieval Vetorial → Reranking (bge-reranker-large) → top 5")
 
-    # 4. tree_summarize sintetiza respostas hierarquicamente sobre múltiplos chunks/documentos
+    # 4. Reranker cross-encoder: seleciona os 5 chunks mais relevantes dos 20 recuperados
+    reranker = SentenceTransformerRerank(
+        model="BAAI/bge-reranker-large",
+        top_n=5,
+    )
+
+    # 5. tree_summarize sintetiza respostas hierarquicamente sobre múltiplos chunks/documentos
     response_synthesizer = get_response_synthesizer(
         response_mode="tree_summarize",
         text_qa_template=QA_PROMPT,
@@ -81,9 +97,10 @@ def get_query_engine(index, nodes=None):
     query_engine = RetrieverQueryEngine(
         retriever=retriever,
         response_synthesizer=response_synthesizer,
+        node_postprocessors=[reranker],
     )
 
-    return query_engine
+    return query_engine, retriever, reranker
 
 def answer_question(query_engine, question: str):
     """Encapsula a função de consulta e devolve ao script principal"""
