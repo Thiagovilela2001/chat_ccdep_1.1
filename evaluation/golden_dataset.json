@@ -1,0 +1,52 @@
+[
+  {
+    "question": "Qual foi a variação do PIB do estado de São Paulo no 1º trimestre de 2024?",
+    "ground_truth": "",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi o saldo de empregos formais criados em São Paulo no 3º trimestre de 2024?",
+    "ground_truth": "",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual setor teve o maior crescimento no mercado de trabalho paulista em 2024?",
+    "ground_truth": "",
+    "type": "comparacao"
+  },
+  {
+    "question": "Como evoluiu a taxa de desemprego em São Paulo ao longo de 2024?",
+    "ground_truth": "",
+    "type": "tendencia"
+  },
+  {
+    "question": "Qual foi a variação percentual das exportações paulistas entre o 1º e o 3º trimestre de 2024?",
+    "ground_truth": "",
+    "type": "calculo"
+  },
+  {
+    "question": "Qual foi o desempenho da indústria de transformação paulista no 2º trimestre de 2024?",
+    "ground_truth": "",
+    "type": "lookup"
+  },
+  {
+    "question": "O setor de serviços cresceu mais ou menos que a indústria em São Paulo no 3º trimestre de 2024?",
+    "ground_truth": "",
+    "type": "comparacao"
+  },
+  {
+    "question": "Qual foi a variação do rendimento médio real dos trabalhadores paulistas em 2024?",
+    "ground_truth": "",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi o crescimento acumulado do PIB paulista entre o 1º trimestre de 2024 e o 1º trimestre de 2025?",
+    "ground_truth": "",
+    "type": "calculo"
+  },
+  {
+    "question": "Quais foram as principais tendências do comércio varejista paulista em 2024?",
+    "ground_truth": "",
+    "type": "tendencia"
+  }
+]
