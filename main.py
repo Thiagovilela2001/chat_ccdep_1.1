@@ -10,7 +10,7 @@ if sys.stderr.encoding != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8")
 
 import chromadb
-from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
 from src.ingestion import load_documents
 from src.processing import process_documents
 from src.indexing import create_or_load_index, load_nodes_cache
@@ -119,9 +119,9 @@ def main():
     # 5. RAG Motor de Busca
     print("\n4. Inicializando Motor de Consulta...")
     bm25_nodes = load_nodes_cache()
-    query_engine, retriever, reranker = get_query_engine(index, nodes=bm25_nodes)
+    query_engine, retriever, reranker, rewrite_llm = get_query_engine(index, nodes=bm25_nodes)
 
-    llm = OpenAI(model="gpt-4.1", temperature=0.0)
+    llm = Settings.llm  # instância já criada por setup_llm() dentro de get_query_engine()
     calc_engine = CalculationEngine(retriever=retriever, reranker=reranker, llm=llm)
 
     print("\n" + "="*50)
@@ -156,7 +156,7 @@ def main():
                     score = node.score if node.score is not None else 0.0
                     print(f"  [{i+1}] 📄 Documento: {file_name} (Confiança/Score: {score:.3f})")
             else:
-                resposta = answer_question(query_engine, pergunta)
+                resposta = answer_question(query_engine, pergunta, rewrite_llm=rewrite_llm)
                 print(f"✅ Resposta:\n{resposta.response}\n")
                 print("🔢 Validação numérica:")
                 checks = validate_numbers(resposta.response, resposta.source_nodes)

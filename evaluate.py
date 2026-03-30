@@ -2,19 +2,20 @@
 Script de avaliação do pipeline RAG usando RAGAS.
 
 Uso:
-    python evaluate.py
+    python evaluate.py --split dev          # padrão
+    python evaluate.py --split test
+    python evaluate.py --split adversarial  # usa métrica de recusa, sem RAGAS
+    python evaluate.py --split all          # roda dev + test + adversarial
 
 Saída:
     - Tabela de métricas no console
-    - evaluation_results.json com detalhes por pergunta
-
-Métricas computadas:
-    Sempre:        faithfulness, answer_relevancy
-    Com ground_truth: context_precision, context_recall
+    - evaluation/results_{split}.json com detalhes por pergunta
 """
+import argparse
 import os
 import sys
 import json
+import math
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -24,7 +25,7 @@ if sys.stdout.encoding != "utf-8":
 import chromadb
 from datasets import Dataset
 from ragas import evaluate
-from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
+from ragas.metrics import faithfulness, context_precision, context_recall
 
 from src.ingestion import load_documents
 from src.processing import process_documents
@@ -32,22 +33,39 @@ from src.indexing import create_or_load_index, load_nodes_cache
 from src.qa_chain import get_query_engine, answer_question
 from src.query_router import classify_query
 from src.calculation_engine import CalculationEngine
-from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
 
-GOLDEN_DATASET_PATH = "evaluation/golden_dataset.json"
-RESULTS_PATH = "evaluation/results.json"
+DATASET_PATHS = {
+    "dev":         "data/golden_dataset_dev.json",
+    "test":        "data/golden_dataset_test.json",
+    "adversarial": "data/golden_dataset_adversarial.json",
+}
+
+RESULTS_DIR = "evaluation"
+
+REFUSAL_KEYWORDS = [
+    "não consta",
+    "não está disponível",
+    "não foi possível encontr",
+    "não há informação",
+    "não encontr",
+    "não tenho informação",
+    "não está nos documentos",
+    "informação não consta",
+]
 
 
-def load_golden_dataset(path: str) -> list[dict]:
+def load_dataset(path: str) -> list[dict]:
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     valid = [d for d in data if d.get("question", "").strip()]
-    print(f"  {len(valid)} perguntas carregadas ({sum(1 for d in valid if d.get('ground_truth', '').strip())} com ground_truth)")
+    gt_count = sum(1 for d in valid if d.get("ground_truth", "").strip())
+    print(f"  {len(valid)} perguntas carregadas ({gt_count} com ground_truth)")
     return valid
 
 
-def build_rag_pipeline():
-    """Inicializa o pipeline RAG (igual ao main.py, sem o loop interativo)."""
+def build_pipeline():
+    """Inicializa o pipeline RAG."""
     load_dotenv()
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -65,107 +83,178 @@ def build_rag_pipeline():
 
     index = create_or_load_index(nodes, db_path=DB_PATH)
     bm25_nodes = load_nodes_cache()
-    query_engine, retriever, reranker = get_query_engine(index, nodes=bm25_nodes)
+    query_engine, retriever, reranker, rewrite_llm = get_query_engine(index, nodes=bm25_nodes)
 
-    llm = OpenAI(model="gpt-4.1", temperature=0.0)
+    llm = Settings.llm  # instância já criada por setup_llm() dentro de get_query_engine()
     calc_engine = CalculationEngine(retriever=retriever, reranker=reranker, llm=llm)
 
-    return query_engine, calc_engine, llm
+    return query_engine, calc_engine, llm, rewrite_llm
 
 
-def run_question(question: str, query_engine, calc_engine, llm) -> tuple[str, list[str]]:
-    """Roda uma pergunta no pipeline e retorna (resposta, contextos)."""
+def run_question(question: str, query_engine, calc_engine, llm, rewrite_llm=None) -> tuple[str, list[str]]:
     query_type = classify_query(question, llm)
 
     if query_type == "calculo":
         answer, source_nodes = calc_engine.answer(question)
         contexts = [n.get_content() for n in source_nodes]
     else:
-        response = answer_question(query_engine, question)
+        response = answer_question(query_engine, question, rewrite_llm=rewrite_llm)
         answer = response.response
         contexts = [n.get_content() for n in response.source_nodes]
 
     return answer, contexts
 
 
-def run_evaluation():
-    print("=" * 55)
-    print(" AVALIAÇÃO RAG — RAGAS")
-    print("=" * 55)
+def is_refusal(response: str) -> bool:
+    """Verifica se a resposta indica corretamente que a informação não está nos documentos."""
+    lowered = response.lower()
+    return any(kw in lowered for kw in REFUSAL_KEYWORDS)
 
-    print("\n1. Carregando golden dataset...")
-    golden = load_golden_dataset(GOLDEN_DATASET_PATH)
 
-    has_ground_truth = any(d.get("ground_truth", "").strip() for d in golden)
-    if not has_ground_truth:
-        print("\n  ⚠️  Nenhum ground_truth encontrado.")
-        print("  Serão computadas apenas: faithfulness, answer_relevancy")
-        print("  Preencha o campo 'ground_truth' em data/golden_dataset.json")
-        print("  para ativar: context_precision, context_recall\n")
-
-    print("\n2. Inicializando pipeline RAG...")
-    query_engine, calc_engine, llm = build_rag_pipeline()
-
-    print(f"\n3. Rodando {len(golden)} perguntas no pipeline...")
+def run_ragas_split(split: str, dataset: list[dict], query_engine, calc_engine, llm, rewrite_llm=None):
+    """Roda RAGAS em um split (dev ou test). Retorna dict com métricas e detalhes."""
+    print(f"\n  Rodando {len(dataset)} perguntas ({split})...")
     records = []
-    for i, item in enumerate(golden, 1):
-        question = item["question"]
+    for i, item in enumerate(dataset, 1):
+        question    = item["question"]
         ground_truth = item.get("ground_truth", "").strip()
-        query_type = item.get("type", "?")
+        q_type      = item.get("type", "?")
 
-        print(f"  [{i}/{len(golden)}] ({query_type}) {question[:70]}...")
-
+        print(f"  [{i}/{len(dataset)}] ({q_type}) {question[:70]}...")
         try:
-            answer, contexts = run_question(question, query_engine, calc_engine, llm)
-            record = {
-                "question": question,
-                "answer": answer,
-                "contexts": contexts,
-                "ground_truth": ground_truth or None,
-            }
-            records.append(record)
-            print(f"         ✅ OK")
+            answer, contexts = run_question(question, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+            records.append({
+                "question":     question,
+                "answer":       answer,
+                "contexts":     contexts,
+                "ground_truth": ground_truth or "",
+            })
+            print("         ✅ OK")
         except Exception as exc:
             print(f"         ❌ ERRO: {exc}")
             records.append({
-                "question": question,
-                "answer": f"[ERRO] {exc}",
-                "contexts": [],
-                "ground_truth": ground_truth or None,
+                "question":     question,
+                "answer":       f"[ERRO] {exc}",
+                "contexts":     [],
+                "ground_truth": ground_truth or "",
             })
 
-    print("\n4. Computando métricas RAGAS...")
-    metrics = [faithfulness, answer_relevancy]
-    if has_ground_truth:
-        metrics += [context_precision, context_recall]
+    print("\n  Computando métricas RAGAS...")
+    metrics = [faithfulness, context_precision, context_recall]
+    ds = Dataset.from_list(records)
+    scores = evaluate(ds, metrics=metrics)
 
-    # RAGAS espera ground_truth como string vazia ou preenchida
-    for r in records:
-        if r["ground_truth"] is None:
-            r["ground_truth"] = ""
+    scores_dict = scores.to_pandas().mean(numeric_only=True).to_dict()
+    details = scores.to_pandas().rename(columns={"question": "user_input"}).to_dict(orient="records")
 
-    dataset = Dataset.from_list(records)
-    scores = evaluate(dataset, metrics=metrics)
+    return scores_dict, details
 
+
+def run_adversarial_split(dataset: list[dict], query_engine, calc_engine, llm, rewrite_llm=None):
+    """Roda o split adversarial e computa refusal_accuracy."""
+    print(f"\n  Rodando {len(dataset)} perguntas adversariais...")
+    details = []
+    refusals = 0
+
+    for i, item in enumerate(dataset, 1):
+        question = item["question"]
+        print(f"  [{i}/{len(dataset)}] {question[:70]}...")
+        try:
+            answer, _ = run_question(question, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+            refused = is_refusal(answer)
+            refusals += int(refused)
+            mark = "✅" if refused else "❌ ALUCINAÇÃO"
+            print(f"         {mark}")
+        except Exception as exc:
+            print(f"         ❌ ERRO: {exc}")
+            answer = f"[ERRO] {exc}"
+            refused = False
+
+        details.append({
+            "user_input": question,
+            "response":   answer,
+            "refused":    refused,
+        })
+
+    refusal_accuracy = refusals / len(dataset) if dataset else 0.0
+    scores_dict = {"refusal_accuracy": refusal_accuracy}
+    return scores_dict, details
+
+
+def print_results(scores_dict: dict):
     print("\n" + "=" * 55)
     print(" RESULTADOS")
     print("=" * 55)
-    scores_dict = scores.to_pandas().mean(numeric_only=True).to_dict()
     for metric, value in scores_dict.items():
-        bar = "█" * int(value * 20)
-        print(f"  {metric:<25} {value:.3f}  {bar}")
+        if isinstance(value, float) and math.isnan(value):
+            print(f"  {metric:<30} N/A")
+        else:
+            bar = "█" * int(value * 20)
+            print(f"  {metric:<30} {value:.3f}  {bar}")
 
-    # Salva resultados detalhados
+
+def save_results(split: str, scores_dict: dict, details: list):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    path = os.path.join(RESULTS_DIR, f"results_{split}.json")
     output = {
         "timestamp": datetime.now().isoformat(),
-        "summary": scores_dict,
-        "details": scores.to_pandas().to_dict(orient="records"),
+        "split":     split,
+        "summary":   scores_dict,
+        "details":   details,
     }
-    with open(RESULTS_PATH, "w", encoding="utf-8") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
+    print(f"\n  Resultados salvos em: {path}\n")
 
-    print(f"\n  Resultados detalhados salvos em: {RESULTS_PATH}\n")
+
+def run_split(split: str, query_engine, calc_engine, llm, rewrite_llm=None):
+    print(f"\n{'=' * 55}")
+    print(f" SPLIT: {split.upper()}")
+    print(f"{'=' * 55}")
+
+    print(f"\n1. Carregando dataset ({split})...")
+    dataset = load_dataset(DATASET_PATHS[split])
+
+    if split == "adversarial":
+        scores_dict, details = run_adversarial_split(dataset, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+    else:
+        scores_dict, details = run_ragas_split(split, dataset, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+
+    print_results(scores_dict)
+    save_results(split, scores_dict, details)
+    return scores_dict
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Avaliação RAG com RAGAS")
+    parser.add_argument(
+        "--split",
+        choices=["dev", "test", "adversarial", "all"],
+        default="dev",
+        help="Split a avaliar (padrão: dev)",
+    )
+    args = parser.parse_args()
+
+    print("Inicializando pipeline RAG...")
+    query_engine, calc_engine, llm, rewrite_llm = build_pipeline()
+
+    splits = ["dev", "test", "adversarial"] if args.split == "all" else [args.split]
+
+    all_scores = {}
+    for split in splits:
+        all_scores[split] = run_split(split, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+
+    if args.split == "all":
+        print("\n" + "=" * 55)
+        print(" RESUMO GERAL")
+        print("=" * 55)
+        for split, scores in all_scores.items():
+            print(f"\n  [{split.upper()}]")
+            for metric, value in scores.items():
+                if isinstance(value, float) and not math.isnan(value):
+                    bar = "█" * int(value * 20)
+                    print(f"    {metric:<30} {value:.3f}  {bar}")
 
 
 if __name__ == "__main__":
-    run_evaluation()
+    main()

@@ -1,12 +1,23 @@
-import os
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core import get_response_synthesizer
 from llama_index.core.retrievers import VectorIndexRetriever, QueryFusionRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.postprocessor import SentenceTransformerRerank
+from llama_index.core.postprocessor import LLMRerank
 from llama_index.retrievers.bm25 import BM25Retriever
+
+REWRITE_PROMPT = (
+    "Você é um especialista em recuperação de informações econômicas sobre o Estado de São Paulo.\n"
+    "Reescreva a pergunta abaixo para maximizar a precisão na busca em documentos de conjuntura econômica.\n"
+    "Regras:\n"
+    "- Seja específico sobre períodos (trimestre, ano), indicadores e setores mencionados.\n"
+    "- Expanda siglas relevantes (ex: PIB, PNAD, IPCA).\n"
+    "- Mantenha o significado original.\n"
+    "- Retorne APENAS a pergunta reescrita, sem explicações.\n\n"
+    "Pergunta: {question}\n"
+    "Reescrita:"
+)
 
 QA_PROMPT = PromptTemplate(
     "Você é um analista especialista em dados econômicos e estatísticos. "
@@ -17,6 +28,7 @@ QA_PROMPT = PromptTemplate(
     "- Não invente números, datas, nomes, períodos, classificações ou relações causais.\n"
     "- Se a resposta não estiver disponível, diga: 'A informação não consta nos documentos fornecidos.'\n"
     "- Se houver evidência parcial, responda apenas com o que está documentado e explicite a limitação.\n"
+    "- Nunca substitua o tema da pergunta por um tema adjacente (ex: pergunta sobre emprego → não responda com dados de PIB setorial).\n"
     "- Quando citar dados, mantenha o sentido original e preserve o recorte temporal, geográfico ou setorial.\n"
     "- Evite linguagem vaga. Seja específico.\n\n"
     "Citação de fontes (obrigatório):\n"
@@ -39,23 +51,32 @@ QA_PROMPT = PromptTemplate(
     "Resposta:"
 )
 
+
 def setup_llm():
-    """Configura o gerador OpenAI (GPT-4.1) com temperatura 0 para respostas factuais e precisas."""
-    llm = OpenAI(model="gpt-4.1", temperature=0.0)
+    llm = OpenAI(model="gpt-5-chat-latest", temperature=0.0)
     Settings.llm = llm
     return llm
+
+
+def rewrite_query(question: str, llm) -> str:
+    response = llm.complete(REWRITE_PROMPT.format(question=question))
+    return response.text.strip()
+
 
 def get_query_engine(index, nodes=None):
     """
     Constrói a engine de perguntas e respostas com retrieval híbrido (Vector + BM25).
-    - Vector: captura similaridade semântica
-    - BM25: captura termos exatos (anos, indicadores, valores numéricos)
-    - Fusão via Reciprocal Rank Fusion (RRF)
-    - Reranker cross-encoder (bge-reranker-large): top 20 → top 5
+    Arquitetura:
+      - Query rewrite:  gpt-5-mini   (reformula a query para melhor retrieval)
+      - Retrieval:      embeddings + BM25 (fusão RRF, top 20)
+      - Rerank:         gpt-5-nano   (LLMRerank, top 20 → top 5)
+      - Answer:         gpt-5-chat-latest (tree_summarize com prompt restritivo)
 
-    Retorna (query_engine, retriever, reranker) para reuso pelo CalculationEngine.
+    Retorna (query_engine, retriever, reranker, rewrite_llm).
     """
     setup_llm()
+    rewrite_llm = OpenAI(model="gpt-5-mini", temperature=0.0)
+    nano_llm    = OpenAI(model="gpt-5-nano",  temperature=0.0)
 
     # 1. Retriever denso (embeddings / similaridade semântica)
     vector_retriever = VectorIndexRetriever(
@@ -77,18 +98,19 @@ def get_query_engine(index, nodes=None):
             mode="reciprocal_rerank",
             use_async=False,
         )
-        print("  Modo: Retrieval Híbrido (Vector + BM25) → Reranking (bge-reranker-large) → top 5")
+        print("  Modo: Retrieval Híbrido (Vector + BM25) → Reranking (gpt-5-nano) → top 5")
     else:
         retriever = vector_retriever
-        print("  Modo: Retrieval Vetorial → Reranking (bge-reranker-large) → top 5")
+        print("  Modo: Retrieval Vetorial → Reranking (gpt-5-nano) → top 5")
 
-    # 4. Reranker cross-encoder: seleciona os 5 chunks mais relevantes dos 20 recuperados
-    reranker = SentenceTransformerRerank(
-        model="BAAI/bge-reranker-large",
+    # 4. LLMRerank com gpt-5-nano: seleciona os 5 chunks mais relevantes dos 20 recuperados
+    reranker = LLMRerank(
         top_n=5,
+        choice_batch_size=10,
+        llm=nano_llm,
     )
 
-    # 5. tree_summarize sintetiza respostas hierarquicamente sobre múltiplos chunks/documentos
+    # 5. tree_summarize sintetiza hierarquicamente com prompt restritivo
     response_synthesizer = get_response_synthesizer(
         response_mode="tree_summarize",
         text_qa_template=QA_PROMPT,
@@ -100,9 +122,11 @@ def get_query_engine(index, nodes=None):
         node_postprocessors=[reranker],
     )
 
-    return query_engine, retriever, reranker
+    return query_engine, retriever, reranker, rewrite_llm
 
-def answer_question(query_engine, question: str):
-    """Encapsula a função de consulta e devolve ao script principal"""
+
+def answer_question(query_engine, question: str, rewrite_llm=None):
+    if rewrite_llm is not None:
+        question = rewrite_query(question, rewrite_llm)
     response = query_engine.query(question)
     return response
