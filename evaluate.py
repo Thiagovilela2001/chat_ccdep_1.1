@@ -25,7 +25,9 @@ if sys.stdout.encoding != "utf-8":
 import chromadb
 from datasets import Dataset
 from ragas import evaluate
-from ragas.metrics import faithfulness, context_precision, context_recall
+from ragas.metrics import Faithfulness, ContextPrecision, ContextRecall
+from ragas.llms import LangchainLLMWrapper
+from langchain_openai import ChatOpenAI
 
 from src.ingestion import load_documents
 from src.processing import process_documents
@@ -139,8 +141,9 @@ def run_ragas_split(split: str, dataset: list[dict], query_engine, calc_engine, 
                 "ground_truth": ground_truth or "",
             })
 
-    print("\n  Computando métricas RAGAS...")
-    metrics = [faithfulness, context_precision, context_recall]
+    print("\n  Computando métricas RAGAS (judge: gpt-5-chat-latest)...")
+    ragas_llm = LangchainLLMWrapper(ChatOpenAI(model="gpt-5-chat-latest", temperature=0.0))
+    metrics = [Faithfulness(llm=ragas_llm), ContextPrecision(llm=ragas_llm), ContextRecall(llm=ragas_llm)]
     ds = Dataset.from_list(records)
     scores = evaluate(ds, metrics=metrics)
 

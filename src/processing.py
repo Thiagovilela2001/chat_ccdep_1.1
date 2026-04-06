@@ -179,8 +179,8 @@ def process_documents(documents):
     # --- Tabelas ---
     table_nodes = []
     if table_docs:
-        print("  Enriquecendo metadados e aplicando chunking nas tabelas (gpt-5.4-mini)...")
-        llm = OpenAI(model="gpt-5.4-mini-2026-03-17", temperature=0.0)
+        print("  Enriquecendo metadados e aplicando chunking nas tabelas (gpt-5-mini)...")
+        llm = OpenAI(model="gpt-5-mini", temperature=0.0)
         for doc in table_docs:
             extra_meta = _enrich_table_metadata(doc, llm)
             nodes      = _chunk_table(doc, extra_metadata=extra_meta)

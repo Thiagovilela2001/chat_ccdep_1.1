@@ -30,6 +30,7 @@ class NumberCheck:
     value: str                          # como aparece na resposta
     verified: bool
     source_snippet: Optional[str] = None  # trecho onde foi encontrado
+    response_snippet: Optional[str] = None  # contexto na resposta do LLM
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -74,12 +75,15 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
             continue
         seen.add(raw)
 
+        resp_snippet = _find_snippet(raw, response_text)
+
         # 1. Match verbatim
         if raw in combined:
             results.append(NumberCheck(
                 value=raw,
                 verified=True,
                 source_snippet=_find_snippet(raw, combined),
+                response_snippet=resp_snippet,
             ))
             continue
 
@@ -93,6 +97,7 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
                         value=raw,
                         verified=True,
                         source_snippet=_find_snippet(cm.group(1), node_text),
+                        response_snippet=resp_snippet,
                     ))
                     found = True
                     break
@@ -100,7 +105,7 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
                 break
 
         if not found:
-            results.append(NumberCheck(value=raw, verified=False))
+            results.append(NumberCheck(value=raw, verified=False, response_snippet=resp_snippet))
 
     return results
 
@@ -119,6 +124,8 @@ def format_validation_report(checks: list[NumberCheck]) -> str:
         lines.append("  ⚠️  Não encontrados nos documentos originais:")
         for c in unverified:
             lines.append(f"    • {c.value}")
+            if c.response_snippet:
+                lines.append(f"      Contexto na resposta: {c.response_snippet}")
     else:
         lines.append("  ✅ Todos os números foram verificados nos documentos.")
 

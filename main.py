@@ -1,179 +1,103 @@
-import os
-import sys
-import json
-from dotenv import load_dotenv
+"""
+Entry point do RAG Estatístico SP.
 
-# Garante UTF-8 no console do Windows
+Modos de uso:
+    python main.py              # inicia servidor FastAPI em :8000
+    python main.py --port 9000  # porta customizada
+    python main.py --cli        # loop interativo (sem servidor HTTP)
+"""
+import sys
+import os
+import argparse
+
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 if sys.stderr.encoding != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8")
 
-import chromadb
-from llama_index.core import Settings
-from src.ingestion import load_documents
-from src.processing import process_documents
-from src.indexing import create_or_load_index, load_nodes_cache
-from src.qa_chain import get_query_engine, answer_question
-from src.query_router import classify_query
-from src.calculation_engine import CalculationEngine
-from src.numerical_validator import validate_numbers, format_validation_report
 
-MANIFEST_FILE = "chroma_db/indexed_manifest.json"
+def _run_server(host: str, port: int) -> None:
+    import uvicorn
+    print(f"Iniciando servidor em http://{host}:{port}")
+    print("Documentação interativa: http://127.0.0.1:{port}/docs\n")
+    uvicorn.run("src.api:app", host=host, port=port, reload=False)
 
-def get_data_snapshot(data_dir):
-    """Retorna um dicionário {nome_arquivo: ultima_modificacao} dos arquivos em /data."""
-    snapshot = {}
-    if not os.path.isdir(data_dir):
-        return snapshot
-    for fname in os.listdir(data_dir):
-        fpath = os.path.join(data_dir, fname)
-        if os.path.isfile(fpath):
-            snapshot[fname] = os.path.getmtime(fpath)
-    return snapshot
 
-def load_manifest():
-    """Carrega o manifesto de arquivos já indexados."""
-    if os.path.exists(MANIFEST_FILE):
-        with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+def _run_cli() -> None:
+    import asyncio
+    from dotenv import load_dotenv
+    from src.startup import initialize
+    from src.query_interpreter import interpret_query
+    from src.numerical_validator import validate_numbers, format_validation_report
 
-def save_manifest(snapshot):
-    """Salva o estado atual dos arquivos como manifesto."""
-    os.makedirs(os.path.dirname(MANIFEST_FILE), exist_ok=True)
-    with open(MANIFEST_FILE, "w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2)
-
-def detect_changes(current_snapshot, manifest):
-    """Retorna lista de arquivos novos ou modificados."""
-    changed = []
-    for fname, mtime in current_snapshot.items():
-        if fname not in manifest or manifest[fname] != mtime:
-            changed.append(fname)
-    return changed
-
-def main():
-    # 1. Carrega variáveis de ambiente (ex: OPENAI_API_KEY)
     load_dotenv()
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_DIR = os.path.join(BASE_DIR, "data")
-    DB_PATH = os.path.join(BASE_DIR, "chroma_db")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    engine, interp_llm = initialize(base_dir)
 
-    # Validações Iniciais
-    if not os.environ.get("OPENAI_API_KEY"):
-        print("\n[ERRO] AVISO CRÍTICO: Chave da OpenAI não encontrada.")
-        print("Por favor, crie um arquivo .env na pasta raiz e adicione: OPENAI_API_KEY=sua_chave\n")
-        return
-
-    print("==================================================")
-    print(" INICIALIZANDO RAG ESTATÍSTICO (LlamaIndex + GPT)")
-    print("==================================================")
-
-    # 2. Detecta mudanças nos documentos
-    current_snapshot = get_data_snapshot(DATA_DIR)
-    manifest = load_manifest()
-    changed_files = detect_changes(current_snapshot, manifest)
-
-    db = chromadb.PersistentClient(path=DB_PATH)
-    col = db.get_or_create_collection("estatisticas")
-    already_indexed = col.count() > 0
-
-    # 3. Ingestão e processamento apenas se necessário
-    nodes = []
-    if changed_files:
-        print(f"\n1. Documentos novos/modificados detectados: {changed_files}")
-        print("   Reindexando...")
-        # Limpa o banco para reindexar tudo de forma consistente
-        db.delete_collection("estatisticas")
-        col = db.get_or_create_collection("estatisticas")
-
-        print("\n2. Carregando e processando documentos de /data...")
-        docs = load_documents(DATA_DIR)
-        if docs:
-            nodes = process_documents(docs)
-    elif not already_indexed:
-        print("\n1. Banco vazio. Carregando documentos de /data...")
-        docs = load_documents(DATA_DIR)
-        if docs:
-            print("\n2. Processando/Normalizando os documentos extraídos...")
-            nodes = process_documents(docs)
-        else:
-            print("\n2. Nenhum documento encontrado em /data.")
-    else:
-        print(f"\n1. Banco de dados atualizado ({col.count()} vetores). Nenhuma mudança detectada.")
-
-    # 4. Indexação (Vector Store local ChromaDB + Embeddings)
-    print("\n3. Indexando vetores e metadados no ChromaDB...")
-    try:
-        index = create_or_load_index(nodes, db_path=DB_PATH)
-    except Exception as e:
-        print(f"\n[ERRO] Falha ao carregar banco de dados ou criar embeddings. Detalhes: {e}")
-        return
-
-    # Salva manifesto após indexação bem-sucedida
-    if changed_files or not already_indexed:
-        save_manifest(current_snapshot)
-
-    # 5. RAG Motor de Busca
-    print("\n4. Inicializando Motor de Consulta...")
-    bm25_nodes = load_nodes_cache()
-    query_engine, retriever, reranker, rewrite_llm = get_query_engine(index, nodes=bm25_nodes)
-
-    llm = Settings.llm  # instância já criada por setup_llm() dentro de get_query_engine()
-    calc_engine = CalculationEngine(retriever=retriever, reranker=reranker, llm=llm)
-
-    print("\n" + "="*50)
-    print(" RAG PRONTO PARA USO!")
-    print(" Digite sua pergunta sobre os documentos.")
-    print(" Digite 'sair' para encerrar o programa.")
-    print("="*50 + "\n")
+    print("=" * 52)
+    print(" RAG PRONTO — modo CLI interativo")
+    print(" Digite 'sair' para encerrar.")
+    print("=" * 52 + "\n")
 
     while True:
         try:
-            pergunta = input("▶️ Pergunta: ")
-            if pergunta.lower().strip() in ["sair", "exit", "quit", "q"]:
-                print("Encerrando...")
-                break
-
-            if not pergunta.strip():
-                continue
-
-            query_type = classify_query(pergunta, llm)
-            print(f"  Tipo detectado: {query_type}\n")
-            print("⏳ Buscando e analisando dados...\n")
-
-            if query_type == "calculo":
-                resposta_texto, source_nodes = calc_engine.answer(pergunta)
-                print(f"✅ Resposta:\n{resposta_texto}\n")
-                print("🔢 Validação numérica:")
-                checks = validate_numbers(resposta_texto, source_nodes)
-                print(format_validation_report(checks))
-                print("\n🔍 Referências e Fontes da Extração Original:")
-                for i, node in enumerate(source_nodes):
-                    file_name = node.metadata.get('file_name', 'Nome Desconhecido')
-                    score = node.score if node.score is not None else 0.0
-                    print(f"  [{i+1}] 📄 Documento: {file_name} (Confiança/Score: {score:.3f})")
-            else:
-                resposta = answer_question(query_engine, pergunta, rewrite_llm=rewrite_llm)
-                print(f"✅ Resposta:\n{resposta.response}\n")
-                print("🔢 Validação numérica:")
-                checks = validate_numbers(resposta.response, resposta.source_nodes)
-                print(format_validation_report(checks))
-                print("\n🔍 Referências e Fontes da Extração Original:")
-                for i, node in enumerate(resposta.source_nodes):
-                    file_name = node.metadata.get('file_name', 'Nome Desconhecido')
-                    score = node.score if node.score is not None else 0.0
-                    print(f"  [{i+1}] 📄 Documento: {file_name} (Confiança/Score: {score:.3f})")
-
-            print("\n" + "-"*40 + "\n")
-
-        except KeyboardInterrupt:
-            print("\nProcesso interrompido.")
+            pergunta = input("Pergunta: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nEncerrando.")
             break
-        except Exception as e:
-            print(f"\n[ERRO] Ocorreu um problema durante a consulta: {e}\n")
+
+        if not pergunta:
+            continue
+        if pergunta.lower() in {"sair", "exit", "quit", "q"}:
+            print("Encerrando.")
+            break
+
+        try:
+            interp = interpret_query(pergunta, interp_llm)
+            print(f"  Fontes: {interp['sources']}")
+            print(f"  Query reescrita: {interp['rewritten_query']}\n")
+            print("Buscando e analisando...\n")
+
+            resposta, source_nodes = asyncio.run(
+                engine.answer(
+                    question=pergunta,
+                    sources=interp["sources"],
+                    rewritten_query=interp["rewritten_query"],
+                    is_labor_market=interp.get("is_labor_market", False),
+                )
+            )
+
+            print(f"Resposta:\n{resposta}\n")
+
+            print("Validação numérica:")
+            checks = validate_numbers(resposta, source_nodes)
+            print(format_validation_report(checks))
+
+            print("\nReferências:")
+            for i, node in enumerate(source_nodes):
+                fname = node.metadata.get("source_file") or node.metadata.get("file_name", "?")
+                score = round((node.score or 0) / 10.0, 2)
+                print(f"  [{i+1}] {fname} (relevância: {score:.2f})")
+
+        except Exception as exc:
+            print(f"\n[ERRO] {exc}\n")
+
+        print("\n" + "-" * 40 + "\n")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="RAG Estatístico SP")
+    parser.add_argument("--cli",  action="store_true", help="Loop interativo (sem servidor HTTP)")
+    parser.add_argument("--host", default="0.0.0.0",   help="Host do servidor (padrão: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000, help="Porta do servidor (padrão: 8000)")
+    args = parser.parse_args()
+
+    if args.cli:
+        _run_cli()
+    else:
+        _run_server(args.host, args.port)
+
 
 if __name__ == "__main__":
     main()
