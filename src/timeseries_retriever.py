@@ -8,6 +8,53 @@ análise de tendências, crescimento e evolução de indicadores econômicos.
 import re
 import pandas as pd
 
+from src.logger import get_logger
+from src.safe_exec import safe_exec
+
+log = get_logger(__name__)
+_FALLBACK_TOP_N = 3
+
+def _sanitize(text: str) -> str:
+    """Remove caracteres de controle inválidos que podem quebrar o JSON da API."""
+    return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+
+
+# Marcadores temporais reconhecíveis em português — sinal positivo de série válida
+_PERIOD_PATTERN = re.compile(
+    r"([1-4][oO°]\s*trim)"               # 1o trim, 2º trim …
+    r"|(\b(19|20)\d{2}\b)"               # anos: 1990–2099
+    r"|(jan(eiro)?|fev(ereiro)?|mar(ço)?|abr(il)?"
+    r"|mai(o)?|jun(ho)?|jul(ho)?|ago(sto)?"
+    r"|set(embro)?|out(ubro)?|nov(embro)?|dez(embro)?)"
+    r"|(\b(período|data|mês|mes|trimestre|semestre|anual|mensal)\b)",
+    re.IGNORECASE,
+)
+
+
+def _context_has_temporal_labels(context: str) -> bool:
+    """
+    Verifica (por sinal positivo) se o contexto contém rótulos temporais reconhecíveis.
+    Retorna False para contextos com apenas números e índices inteiros — indica
+    serialização incorreta de tabela (ex: '0: 17,5\\n1: 16,5\\n...').
+    """
+    return bool(_PERIOD_PATTERN.search(context))
+
+
+def _df_is_valid_timeseries(df) -> bool:
+    """
+    Verifica se o DataFrame extraído tem estrutura de série temporal útil:
+      - Pelo menos 2 linhas e 2 colunas.
+      - Primeira coluna com rótulos textuais (não puramente numérica) — indica períodos.
+    """
+    if df is None or df.shape[0] < 2 or df.shape[1] < 2:
+        return False
+    first_col = df.iloc[:, 0]
+    # Coluna de período deve ser object/string, não inteiros ou floats
+    if pd.api.types.is_numeric_dtype(first_col):
+        return False
+    return True
+
+
 # Granularidades que indicam série temporal → incluídas neste retriever
 _TEMPORAL_KEYWORDS = {
     "mensal", "trimestral", "semestral", "bimestral",
@@ -44,6 +91,7 @@ Armazene o resultado final como string descritiva na variável `resultado`.
 Regras:
 - Não importe nada. `pd` e `df`/`data` já estão disponíveis.
 - Não use print().
+- Ao acessar um valor de Series de um único elemento, use `.iloc[0]` (ex: `float(df['col'].iloc[0])`).
 - Calcule variações, tendências e estatísticas relevantes para a pergunta.
 - Formate números com separador de milhar e 2 casas decimais.
 
@@ -92,13 +140,38 @@ class TimeSeriesRetriever:
         if not ts_nodes:
             return None
 
-        ts_nodes = self._reranker.postprocess_nodes(ts_nodes, query_str=question)
-        if not ts_nodes:
-            return None
+        # Sanitiza antes do reranker
+        for n in ts_nodes:
+            n.node.text = _sanitize(n.node.text)
 
-        context = "\n\n---\n\n".join(n.get_content() for n in ts_nodes)
+        try:
+            reranked = self._reranker.postprocess_nodes(ts_nodes, query_str=question)
+        except Exception:
+            log.warning("Reranker falhou em timeseries — usando fallback", extra={"fallback": True})
+            reranked = []
+
+        if not reranked:
+            reranked = ts_nodes[:_FALLBACK_TOP_N]
+
+        context = "\n\n---\n\n".join(n.get_content() for n in reranked)
+
+        # Pré-filtro: contexto sem rótulo temporal → não vale chamar o LLM de extração
+        if not _context_has_temporal_labels(context):
+            log.warning(
+                "Contexto sem rotulos temporais reconheciveis — revertendo para narrativa",
+                extra={"event": "ts_no_period_labels"},
+            )
+            return None, reranked
+
         structured = self._extract_and_analyze(question, context)
-        return structured, ts_nodes
+        if structured is None:
+            # DataFrame inválido na extração — narrativa como fallback
+            log.warning(
+                "Extracao retornou estrutura invalida — revertendo para narrativa",
+                extra={"event": "ts_extraction_fallback"},
+            )
+            return None, reranked
+        return structured, reranked
 
     def _extract_and_analyze(self, question: str, context: str) -> str:
         # Fase 1: extração da série temporal em DataFrame
@@ -109,14 +182,23 @@ class TimeSeriesRetriever:
 
         ns = {"pd": pd}
         try:
-            exec(extract_code, ns)  # noqa: S102
-        except Exception as exc:
+            safe_exec(extract_code, ns)
+        except (ValueError, RuntimeError) as exc:
+            log.warning("Extracao de serie temporal falhou: %s", exc)
             return f"[Erro na extração da série temporal: {exc}]"
 
         df = ns.get("df")
         data = ns.get("data")
 
         if df is not None:
+            if not _df_is_valid_timeseries(df):
+                log.warning(
+                    "DataFrame extraido sem estrutura de serie temporal valida "
+                    "(colunas: %s, shape: %s) — abortando analise",
+                    list(df.columns), df.shape,
+                    extra={"event": "ts_invalid_df"},
+                )
+                return None  # retrieve() usará fallback narrativo
             data_preview = df.to_string(max_rows=40)
         elif data is not None:
             data_preview = str(data)
@@ -130,8 +212,9 @@ class TimeSeriesRetriever:
         analyze_code = _extract_code_block(analyze_resp.text)
 
         try:
-            exec(analyze_code, ns)  # noqa: S102
-        except Exception as exc:
+            safe_exec(analyze_code, ns)
+        except (ValueError, RuntimeError) as exc:
+            log.warning("Analise de serie temporal falhou: %s", exc)
             return f"[Erro na análise da série temporal: {exc}]"
 
         return str(ns.get("resultado", data_preview))

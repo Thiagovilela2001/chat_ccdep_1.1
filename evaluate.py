@@ -12,6 +12,7 @@ Saída:
     - evaluation/results_{split}.json com detalhes por pergunta
 """
 import argparse
+import asyncio
 import os
 import sys
 import json
@@ -22,20 +23,14 @@ from dotenv import load_dotenv
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
-import chromadb
 from datasets import Dataset
 from ragas import evaluate
 from ragas.metrics import Faithfulness, ContextPrecision, ContextRecall
-from ragas.llms import LangchainLLMWrapper
-from langchain_openai import ChatOpenAI
+from openai import OpenAI as OpenAIClient
+from ragas.llms import llm_factory
 
-from src.ingestion import load_documents
-from src.processing import process_documents
-from src.indexing import create_or_load_index, load_nodes_cache
-from src.qa_chain import get_query_engine, answer_question
-from src.query_router import classify_query
-from src.calculation_engine import CalculationEngine
-from llama_index.core import Settings
+from src.startup import initialize
+from src.query_interpreter import interpret_query
 
 DATASET_PATHS = {
     "dev":         "data/golden_dataset_dev.json",
@@ -66,72 +61,43 @@ def load_dataset(path: str) -> list[dict]:
     return valid
 
 
-def build_pipeline():
-    """Inicializa o pipeline RAG."""
-    load_dotenv()
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_DIR = os.path.join(BASE_DIR, "data")
-    DB_PATH = os.path.join(BASE_DIR, "chroma_db")
-
-    db = chromadb.PersistentClient(path=DB_PATH)
-    col = db.get_or_create_collection("estatisticas")
-
-    nodes = []
-    if col.count() == 0:
-        print("  Banco vazio — indexando documentos...")
-        docs = load_documents(DATA_DIR)
-        nodes = process_documents(docs)
-
-    index = create_or_load_index(nodes, db_path=DB_PATH)
-    bm25_nodes = load_nodes_cache()
-    query_engine, retriever, reranker, rewrite_llm = get_query_engine(index, nodes=bm25_nodes)
-
-    llm = Settings.llm  # instância já criada por setup_llm() dentro de get_query_engine()
-    calc_engine = CalculationEngine(retriever=retriever, reranker=reranker, llm=llm)
-
-    return query_engine, calc_engine, llm, rewrite_llm
-
-
-def run_question(question: str, query_engine, calc_engine, llm, rewrite_llm=None) -> tuple[str, list[str]]:
-    query_type = classify_query(question, llm)
-
-    if query_type == "calculo":
-        answer, source_nodes = calc_engine.answer(question)
-        contexts = [n.get_content() for n in source_nodes]
-    else:
-        response = answer_question(query_engine, question, rewrite_llm=rewrite_llm)
-        answer = response.response
-        contexts = [n.get_content() for n in response.source_nodes]
-
-    return answer, contexts
+def run_question(question: str, engine, interp_llm) -> tuple[str, list, dict]:
+    interp = interpret_query(question, interp_llm)
+    answer, source_nodes = asyncio.run(
+        engine.answer(
+            question=question,
+            sources=interp["sources"],
+            rewritten_query=interp["rewritten_query"],
+            is_labor_market=interp.get("is_labor_market", False),
+        )
+    )
+    return answer, source_nodes, interp
 
 
 def is_refusal(response: str) -> bool:
-    """Verifica se a resposta indica corretamente que a informação não está nos documentos."""
     lowered = response.lower()
     return any(kw in lowered for kw in REFUSAL_KEYWORDS)
 
 
-def run_ragas_split(split: str, dataset: list[dict], query_engine, calc_engine, llm, rewrite_llm=None):
-    """Roda RAGAS em um split (dev ou test). Retorna dict com métricas e detalhes."""
+def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm):
     print(f"\n  Rodando {len(dataset)} perguntas ({split})...")
     records = []
     for i, item in enumerate(dataset, 1):
-        question    = item["question"]
+        question     = item["question"]
         ground_truth = item.get("ground_truth", "").strip()
-        q_type      = item.get("type", "?")
+        q_type       = item.get("type", "?")
 
         print(f"  [{i}/{len(dataset)}] ({q_type}) {question[:70]}...")
         try:
-            answer, contexts = run_question(question, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+            answer, source_nodes, interp = run_question(question, engine, interp_llm)
+            contexts = [n.get_content() for n in source_nodes]
             records.append({
                 "question":     question,
                 "answer":       answer,
                 "contexts":     contexts,
                 "ground_truth": ground_truth or "",
             })
-            print("         ✅ OK")
+            print(f"         ✅ OK | fontes: {interp['sources']} | chunks: {len(contexts)}")
         except Exception as exc:
             print(f"         ❌ ERRO: {exc}")
             records.append({
@@ -141,8 +107,9 @@ def run_ragas_split(split: str, dataset: list[dict], query_engine, calc_engine, 
                 "ground_truth": ground_truth or "",
             })
 
-    print("\n  Computando métricas RAGAS (judge: gpt-5-chat-latest)...")
-    ragas_llm = LangchainLLMWrapper(ChatOpenAI(model="gpt-5-chat-latest", temperature=0.0))
+    ragas_model = os.getenv("RAGAS_JUDGE_MODEL", "gpt-5-chat-latest")
+    print(f"\n  Computando métricas RAGAS (judge: {ragas_model})...")
+    ragas_llm = llm_factory(ragas_model, client=OpenAIClient(), max_tokens=8192)
     metrics = [Faithfulness(llm=ragas_llm), ContextPrecision(llm=ragas_llm), ContextRecall(llm=ragas_llm)]
     ds = Dataset.from_list(records)
     scores = evaluate(ds, metrics=metrics)
@@ -153,8 +120,7 @@ def run_ragas_split(split: str, dataset: list[dict], query_engine, calc_engine, 
     return scores_dict, details
 
 
-def run_adversarial_split(dataset: list[dict], query_engine, calc_engine, llm, rewrite_llm=None):
-    """Roda o split adversarial e computa refusal_accuracy."""
+def run_adversarial_split(dataset: list[dict], engine, interp_llm):
     print(f"\n  Rodando {len(dataset)} perguntas adversariais...")
     details = []
     refusals = 0
@@ -163,7 +129,7 @@ def run_adversarial_split(dataset: list[dict], query_engine, calc_engine, llm, r
         question = item["question"]
         print(f"  [{i}/{len(dataset)}] {question[:70]}...")
         try:
-            answer, _ = run_question(question, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+            answer, _, _interp = run_question(question, engine, interp_llm)
             refused = is_refusal(answer)
             refusals += int(refused)
             mark = "✅" if refused else "❌ ALUCINAÇÃO"
@@ -210,7 +176,7 @@ def save_results(split: str, scores_dict: dict, details: list):
     print(f"\n  Resultados salvos em: {path}\n")
 
 
-def run_split(split: str, query_engine, calc_engine, llm, rewrite_llm=None):
+def run_split(split: str, engine, interp_llm):
     print(f"\n{'=' * 55}")
     print(f" SPLIT: {split.upper()}")
     print(f"{'=' * 55}")
@@ -219,9 +185,9 @@ def run_split(split: str, query_engine, calc_engine, llm, rewrite_llm=None):
     dataset = load_dataset(DATASET_PATHS[split])
 
     if split == "adversarial":
-        scores_dict, details = run_adversarial_split(dataset, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+        scores_dict, details = run_adversarial_split(dataset, engine, interp_llm)
     else:
-        scores_dict, details = run_ragas_split(split, dataset, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+        scores_dict, details = run_ragas_split(split, dataset, engine, interp_llm)
 
     print_results(scores_dict)
     save_results(split, scores_dict, details)
@@ -238,14 +204,17 @@ def main():
     )
     args = parser.parse_args()
 
+    load_dotenv()
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
     print("Inicializando pipeline RAG...")
-    query_engine, calc_engine, llm, rewrite_llm = build_pipeline()
+    engine, interp_llm = initialize(base_dir)
 
     splits = ["dev", "test", "adversarial"] if args.split == "all" else [args.split]
 
     all_scores = {}
     for split in splits:
-        all_scores[split] = run_split(split, query_engine, calc_engine, llm, rewrite_llm=rewrite_llm)
+        all_scores[split] = run_split(split, engine, interp_llm)
 
     if args.split == "all":
         print("\n" + "=" * 55)

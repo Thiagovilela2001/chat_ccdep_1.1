@@ -12,6 +12,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
 
+from src.logger import get_logger, setup_logging
 from src.ingestion import load_documents
 from src.processing import process_documents
 from src.indexing import create_or_load_index, load_nodes_cache
@@ -20,6 +21,8 @@ from src.tables_retriever import TablesRetriever
 from src.timeseries_retriever import TimeSeriesRetriever
 from src.analysis_engine import AnalysisEngine
 from src.labor_market_skill import LaborMarketSkill
+
+log = get_logger(__name__)
 
 MANIFEST_FILE = "chroma_db/indexed_manifest.json"
 
@@ -81,12 +84,11 @@ def initialize(base_dir: str) -> tuple[AnalysisEngine, object]:
             "Crie um arquivo .env com: OPENAI_API_KEY=sua_chave"
         )
 
+    setup_logging()
     data_dir = os.path.join(base_dir, "data")
     db_path = os.path.join(base_dir, "chroma_db")
 
-    print("=" * 52)
-    print(" INICIALIZANDO RAG ESTATÍSTICO SP")
-    print("=" * 52)
+    log.info("Inicializando RAG Estatistico SP")
 
     # 1. Detecção de mudanças nos documentos
     snapshot = _get_data_snapshot(data_dir)
@@ -100,42 +102,42 @@ def initialize(base_dir: str) -> tuple[AnalysisEngine, object]:
     # 2. Ingestão e processamento (somente se necessário)
     nodes = []
     if changed:
-        print(f"\n[1] Documentos novos/modificados: {changed}")
-        print("    Reindexando banco de dados...")
+        log.info("[1] Documentos novos/modificados: %s — reindexando", changed)
         db.delete_collection("estatisticas")
         col = db.get_or_create_collection("estatisticas")
         docs = load_documents(data_dir)
         if docs:
             nodes = process_documents(docs)
     elif not already_indexed:
-        print("\n[1] Banco vazio. Carregando documentos...")
+        log.info("[1] Banco vazio — carregando documentos")
         docs = load_documents(data_dir)
         if docs:
             nodes = process_documents(docs)
         else:
-            print("    Nenhum documento encontrado em /data.")
+            log.warning("Nenhum documento encontrado em /data")
     else:
-        print(f"\n[1] Banco atualizado ({col.count()} vetores). Sem mudanças detectadas.")
+        log.info("[1] Banco atualizado (%d vetores) — sem mudancas", col.count())
 
     # 3. Indexação vetorial
-    print("\n[2] Indexando vetores no ChromaDB...")
+    log.info("[2] Indexando vetores no ChromaDB")
     index = create_or_load_index(nodes, db_path=db_path)
 
     if changed or not already_indexed:
         _save_manifest(snapshot)
 
     # 4. LLMs
-    print("\n[3] Carregando modelos de linguagem...")
-    llm = OpenAI(model="gpt-5-chat-latest", temperature=0.0)
+    log.info("[3] Carregando modelos de linguagem")
+    llm = OpenAI(model="gpt-5-chat-latest", temperature=0.0, timeout=60.0)
     Settings.llm = llm
-    interp_llm  = OpenAI(model="gpt-5-mini", temperature=0.0)
-    nano_llm    = OpenAI(model="gpt-5-nano",  temperature=0.0)
+    interp_llm  = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
 
     # 5. Retriever híbrido compartilhado + reranker
-    print("\n[4] Inicializando retrievers...")
+    log.info("[4] Inicializando retrievers")
     bm25_nodes = load_nodes_cache()
     retriever  = build_hybrid_retriever(index, bm25_nodes)
-    reranker   = LLMRerank(top_n=5, choice_batch_size=10, llm=nano_llm)
+    # choice_batch_size=30 iguala o top_k do retriever → todos os candidatos
+    # são comparados num único LLM call (sem viés de batch)
+    reranker   = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
 
     # 6. Três retrievers especializados
     text_ret   = TextRetriever(retriever, reranker)
@@ -145,12 +147,12 @@ def initialize(base_dir: str) -> tuple[AnalysisEngine, object]:
     # 7. Labor Market Skill (opcional — carrega se o arquivo existir)
     labor_skill = LaborMarketSkill(base_dir)
     if labor_skill.is_loaded():
-        print("\n[5] Skill de mercado de trabalho carregada.")
+        log.info("[5] Skill de mercado de trabalho carregada")
     else:
-        print("\n[5] Skill de mercado de trabalho não encontrada (opcional).")
+        log.info("[5] Skill de mercado de trabalho nao encontrada (opcional)")
 
     # 8. Analysis Engine
     engine = AnalysisEngine(text_ret, tables_ret, ts_ret, llm, labor_market_skill=labor_skill)
 
-    print("\n[OK] Sistema pronto.\n")
+    log.info("Sistema pronto")
     return engine, interp_llm

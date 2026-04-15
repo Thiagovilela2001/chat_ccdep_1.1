@@ -1,6 +1,7 @@
 import json
 import re
 import pandas as pd
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from llama_index.core.node_parser import LangchainNodeParser
@@ -180,14 +181,24 @@ def process_documents(documents):
     table_nodes = []
     if table_docs:
         print("  Enriquecendo metadados e aplicando chunking nas tabelas (gpt-5-mini)...")
-        llm = OpenAI(model="gpt-5-mini", temperature=0.0)
-        for doc in table_docs:
-            extra_meta = _enrich_table_metadata(doc, llm)
+        llm = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
+
+        # Paraleliza as chamadas LLM de enriquecimento (I/O-bound → ThreadPoolExecutor)
+        max_workers = min(8, len(table_docs))
+        enriched: dict[int, dict] = {}
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(_enrich_table_metadata, doc, llm): i
+                       for i, doc in enumerate(table_docs)}
+            for fut in as_completed(futures):
+                enriched[futures[fut]] = fut.result()
+
+        for i, doc in enumerate(table_docs):
+            extra_meta = enriched[i]
             nodes      = _chunk_table(doc, extra_metadata=extra_meta)
             table_nodes.extend(nodes)
-            strategy = nodes[0].metadata.get("chunk_strategy", "?") if nodes else "?"
-            source   = doc.metadata.get("source_file", "?")
-            page     = doc.metadata.get("page", "?")
+            strategy  = nodes[0].metadata.get("chunk_strategy", "?") if nodes else "?"
+            source    = doc.metadata.get("source_file", "?")
+            page      = doc.metadata.get("page", "?")
             descricao = extra_meta.get("table_descricao", "")
             print(f"    {source} p.{page} → {len(nodes)} chunk(s) [{strategy}] | {descricao[:60]}")
 

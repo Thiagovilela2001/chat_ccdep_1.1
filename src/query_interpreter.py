@@ -51,6 +51,8 @@ def interpret_query(question: str, llm) -> dict:
     try:
         result = json.loads(raw)
         sources = [s for s in result.get("sources", []) if s in _VALID_SOURCES]
+        if "text" not in sources:
+            sources = ["text"] + sources
         return {
             "sources": sources or ["text"],
             "rewritten_query": result.get("rewritten_query", question),

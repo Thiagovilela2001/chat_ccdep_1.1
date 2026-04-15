@@ -18,8 +18,10 @@ if sys.stderr.encoding != "utf-8":
 
 def _run_server(host: str, port: int) -> None:
     import uvicorn
+    from src.logger import setup_logging
+    setup_logging()
     print(f"Iniciando servidor em http://{host}:{port}")
-    print("Documentação interativa: http://127.0.0.1:{port}/docs\n")
+    print(f"Documentacao interativa: http://127.0.0.1:{port}/docs\n")
     uvicorn.run("src.api:app", host=host, port=port, reload=False)
 
 

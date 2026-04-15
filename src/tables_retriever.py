@@ -8,6 +8,17 @@ estrutura via pandas para o Analysis Engine.
 import re
 import pandas as pd
 
+from src.logger import get_logger
+from src.safe_exec import safe_exec
+
+log = get_logger(__name__)
+_FALLBACK_TOP_N = 3
+
+
+def _sanitize(text: str) -> str:
+    """Remove caracteres de controle inválidos que podem quebrar o JSON da API."""
+    return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+
 # Granularidades que indicam série temporal → excluídas deste retriever
 _TEMPORAL_KEYWORDS = {
     "mensal", "trimestral", "semestral", "bimestral",
@@ -43,6 +54,7 @@ Armazene o resultado final como string formatada e legível na variável `result
 Regras:
 - Não importe nada. `pd` e `df`/`data` já estão disponíveis.
 - Não use print().
+- Ao acessar um valor de Series de um único elemento, use `.iloc[0]` (ex: `float(df['col'].iloc[0])`).
 - Formate números com separador de milhar e 2 casas decimais quando aplicável.
 
 Pergunta: {question}
@@ -90,13 +102,22 @@ class TablesRetriever:
         if not table_nodes:
             return None
 
-        table_nodes = self._reranker.postprocess_nodes(table_nodes, query_str=question)
-        if not table_nodes:
-            return None
+        # Sanitiza antes do reranker
+        for n in table_nodes:
+            n.node.text = _sanitize(n.node.text)
 
-        context = "\n\n---\n\n".join(n.get_content() for n in table_nodes)
+        try:
+            reranked = self._reranker.postprocess_nodes(table_nodes, query_str=question)
+        except Exception:
+            log.warning("Reranker falhou em tables — usando fallback", extra={"fallback": True})
+            reranked = []
+
+        if not reranked:
+            reranked = table_nodes[:_FALLBACK_TOP_N]
+
+        context = "\n\n---\n\n".join(n.get_content() for n in reranked)
         structured = self._extract_and_calculate(question, context)
-        return structured, table_nodes
+        return structured, reranked
 
     def _extract_and_calculate(self, question: str, context: str) -> str:
         # Fase 1: extração de dados em DataFrame
@@ -107,8 +128,9 @@ class TablesRetriever:
 
         ns = {"pd": pd}
         try:
-            exec(extract_code, ns)  # noqa: S102
-        except Exception as exc:
+            safe_exec(extract_code, ns)
+        except (ValueError, RuntimeError) as exc:
+            log.warning("Extracao de tabela falhou: %s", exc)
             return f"[Erro na extração de dados da tabela: {exc}]"
 
         df = ns.get("df")
@@ -128,8 +150,9 @@ class TablesRetriever:
         calc_code = _extract_code_block(calc_resp.text)
 
         try:
-            exec(calc_code, ns)  # noqa: S102
-        except Exception as exc:
+            safe_exec(calc_code, ns)
+        except (ValueError, RuntimeError) as exc:
+            log.warning("Calculo sobre tabela falhou: %s", exc)
             return f"[Erro no cálculo sobre a tabela: {exc}]"
 
         return str(ns.get("resultado", data_preview))

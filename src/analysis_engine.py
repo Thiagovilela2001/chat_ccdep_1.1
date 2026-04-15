@@ -12,16 +12,40 @@ import asyncio
 
 _SYNTHESIS_PROMPT = """\
 Você é um analista especialista em dados econômicos e estatísticos do Estado de São Paulo.
-Responda SOMENTE com base nas informações fornecidas abaixo. É proibido usar conhecimento externo.
+Responda SOMENTE com base nas informações fornecidas abaixo. Conhecimento externo é proibido.
 
 Regras obrigatórias:
-- Não invente números, datas, nomes, períodos ou relações causais.
-- Se a resposta não estiver disponível nos dados fornecidos, diga: \
-'A informação não consta nos documentos fornecidos.'
-- Se houver evidência parcial, responda apenas com o que está documentado e explicite a limitação.
-- Toda afirmação com dado numérico deve ser seguida de citação inline.
-  Formato: (Fonte: [nome_do_arquivo], p. [página])
-- Linguagem clara, direta e profissional. Destaque números e tendências relevantes.
+
+1. CITAÇÃO REAL — Toda afirmação factual deve citar o arquivo PDF de origem e a página.
+   Formato: (Fonte: nome_do_arquivo.pdf, p. X)
+   Nunca cite "[Dados de Séries Temporais]" ou "[Dados Estruturados de Tabelas]" como fonte.
+   Se um valor numérico extraído de tabela/série não tiver arquivo PDF identificável no \
+contexto narrativo adjacente, não o utilize na resposta.
+
+2. UMA FONTE POR AFIRMAÇÃO — Cada afirmação deve ser verificável em um único trecho do \
+contexto. Não combine fragmentos de trechos distintos para criar uma afirmação nova que \
+nenhum trecho expressa diretamente.
+
+3. DADOS ESTRUTURADOS SEM RÓTULOS — Se a seção de séries temporais ou tabelas contiver \
+apenas números sem rótulos claros de indicador e período, ignore essa seção inteiramente \
+e baseie a resposta somente no contexto narrativo.
+
+4. CONFLITO DE DADOS — Se um valor numérico na seção estruturada divergir do contexto \
+narrativo, prevaleça o contexto narrativo.
+
+5. AUSÊNCIA DE DADOS — Se a informação não está no contexto, responda exatamente:
+   'A informação não consta nos documentos fornecidos.'
+
+6. EVIDÊNCIA PARCIAL — Responda apenas o que está documentado e declare explicitamente \
+o que está faltando.
+
+7. CÁLCULOS — Se a pergunta pede diferença, variação ou comparação e os dois valores \
+estão no contexto com fontes identificáveis, calcule e mostre (ex: 3,4% − 2,8% = 0,6 p.p.).
+
+8. SEM CONCLUSÕES ALÉM DO TEXTO — Não escreva parágrafos de síntese com afirmações \
+que vão além do que está literal ou numericamente nos trechos fornecidos.
+
+Linguagem clara, direta e profissional.
 {skill_block}
 {context_block}
 
@@ -42,12 +66,21 @@ def _build_context_block(
     text_nodes: list,
     tables_data: str | None,
     ts_data: str | None,
+    ts_nodes: list | None = None,
 ) -> str:
     sections = []
 
+    # Consolida texto narrativo: nodes de texto + nodes de timeseries sem dados estruturados
+    narrative_parts = []
     if text_nodes:
-        text_context = "\n\n---\n\n".join(n.get_content() for n in text_nodes)
-        sections.append(f"[Contexto Narrativo dos Documentos]\n{text_context}")
+        narrative_parts.extend(n.get_content() for n in text_nodes)
+    if not ts_data and ts_nodes:
+        # Timeseries não produziu dados estruturados — usa conteúdo bruto como narrativa
+        narrative_parts.extend(n.get_content() for n in ts_nodes)
+    if narrative_parts:
+        sections.append(
+            "[Contexto Narrativo dos Documentos]\n" + "\n\n---\n\n".join(narrative_parts)
+        )
 
     if tables_data:
         sections.append(f"[Dados Estruturados de Tabelas]\n{tables_data}")
@@ -98,7 +131,7 @@ class AnalysisEngine:
             keys.append("ts")
             coros.append(asyncio.to_thread(self._ts.retrieve, rewritten_query))
 
-        results = await asyncio.gather(*coros)
+        results = await asyncio.wait_for(asyncio.gather(*coros), timeout=120.0)
         result_map = dict(zip(keys, results))
 
         # Coleta resultados
@@ -119,7 +152,7 @@ class AnalysisEngine:
         all_source_nodes = text_nodes + tables_nodes + ts_nodes
 
         # Síntese: único LLM call com contexto unificado
-        context_block = _build_context_block(text_nodes, tables_data, ts_data)
+        context_block = _build_context_block(text_nodes, tables_data, ts_data, ts_nodes)
 
         if not context_block.strip():
             return "A informação não consta nos documentos fornecidos.", []

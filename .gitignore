@@ -1,28 +1,42 @@
-# Ambiente virtual
-.venv/
-venv/
-env/
-
-# Variáveis de ambiente (chaves de API, senhas)
+# ── Credenciais e configuração local ─────────────────────────────────────────
 .env
+.env.*
+*.env
 
-# Banco de dados vetorial gerado localmente
+# ── Banco vetorial (gerado localmente) ───────────────────────────────────────
 chroma_db/
 
-# Dados locais (PDFs, documentos)
-data/
-
-# Cache Python
+# ── Cache e artefatos de indexação ───────────────────────────────────────────
+nodes_cache.pkl
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.cache/
 
-# VSCode
+# ── Python ────────────────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# Arquivos temporários
-*.tmp
-*.log
+# ── Dados (PDFs grandes — armazenar externamente) ────────────────────────────
+data/
 
-# PDFs na raiz
+# ── Documentos e arquivos de conversa ────────────────────────────────────────
+*.docx
 *.pdf
+conversa_*
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
