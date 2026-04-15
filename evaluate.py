@@ -13,6 +13,7 @@ Saída:
 """
 import argparse
 import asyncio
+import importlib
 import os
 import sys
 import json
@@ -28,9 +29,6 @@ from ragas import evaluate
 from ragas.metrics import Faithfulness, ContextPrecision, ContextRecall
 from openai import OpenAI as OpenAIClient
 from ragas.llms import llm_factory
-
-from src.startup import initialize
-from src.query_interpreter import interpret_query
 
 DATASET_PATHS = {
     "dev":         "data/golden_dataset_dev.json",
@@ -202,13 +200,31 @@ def main():
         default="dev",
         help="Split a avaliar (padrão: dev)",
     )
+    parser.add_argument(
+        "--rag",
+        default="rag_principal",
+        help="Pasta do RAG a avaliar (padrão: rag_principal)",
+    )
     args = parser.parse_args()
 
     load_dotenv()
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    rag_dir  = os.path.join(root_dir, args.rag)
 
-    print("Inicializando pipeline RAG...")
-    engine, interp_llm = initialize(base_dir)
+    if not os.path.isdir(rag_dir):
+        print(f"[ERRO] Pasta '{args.rag}' não encontrada em {root_dir}")
+        sys.exit(1)
+
+    # Importa initialize e interpret_query do RAG especificado
+    sys.path.insert(0, rag_dir)
+    startup_mod = importlib.import_module("src.startup")
+    interp_mod  = importlib.import_module("src.query_interpreter")
+    initialize      = startup_mod.initialize
+    interpret_query = interp_mod.interpret_query
+
+    print(f"Inicializando pipeline RAG ({args.rag})...")
+    data_dir = os.path.join(root_dir, "data")
+    engine, interp_llm = initialize(rag_dir, data_dir=data_dir)
 
     splits = ["dev", "test", "adversarial"] if args.split == "all" else [args.split]
 

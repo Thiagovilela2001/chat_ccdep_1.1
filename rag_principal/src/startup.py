@@ -62,14 +62,17 @@ def _detect_changes(snapshot: dict, manifest: dict) -> list[str]:
 
 # ── Inicialização principal ───────────────────────────────────────────────────
 
-def initialize(base_dir: str) -> tuple[AnalysisEngine, object]:
+def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AnalysisEngine, object]:
     """
     Inicializa o sistema completo e retorna (engine, interp_llm).
 
     Parâmetros
     ----------
     base_dir : str
-        Diretório raiz do projeto (onde ficam /data e /chroma_db).
+        Diretório raiz do RAG (onde fica /chroma_db).
+    data_dir : str | None
+        Diretório dos documentos PDF. Se None, usa base_dir/data.
+        Útil quando evaluate.py roda de um diretório diferente do RAG.
 
     Retorna
     -------
@@ -85,7 +88,7 @@ def initialize(base_dir: str) -> tuple[AnalysisEngine, object]:
         )
 
     setup_logging()
-    data_dir = os.path.join(base_dir, "data")
+    data_dir = data_dir or os.path.join(base_dir, "data")
     db_path = os.path.join(base_dir, "chroma_db")
 
     log.info("Inicializando RAG Estatistico SP")
