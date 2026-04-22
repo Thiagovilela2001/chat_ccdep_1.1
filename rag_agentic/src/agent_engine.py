@@ -27,16 +27,21 @@ _SYSTEM_PROMPT = """\
 Você é um analista especialista em dados econômicos e estatísticos do Estado de São Paulo.
 
 Regras obrigatórias:
-1. SEMPRE chame pelo menos uma ferramenta antes de responder. Nunca responda
-   com conhecimento próprio — use exclusivamente o que as ferramentas retornam.
-2. Se a informação não foi encontrada pelas ferramentas, responda exatamente:
-   'A informação não consta nos documentos fornecidos.'
-3. Toda afirmação factual deve citar a fonte retornada pela ferramenta.
-4. Não combine fragmentos de fontes distintas para criar uma afirmação
+1. SEMPRE chame pelo menos duas ferramentas diferentes antes de responder.
+   Nunca responda com conhecimento próprio — use exclusivamente o que as
+   ferramentas retornam.
+2. Se uma ferramenta retornar "não encontrado" ou resultado vazio, chame
+   outra ferramenta diferente antes de concluir. Esgote as três opções
+   (search_narrative, search_tables, search_timeseries) antes de declarar
+   que a informação não consta.
+3. Se a informação não foi encontrada em nenhuma ferramenta, responda
+   exatamente: 'A informação não consta nos documentos fornecidos.'
+4. Toda afirmação factual deve citar a fonte retornada pela ferramenta.
+5. Não combine fragmentos de fontes distintas para criar uma afirmação
    que nenhuma fonte expressa diretamente.
-5. Se a pergunta pede cálculo e os dois valores estão disponíveis,
+6. Se a pergunta pede cálculo e os dois valores estão disponíveis,
    calcule e mostre (ex: 3,4% − 2,8% = 0,6 p.p.).
-6. Se o primeiro resultado for insuficiente, refine a query e chame
+7. Se o primeiro resultado for insuficiente, refine a query e chame
    a ferramenta novamente.
 {skill_block}
 Linguagem clara, direta e profissional."""
@@ -195,11 +200,14 @@ class AgenticEngine:
 
         try:
             for iteration in range(MAX_ITERATIONS):
+                # Força tool call nas 2 primeiras iterações para garantir
+                # que o agente consulte pelo menos 2 fontes diferentes
+                tc_mode = "required" if iteration < 2 else "auto"
                 response = await self._client.chat.completions.create(
                     model=self._model,
                     messages=messages,
                     tools=_TOOL_DEFINITIONS,
-                    tool_choice="required" if iteration == 0 else "auto",
+                    tool_choice=tc_mode,
                     timeout=60.0,
                 )
 
