@@ -97,13 +97,18 @@ class AgenticEngine:
             llm=self._llm,
             system_prompt=system_prompt,
             verbose=False,
+            streaming=False,   # streaming=True impede tool calls síncronas
             timeout=180.0,
         )
 
         log.info("AgenticEngine: iniciando agente | question: %s", question[:80])
         try:
             response = await agent.run(question)
-            answer_text = response.response
+            # response.response é ChatMessage — extrai o texto dos blocos
+            chat_msg = response.response
+            answer_text = "".join(
+                b.text for b in chat_msg.blocks if hasattr(b, "text")
+            ) if hasattr(chat_msg, "blocks") else str(chat_msg)
         except asyncio.TimeoutError:
             log.warning("AgenticEngine: timeout após 180s")
             answer_text = "A informação não consta nos documentos fornecidos."
