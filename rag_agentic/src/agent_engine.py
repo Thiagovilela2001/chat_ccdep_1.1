@@ -26,14 +26,14 @@ MAX_ITERATIONS = 8
 _SYSTEM_PROMPT = """\
 Você é um analista especialista em dados econômicos e estatísticos do Estado de São Paulo.
 
+As três ferramentas (search_narrative, search_tables, search_timeseries) já
+foram chamadas automaticamente com a pergunta original — os resultados estão
+no histórico acima.
+
 Regras obrigatórias:
-1. SEMPRE chame pelo menos duas ferramentas diferentes antes de responder.
-   Nunca responda com conhecimento próprio — use exclusivamente o que as
-   ferramentas retornam.
-2. Se uma ferramenta retornar "não encontrado" ou resultado vazio, chame
-   outra ferramenta diferente antes de concluir. Esgote as três opções
-   (search_narrative, search_tables, search_timeseries) antes de declarar
-   que a informação não consta.
+1. Use SOMENTE o que as ferramentas retornaram. Conhecimento externo é proibido.
+2. Se os resultados pré-carregados forem insuficientes, chame as ferramentas
+   novamente com queries mais específicas antes de responder.
 3. Se a informação não foi encontrada em nenhuma ferramenta, responda
    exatamente: 'A informação não consta nos documentos fornecidos.'
 4. Toda afirmação factual deve citar a fonte retornada pela ferramenta.
@@ -41,8 +41,6 @@ Regras obrigatórias:
    que nenhuma fonte expressa diretamente.
 6. Se a pergunta pede cálculo e os dois valores estão disponíveis,
    calcule e mostre (ex: 3,4% − 2,8% = 0,6 p.p.).
-7. Se o primeiro resultado for insuficiente, refine a query e chame
-   a ferramenta novamente.
 {skill_block}
 Linguagem clara, direta e profissional."""
 
@@ -188,26 +186,58 @@ class AgenticEngine:
             )
 
         system_prompt = _SYSTEM_PROMPT.format(skill_block=skill_block)
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": question},
-        ]
-
         source_nodes: list = []
         answer_text = "A informação não consta nos documentos fornecidos."
 
         log.info("AgenticEngine: iniciando | question: %s", question[:80])
 
+        # ── Fase 1: pre-fetch paralelo das 3 fontes ───────────────────────────
+        # Garante cobertura completa (recall parity com rag_principal) antes
+        # do loop agentic de refinamento.
+        narrative_r, tables_r, ts_r = await asyncio.gather(
+            asyncio.to_thread(self._call_tool, "search_narrative", question, source_nodes),
+            asyncio.to_thread(self._call_tool, "search_tables",    question, source_nodes),
+            asyncio.to_thread(self._call_tool, "search_timeseries", question, source_nodes),
+        )
+        log.info(
+            "AgenticEngine: pre-fetch concluído | %d source nodes", len(source_nodes)
+        )
+
+        # Injeta resultados do pre-fetch como mensagens sintéticas de tool
+        # (estrutura válida na OpenAI API — o agente vê o contexto completo)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": question},
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {"id": "pf_narrative", "type": "function",
+                     "function": {"name": "search_narrative",
+                                  "arguments": json.dumps({"query": question})}},
+                    {"id": "pf_tables", "type": "function",
+                     "function": {"name": "search_tables",
+                                  "arguments": json.dumps({"query": question})}},
+                    {"id": "pf_ts", "type": "function",
+                     "function": {"name": "search_timeseries",
+                                  "arguments": json.dumps({"query": question})}},
+                ],
+            },
+            {"role": "tool", "tool_call_id": "pf_narrative", "content": narrative_r},
+            {"role": "tool", "tool_call_id": "pf_tables",    "content": tables_r},
+            {"role": "tool", "tool_call_id": "pf_ts",        "content": ts_r},
+        ]
+
+        # ── Fase 2: loop agentic de refinamento ───────────────────────────────
+        # O agente pode chamar tools adicionais com queries mais específicas
+        # se julgar que o contexto pré-carregado é insuficiente.
         try:
             for iteration in range(MAX_ITERATIONS):
-                # Força tool call nas 2 primeiras iterações para garantir
-                # que o agente consulte pelo menos 2 fontes diferentes
-                tc_mode = "required" if iteration < 2 else "auto"
                 response = await self._client.chat.completions.create(
                     model=self._model,
                     messages=messages,
                     tools=_TOOL_DEFINITIONS,
-                    tool_choice=tc_mode,
+                    tool_choice="auto",
                     timeout=60.0,
                 )
 
@@ -219,7 +249,7 @@ class AgenticEngine:
                     log.info("AgenticEngine: resposta final na iteração %d", iteration + 1)
                     break
 
-                # Processa tool calls
+                # Processa tool calls de refinamento
                 messages.append(msg.model_dump(exclude_unset=False))
                 for tc in msg.tool_calls:
                     tool_name = tc.function.name
@@ -227,7 +257,7 @@ class AgenticEngine:
                     query = args.get("query", question)
 
                     log.info(
-                        "AgenticEngine [it=%d]: tool=%s | query=%s",
+                        "AgenticEngine [refinamento it=%d]: tool=%s | query=%s",
                         iteration + 1, tool_name, query[:60],
                     )
 
