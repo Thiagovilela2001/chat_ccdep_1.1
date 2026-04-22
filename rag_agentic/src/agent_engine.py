@@ -1,6 +1,6 @@
 """
-AgenticEngine — agente ReAct que decide iterativamente quais retrievers
-chamar para responder a uma pergunta.
+AgenticEngine — agente com function calling que decide iterativamente
+quais retrievers chamar para responder a uma pergunta.
 
 Diferença do AnalysisEngine (rag_principal):
   - Roteamento determinístico → decisão iterativa do LLM
@@ -8,13 +8,18 @@ Diferença do AnalysisEngine (rag_principal):
   - Síntese em LLM call separado → o próprio agente sintetiza
 
 Fluxo:
-    pergunta → ReActAgent (ferramentas: narrative / tables / timeseries)
+    pergunta → FunctionAgent (ferramentas: narrative / tables / timeseries)
              → agente chama ferramentas conforme necessário
              → agente decide quando tem contexto suficiente
              → resposta final + source_nodes coletados
+
+Nota: LlamaIndex 0.14+ usa FunctionAgent com API assíncrona nativa.
+  - Instanciação direta: FunctionAgent(tools=..., llm=..., ...)
+  - Execução: await agent.run("pergunta") → AgentOutput
+  - Resposta: AgentOutput.response
 """
 import asyncio
-from llama_index.core.agent import ReActAgent
+from llama_index.core.agent import FunctionAgent
 
 from src.tools import make_retriever_tools
 from src.logger import get_logger
@@ -50,7 +55,7 @@ _SKILL_BLOCK = """\
 
 class AgenticEngine:
     """
-    Engine baseada em agente ReAct com três ferramentas de retrieval.
+    Engine baseada em FunctionAgent com três ferramentas de retrieval.
     Interface idêntica ao AnalysisEngine para compatibilidade com evaluate.py.
     """
 
@@ -71,8 +76,8 @@ class AgenticEngine:
     async def answer(
         self,
         question: str,
-        sources: list[str],        # ignorado — agente decide internamente
-        rewritten_query: str,
+        sources: list[str],        # mantido por contrato de interface com evaluate.py
+        rewritten_query: str,      # agente decide internamente quais tools chamar
         is_labor_market: bool = False,
     ) -> tuple[str, list]:
         tools, source_nodes = make_retriever_tools(
@@ -87,23 +92,23 @@ class AgenticEngine:
 
         system_prompt = _SYSTEM_PROMPT.format(skill_block=skill_block)
 
-        agent = ReActAgent.from_tools(
-            tools,
+        agent = FunctionAgent(
+            tools=tools,
             llm=self._llm,
-            verbose=False,
             system_prompt=system_prompt,
-            max_iterations=8,
+            verbose=False,
+            timeout=180.0,
         )
 
         log.info("AgenticEngine: iniciando agente | question: %s", question[:80])
         try:
-            response = await asyncio.wait_for(
-                asyncio.to_thread(agent.chat, question),
-                timeout=180.0,
-            )
+            response = await agent.run(question)
             answer_text = response.response
         except asyncio.TimeoutError:
             log.warning("AgenticEngine: timeout após 180s")
+            answer_text = "A informação não consta nos documentos fornecidos."
+        except Exception as exc:
+            log.warning("AgenticEngine: erro durante execução: %s", exc)
             answer_text = "A informação não consta nos documentos fornecidos."
 
         # Deduplica source_nodes por id de objeto
