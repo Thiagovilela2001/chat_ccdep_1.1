@@ -59,7 +59,7 @@ def load_dataset(path: str) -> list[dict]:
     return valid
 
 
-def run_question(question: str, engine, interp_llm) -> tuple[str, list, dict]:
+def run_question(question: str, engine, interp_llm, interpret_query) -> tuple[str, list, dict]:
     interp = interpret_query(question, interp_llm)
     answer, source_nodes = asyncio.run(
         engine.answer(
@@ -77,7 +77,7 @@ def is_refusal(response: str) -> bool:
     return any(kw in lowered for kw in REFUSAL_KEYWORDS)
 
 
-def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm):
+def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpret_query):
     print(f"\n  Rodando {len(dataset)} perguntas ({split})...")
     records = []
     for i, item in enumerate(dataset, 1):
@@ -87,7 +87,7 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm):
 
         print(f"  [{i}/{len(dataset)}] ({q_type}) {question[:70]}...")
         try:
-            answer, source_nodes, interp = run_question(question, engine, interp_llm)
+            answer, source_nodes, interp = run_question(question, engine, interp_llm, interpret_query)
             contexts = [n.get_content() for n in source_nodes]
             records.append({
                 "question":     question,
@@ -118,7 +118,7 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm):
     return scores_dict, details
 
 
-def run_adversarial_split(dataset: list[dict], engine, interp_llm):
+def run_adversarial_split(dataset: list[dict], engine, interp_llm, interpret_query):
     print(f"\n  Rodando {len(dataset)} perguntas adversariais...")
     details = []
     refusals = 0
@@ -127,7 +127,7 @@ def run_adversarial_split(dataset: list[dict], engine, interp_llm):
         question = item["question"]
         print(f"  [{i}/{len(dataset)}] {question[:70]}...")
         try:
-            answer, _, _interp = run_question(question, engine, interp_llm)
+            answer, _, _interp = run_question(question, engine, interp_llm, interpret_query)
             refused = is_refusal(answer)
             refusals += int(refused)
             mark = "✅" if refused else "❌ ALUCINAÇÃO"
@@ -174,7 +174,7 @@ def save_results(split: str, scores_dict: dict, details: list):
     print(f"\n  Resultados salvos em: {path}\n")
 
 
-def run_split(split: str, engine, interp_llm):
+def run_split(split: str, engine, interp_llm, interpret_query):
     print(f"\n{'=' * 55}")
     print(f" SPLIT: {split.upper()}")
     print(f"{'=' * 55}")
@@ -183,9 +183,9 @@ def run_split(split: str, engine, interp_llm):
     dataset = load_dataset(DATASET_PATHS[split])
 
     if split == "adversarial":
-        scores_dict, details = run_adversarial_split(dataset, engine, interp_llm)
+        scores_dict, details = run_adversarial_split(dataset, engine, interp_llm, interpret_query)
     else:
-        scores_dict, details = run_ragas_split(split, dataset, engine, interp_llm)
+        scores_dict, details = run_ragas_split(split, dataset, engine, interp_llm, interpret_query)
 
     print_results(scores_dict)
     save_results(split, scores_dict, details)
@@ -230,7 +230,7 @@ def main():
 
     all_scores = {}
     for split in splits:
-        all_scores[split] = run_split(split, engine, interp_llm)
+        all_scores[split] = run_split(split, engine, interp_llm, interpret_query)
 
     if args.split == "all":
         print("\n" + "=" * 55)
