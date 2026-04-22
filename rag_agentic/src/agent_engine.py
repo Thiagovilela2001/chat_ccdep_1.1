@@ -1,37 +1,34 @@
 """
-AgenticEngine — agente com function calling que decide iterativamente
-quais retrievers chamar para responder a uma pergunta.
+AgenticEngine — loop agentic com OpenAI function calling nativo.
 
-Diferença do AnalysisEngine (rag_principal):
-  - Roteamento determinístico → decisão iterativa do LLM
-  - Chamada única de retrievers → múltiplas chamadas possíveis
-  - Síntese em LLM call separado → o próprio agente sintetiza
+Substitui FunctionAgent do LlamaIndex (bugado no 0.14 com gpt-5) por
+loop manual via openai.AsyncOpenAI, que garante tool calls reais.
 
-Fluxo:
-    pergunta → FunctionAgent (ferramentas: narrative / tables / timeseries)
-             → agente chama ferramentas conforme necessário
-             → agente decide quando tem contexto suficiente
-             → resposta final + source_nodes coletados
-
-Nota: LlamaIndex 0.14+ usa FunctionAgent com API assíncrona nativa.
-  - Instanciação direta: FunctionAgent(tools=..., llm=..., ...)
-  - Execução: await agent.run("pergunta") → AgentOutput
-  - Resposta: AgentOutput.response
+Fluxo iterativo (max 8 rounds):
+    pergunta
+    → LLM recebe tools como OpenAI functions
+    → LLM decide chamar tool(s) ou responder
+    → se tool: executa retriever, adiciona resultado ao histórico
+    → repete até resposta final ou max_iterations
 """
 import asyncio
-from llama_index.core.agent import FunctionAgent
+import json
+import os
 
-from src.tools import make_retriever_tools
+from openai import AsyncOpenAI
+
 from src.logger import get_logger
 
 log = get_logger(__name__)
+
+MAX_ITERATIONS = 8
 
 _SYSTEM_PROMPT = """\
 Você é um analista especialista em dados econômicos e estatísticos do Estado de São Paulo.
 
 Regras obrigatórias:
-1. Responda SOMENTE com base nas informações retornadas pelas ferramentas.
-   Conhecimento externo é proibido.
+1. SEMPRE chame pelo menos uma ferramenta antes de responder. Nunca responda
+   com conhecimento próprio — use exclusivamente o que as ferramentas retornam.
 2. Se a informação não foi encontrada pelas ferramentas, responda exatamente:
    'A informação não consta nos documentos fornecidos.'
 3. Toda afirmação factual deve citar a fonte retornada pela ferramenta.
@@ -39,9 +36,8 @@ Regras obrigatórias:
    que nenhuma fonte expressa diretamente.
 5. Se a pergunta pede cálculo e os dois valores estão disponíveis,
    calcule e mostre (ex: 3,4% − 2,8% = 0,6 p.p.).
-6. Chame as ferramentas com queries específicas — uma query vaga retorna
-   resultados ruins. Se o primeiro resultado for insuficiente, refine a
-   query e chame novamente.
+6. Se o primeiro resultado for insuficiente, refine a query e chame
+   a ferramenta novamente.
 {skill_block}
 Linguagem clara, direta e profissional."""
 
@@ -52,10 +48,77 @@ _SKILL_BLOCK = """\
 [Fim do Conhecimento Especializado]
 """
 
+# Definições das tools no formato OpenAI functions
+_TOOL_DEFINITIONS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_narrative",
+            "description": (
+                "Busca informações em texto narrativo dos boletins de conjuntura. "
+                "Use para contexto, análises qualitativas, tendências descritas em prosa "
+                "e indicadores sem estrutura tabular."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Query de busca específica e detalhada.",
+                    }
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_tables",
+            "description": (
+                "Busca e extrai dados de tabelas estáticas (rankings, comparações por "
+                "categoria, valores pontuais). Use para um único período ou comparações "
+                "entre setores/regiões sem série histórica."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Query de busca específica e detalhada.",
+                    }
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_timeseries",
+            "description": (
+                "Busca e analisa séries temporais (dados mensais, trimestrais, anuais). "
+                "Use para evolução, variação, tendência ou comparação entre períodos "
+                "de um mesmo indicador ao longo do tempo."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Query de busca específica e detalhada.",
+                    }
+                },
+                "required": ["query"],
+            },
+        },
+    },
+]
+
 
 class AgenticEngine:
     """
-    Engine baseada em FunctionAgent com três ferramentas de retrieval.
+    Engine agentic com loop manual de function calling OpenAI.
     Interface idêntica ao AnalysisEngine para compatibilidade com evaluate.py.
     """
 
@@ -70,8 +133,40 @@ class AgenticEngine:
         self._text   = text_retriever
         self._tables = tables_retriever
         self._ts     = timeseries_retriever
-        self._llm    = llm
+        self._model  = getattr(llm, "model", "gpt-5-chat-latest")
         self._labor_skill = labor_market_skill
+        self._client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+    def _call_tool(self, name: str, query: str, source_nodes: list) -> str:
+        """Executa a tool síncrona e coleta source_nodes."""
+        try:
+            if name == "search_narrative":
+                nodes = self._text.retrieve(query)
+                if nodes:
+                    source_nodes.extend(nodes)
+                    return "\n\n---\n\n".join(n.get_content() for n in nodes)
+                return "Nenhum trecho narrativo relevante encontrado."
+
+            elif name == "search_tables":
+                result = self._tables.retrieve(query)
+                if result is None:
+                    return "Nenhuma tabela relevante encontrada."
+                data, nodes = result
+                source_nodes.extend(nodes)
+                return data or "Sem dados estruturados extraídos."
+
+            elif name == "search_timeseries":
+                result = self._ts.retrieve(query)
+                if result is None:
+                    return "Nenhuma série temporal relevante encontrada."
+                data, nodes = result
+                source_nodes.extend(nodes)
+                return data or "Sem dados de série temporal extraídos."
+
+            return f"Ferramenta '{name}' desconhecida."
+        except Exception as exc:
+            log.warning("Tool '%s' falhou: %s", name, exc)
+            return f"[Erro na ferramenta {name}: {exc}]"
 
     async def answer(
         self,
@@ -80,9 +175,6 @@ class AgenticEngine:
         rewritten_query: str,      # agente decide internamente quais tools chamar
         is_labor_market: bool = False,
     ) -> tuple[str, list]:
-        tools, source_nodes = make_retriever_tools(
-            self._text, self._tables, self._ts
-        )
 
         skill_block = ""
         if is_labor_market and self._labor_skill and self._labor_skill.is_loaded():
@@ -91,38 +183,64 @@ class AgenticEngine:
             )
 
         system_prompt = _SYSTEM_PROMPT.format(skill_block=skill_block)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": question},
+        ]
 
-        agent = FunctionAgent(
-            tools=tools,
-            llm=self._llm,
-            system_prompt=system_prompt,
-            verbose=False,
-            streaming=False,   # streaming=True impede tool calls síncronas
-            timeout=180.0,
-        )
+        source_nodes: list = []
+        answer_text = "A informação não consta nos documentos fornecidos."
 
-        log.info("AgenticEngine: iniciando agente | question: %s", question[:80])
+        log.info("AgenticEngine: iniciando | question: %s", question[:80])
+
         try:
-            response = await agent.run(question)
-            # response.response é ChatMessage — extrai o texto dos blocos
-            chat_msg = response.response
-            answer_text = "".join(
-                b.text for b in chat_msg.blocks if hasattr(b, "text")
-            ) if hasattr(chat_msg, "blocks") else str(chat_msg)
-        except asyncio.TimeoutError:
-            log.warning("AgenticEngine: timeout após 180s")
-            answer_text = "A informação não consta nos documentos fornecidos."
-        except Exception as exc:
-            log.warning("AgenticEngine: erro durante execução: %s", exc)
-            answer_text = "A informação não consta nos documentos fornecidos."
+            for iteration in range(MAX_ITERATIONS):
+                response = await self._client.chat.completions.create(
+                    model=self._model,
+                    messages=messages,
+                    tools=_TOOL_DEFINITIONS,
+                    tool_choice="required" if iteration == 0 else "auto",
+                    timeout=60.0,
+                )
 
-        # Deduplica source_nodes por id de objeto
+                msg = response.choices[0].message
+
+                # Resposta final — sem tool calls
+                if not msg.tool_calls:
+                    answer_text = msg.content or answer_text
+                    log.info("AgenticEngine: resposta final na iteração %d", iteration + 1)
+                    break
+
+                # Processa tool calls
+                messages.append(msg.model_dump(exclude_unset=False))
+                for tc in msg.tool_calls:
+                    tool_name = tc.function.name
+                    args = json.loads(tc.function.arguments)
+                    query = args.get("query", question)
+
+                    log.info(
+                        "AgenticEngine [it=%d]: tool=%s | query=%s",
+                        iteration + 1, tool_name, query[:60],
+                    )
+
+                    result = await asyncio.to_thread(
+                        self._call_tool, tool_name, query, source_nodes
+                    )
+                    messages.append({
+                        "role":         "tool",
+                        "tool_call_id": tc.id,
+                        "content":      result,
+                    })
+
+        except Exception as exc:
+            log.warning("AgenticEngine: erro: %s", exc)
+
+        # Deduplica source_nodes
         seen: set[int] = set()
-        unique_nodes: list = []
-        for n in source_nodes:
-            if id(n) not in seen:
-                seen.add(id(n))
-                unique_nodes.append(n)
+        unique_nodes = [
+            n for n in source_nodes
+            if not (id(n) in seen or seen.add(id(n)))  # type: ignore[func-returns-value]
+        ]
 
         log.info(
             "AgenticEngine: concluído | %d source nodes coletados",
