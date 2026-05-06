@@ -67,13 +67,16 @@ def _build_context_block(
     tables_data: str | None,
     ts_data: str | None,
     ts_nodes: list | None = None,
+    graph_nodes: list | None = None,
 ) -> str:
     sections = []
 
-    # Consolida texto narrativo: nodes de texto + nodes de timeseries sem dados estruturados
+    # Consolida texto narrativo: nodes de texto + grafo + nodes de timeseries sem dados estruturados
     narrative_parts = []
     if text_nodes:
         narrative_parts.extend(n.get_content() for n in text_nodes)
+    if graph_nodes:
+        narrative_parts.extend(n.get_content() for n in graph_nodes)
     if not ts_data and ts_nodes:
         # Timeseries não produziu dados estruturados — usa conteúdo bruto como narrativa
         narrative_parts.extend(n.get_content() for n in ts_nodes)
@@ -100,12 +103,13 @@ class AnalysisEngine:
     """
 
     def __init__(self, text_retriever, tables_retriever, timeseries_retriever, llm,
-                 labor_market_skill=None):
+                 labor_market_skill=None, graph_retriever=None):
         self._text = text_retriever
         self._tables = tables_retriever
         self._ts = timeseries_retriever
         self._llm = llm
         self._labor_skill = labor_market_skill
+        self._graph = graph_retriever
 
     async def answer(
         self,
@@ -131,7 +135,7 @@ class AnalysisEngine:
             keys.append("ts")
             coros.append(asyncio.to_thread(self._ts.retrieve, rewritten_query))
 
-        results = await asyncio.wait_for(asyncio.gather(*coros), timeout=120.0)
+        results = await asyncio.wait_for(asyncio.gather(*coros), timeout=180.0)
         result_map = dict(zip(keys, results))
 
         # Coleta resultados
@@ -149,10 +153,22 @@ class AnalysisEngine:
         if ts_result is not None:
             ts_data, ts_nodes = ts_result
 
-        all_source_nodes = text_nodes + tables_nodes + ts_nodes
+        # Grafo: executa separadamente (precisa dos IDs dos nós já coletados para deduplicar)
+        graph_nodes: list = []
+        if "graph" in sources and self._graph is not None:
+            existing_ids = {
+                getattr(n.node if hasattr(n, "node") else n, "node_id", None)
+                for n in text_nodes + tables_nodes + ts_nodes
+            }
+            graph_nodes = await asyncio.wait_for(
+                asyncio.to_thread(self._graph.retrieve, rewritten_query, existing_ids),
+                timeout=60.0,
+            )
+
+        all_source_nodes = text_nodes + tables_nodes + ts_nodes + graph_nodes
 
         # Síntese: único LLM call com contexto unificado
-        context_block = _build_context_block(text_nodes, tables_data, ts_data, ts_nodes)
+        context_block = _build_context_block(text_nodes, tables_data, ts_data, ts_nodes, graph_nodes)
 
         if not context_block.strip():
             return "A informação não consta nos documentos fornecidos.", []

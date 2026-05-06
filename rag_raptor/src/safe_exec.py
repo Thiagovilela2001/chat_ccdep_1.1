@@ -26,7 +26,6 @@ _SAFE_BUILTINS: dict = {
     "format": format,
     # Inspeção de tipo (usada por pandas internamente)
     "isinstance": isinstance, "type": type, "hasattr": hasattr,
-    # Inspeção de variáveis (LLM às vezes usa vars() para debug)
     "vars": vars,
     # print bloqueado silenciosamente (LLM às vezes gera, não deve causar erro)
     "print": lambda *a, **kw: None,
@@ -34,8 +33,6 @@ _SAFE_BUILTINS: dict = {
 
 _FORBIDDEN = (ast.Import, ast.ImportFrom)
 
-# Módulos pré-injetados pelos retrievers — o LLM não precisa importar, mas
-# se o fizer (ignorando o prompt), a instrução pode ser ignorada com segurança.
 _PREAPPROVED_MODULES = frozenset({"pandas"})
 
 

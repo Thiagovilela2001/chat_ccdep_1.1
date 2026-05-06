@@ -17,11 +17,13 @@ Fontes disponíveis:
 - "text": trechos narrativos dos boletins (análises, comentários, contexto qualitativo)
 - "tables": tabelas com dados estáticos ou comparativos (valores pontuais, rankings, comparações entre regiões/setores)
 - "timeseries": séries temporais (evolução mensal/trimestral, tendências, crescimento, variação ao longo do tempo)
+- "graph": grafo de conhecimento — relações entre indicadores, setores, regiões e fontes de dados
 
 Regras de seleção:
 - Inclua "text" para qualquer pergunta que precise de contexto narrativo ou analítico
 - Inclua "tables" se a pergunta busca valores específicos, rankings ou comparações pontuais
 - Inclua "timeseries" se a pergunta envolve evolução, tendência, crescimento, variação temporal ou sequência de períodos
+- Inclua "graph" se a pergunta envolve relações entre múltiplos indicadores, comparações entre setores/regiões, causalidade ou correlação entre variáveis econômicas
 - Expanda siglas na reescrita (ex: PIB → Produto Interno Bruto, PNAD, IPCA)
 - Seja específico sobre períodos, setores e indicadores na reescrita
 
@@ -31,7 +33,7 @@ Responda SOMENTE com JSON válido (sem markdown, sem texto extra):
 Pergunta: {question}
 """
 
-_VALID_SOURCES = {"text", "tables", "timeseries"}
+_VALID_SOURCES = {"text", "tables", "timeseries", "graph"}
 
 
 def interpret_query(question: str, llm) -> dict:

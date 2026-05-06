@@ -1,0 +1,186 @@
+"""
+RaptorEngine — busca em índice hierárquico RAPTOR + síntese em chamada única.
+
+Diferença em relação aos outros engines:
+
+  rag_principal  → retrievers selecionados pelo interpreter → síntese única
+  rag_agentic    → pre-fetch paralelo + loop iterativo de refinamento
+  rag_raptor     → índice já contém múltiplos níveis de abstração (folhas +
+                   resumos), então uma única busca recupera contexto tanto
+                   específico quanto amplo → síntese única sem loop
+
+O ganho vem do índice, não do número de chamadas ao LLM:
+  - Perguntas específicas → busca retorna folhas (nível 0)
+  - Perguntas amplas      → busca retorna resumos de alto nível
+  - Perguntas mistas      → busca retorna ambos os níveis
+"""
+import asyncio
+import os
+
+from openai import AsyncOpenAI
+
+from src.logger import get_logger
+
+log = get_logger(__name__)
+
+_SYSTEM_PROMPT = """\
+Você é um analista especialista em dados econômicos e estatísticos do Estado de São Paulo.
+
+O contexto abaixo foi recuperado de um índice hierárquico (RAPTOR) que contém tanto
+trechos específicos dos documentos (nível 0) quanto resumos de alto nível gerados
+automaticamente (níveis superiores). Use esse contexto estratificado para responder
+com precisão e abrangência.
+
+Regras obrigatórias:
+1. Use SOMENTE o que está no contexto. Conhecimento externo é proibido.
+2. Se a informação não estiver no contexto, responda exatamente:
+   'A informação não consta nos documentos fornecidos.'
+3. Toda afirmação factual deve citar a fonte presente nos metadados.
+4. Não combine fragmentos de fontes distintas para criar uma afirmação
+   que nenhuma fonte expressa diretamente.
+5. Se a pergunta pede cálculo e os dois valores estão disponíveis,
+   calcule e mostre (ex: 3,4% − 2,8% = 0,6 p.p.).
+{skill_block}
+Linguagem clara, direta e profissional."""
+
+_SKILL_BLOCK = """\
+
+[Conhecimento Especializado — Mercado de Trabalho]
+{skill_context}
+[Fim do Conhecimento Especializado]
+"""
+
+
+class RaptorEngine:
+    """
+    Engine RAPTOR: recupera de índice hierárquico e sintetiza em chamada única.
+    Interface idêntica ao AgenticEngine para compatibilidade com evaluate.py.
+    """
+
+    def __init__(
+        self,
+        text_retriever,
+        tables_retriever,
+        timeseries_retriever,
+        llm,
+        labor_market_skill=None,
+    ):
+        self._text   = text_retriever
+        self._tables = tables_retriever
+        self._ts     = timeseries_retriever
+        self._model  = getattr(llm, "model", "gpt-5-chat-latest")
+        self._labor_skill = labor_market_skill
+        self._client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+    def _retrieve_all(self, query: str, source_nodes: list) -> str:
+        """
+        Recupera de todas as fontes e monta contexto estratificado por nível RAPTOR.
+        Nós de níveis superiores (resumos) aparecem antes dos trechos originais
+        para orientar o LLM com contexto amplo antes dos detalhes.
+        """
+        parts: list[str] = []
+
+        # ── Texto narrativo + nós RAPTOR ──────────────────────────────────────
+        try:
+            nodes = self._text.retrieve(query)
+            if nodes:
+                source_nodes.extend(nodes)
+                levels: dict[int, list[str]] = {}
+                for n in nodes:
+                    lvl = n.metadata.get("raptor_level", 0)
+                    levels.setdefault(lvl, []).append(n.get_content())
+
+                # Ordena do nível mais alto (visão ampla) para o mais baixo (detalhe)
+                for lvl in sorted(levels, reverse=True):
+                    if lvl == 0:
+                        label = "Trechos originais (nível 0)"
+                    else:
+                        label = f"Resumos automáticos — nível {lvl}"
+                    parts.append(f"[{label}]\n" + "\n\n---\n\n".join(levels[lvl]))
+        except Exception as exc:
+            log.warning("RaptorEngine: text retriever falhou: %s", exc)
+
+        # ── Tabelas ───────────────────────────────────────────────────────────
+        try:
+            result = self._tables.retrieve(query)
+            if result:
+                data, nodes = result
+                source_nodes.extend(nodes)
+                if data:
+                    parts.append(f"[Tabelas]\n{data}")
+        except Exception as exc:
+            log.warning("RaptorEngine: tables retriever falhou: %s", exc)
+
+        # ── Séries temporais ──────────────────────────────────────────────────
+        try:
+            result = self._ts.retrieve(query)
+            if result:
+                data, nodes = result
+                source_nodes.extend(nodes)
+                if data:
+                    parts.append(f"[Séries Temporais]\n{data}")
+        except Exception as exc:
+            log.warning("RaptorEngine: timeseries retriever falhou: %s", exc)
+
+        sep = "\n\n" + ("=" * 60) + "\n\n"
+        return sep.join(parts) if parts else ""
+
+    async def answer(
+        self,
+        question: str,
+        sources: list[str],        # mantido por contrato de interface com evaluate.py
+        rewritten_query: str,
+        is_labor_market: bool = False,
+    ) -> tuple[str, list]:
+
+        skill_block = ""
+        if is_labor_market and self._labor_skill and self._labor_skill.is_loaded():
+            skill_block = _SKILL_BLOCK.format(
+                skill_context=self._labor_skill.get_context()
+            )
+
+        system_prompt = _SYSTEM_PROMPT.format(skill_block=skill_block)
+        source_nodes: list = []
+
+        log.info("RaptorEngine: iniciando | question: %s", question[:80])
+
+        context = await asyncio.to_thread(
+            self._retrieve_all, rewritten_query, source_nodes
+        )
+
+        if not context:
+            return "A informação não consta nos documentos fornecidos.", []
+
+        user_message = (
+            f"CONTEXTO RECUPERADO (índice RAPTOR — múltiplos níveis de abstração):\n"
+            f"{context}\n\n"
+            f"PERGUNTA: {question}"
+        )
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": user_message},
+                ],
+                temperature=0.0,
+                timeout=60.0,
+            )
+            answer_text = (
+                response.choices[0].message.content
+                or "A informação não consta nos documentos fornecidos."
+            )
+        except Exception as exc:
+            log.warning("RaptorEngine: erro LLM: %s", exc)
+            answer_text = "A informação não consta nos documentos fornecidos."
+
+        # Deduplica source_nodes
+        seen: set[int] = set()
+        unique_nodes = [
+            n for n in source_nodes
+            if not (id(n) in seen or seen.add(id(n)))  # type: ignore[func-returns-value]
+        ]
+
+        log.info("RaptorEngine: concluído | %d source nodes", len(unique_nodes))
+        return answer_text.strip(), unique_nodes

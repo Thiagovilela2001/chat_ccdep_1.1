@@ -1,9 +1,9 @@
 """
-Entry point do RAG Estatístico SP.
+Entry point do Self-RAG.
 
 Modos de uso:
-    python main.py              # inicia servidor FastAPI em :8000
-    python main.py --port 9000  # porta customizada
+    python main.py              # inicia servidor FastAPI em :8003
+    python main.py --port 9003  # porta customizada
     python main.py --cli        # loop interativo (sem servidor HTTP)
 """
 import sys
@@ -12,20 +12,9 @@ import argparse
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
-if sys.stderr.encoding != "utf-8":
-    sys.stderr.reconfigure(encoding="utf-8")
 
 
-def _run_server(host: str, port: int) -> None:
-    import uvicorn
-    from src.logger import setup_logging
-    setup_logging()
-    print(f"Iniciando servidor em http://{host}:{port}")
-    print(f"Documentacao interativa: http://127.0.0.1:{port}/docs\n")
-    uvicorn.run("src.api:app", host=host, port=port, reload=False)
-
-
-def _run_cli(_use_graph: bool = False) -> None:
+def _run_cli() -> None:
     import asyncio
     from dotenv import load_dotenv
     from src.startup import initialize
@@ -35,10 +24,11 @@ def _run_cli(_use_graph: bool = False) -> None:
     load_dotenv()
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    engine, interp_llm = initialize(base_dir, use_graph=_use_graph)
+    engine, interp_llm = initialize(base_dir)
 
     print("=" * 52)
-    print(" RAG PRONTO — modo CLI interativo")
+    print(" SELF-RAG PRONTO — modo CLI interativo")
+    print(" (RETRIEVE? → ISREL → GENERATE → ISSUP)")
     print(" Digite 'sair' para encerrar.")
     print("=" * 52 + "\n")
 
@@ -57,9 +47,8 @@ def _run_cli(_use_graph: bool = False) -> None:
 
         try:
             interp = interpret_query(pergunta, interp_llm)
-            print(f"  Fontes: {interp['sources']}")
-            print(f"  Query reescrita: {interp['rewritten_query']}\n")
-            print("Buscando e analisando...\n")
+            print(f"  is_labor_market: {interp['is_labor_market']}\n")
+            print("Self-RAG avaliando e buscando...\n")
 
             resposta, source_nodes = asyncio.run(
                 engine.answer(
@@ -89,17 +78,20 @@ def _run_cli(_use_graph: bool = False) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="RAG Estatístico SP")
-    parser.add_argument("--cli",   action="store_true", help="Loop interativo (sem servidor HTTP)")
-    parser.add_argument("--graph", action="store_true", help="Habilita GraphRetriever como 4ª fonte")
-    parser.add_argument("--host",  default="0.0.0.0",   help="Host do servidor (padrão: 0.0.0.0)")
-    parser.add_argument("--port",  type=int, default=8000, help="Porta do servidor (padrão: 8000)")
+    parser = argparse.ArgumentParser(description="Self-RAG Estatístico SP")
+    parser.add_argument("--cli",  action="store_true", help="Loop interativo")
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=8003)
     args = parser.parse_args()
 
     if args.cli:
-        _run_cli(_use_graph=args.graph)
+        _run_cli()
     else:
-        _run_server(args.host, args.port)
+        import uvicorn
+        from src.logger import setup_logging
+        setup_logging()
+        print(f"Iniciando Self-RAG em http://{args.host}:{args.port}")
+        print("API não implementada ainda. Use --cli para modo interativo.")
 
 
 if __name__ == "__main__":

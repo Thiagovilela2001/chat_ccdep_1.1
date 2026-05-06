@@ -1,8 +1,8 @@
 """
-Startup — inicialização compartilhada do sistema RAG.
+Startup — inicialização do Self-RAG.
 
-Usado tanto pela API (FastAPI lifespan) quanto pelo CLI interativo.
-Centraliza: detecção de mudanças, indexação, criação de LLMs e retrievers.
+Idêntico ao rag_agentic/src/startup.py, exceto que instancia
+SelfRAGEngine em vez de AgenticEngine.
 """
 import os
 import json
@@ -19,17 +19,13 @@ from src.indexing import create_or_load_index, load_nodes_cache
 from src.text_retriever import build_hybrid_retriever, TextRetriever
 from src.tables_retriever import TablesRetriever
 from src.timeseries_retriever import TimeSeriesRetriever
-from src.graph_indexing import build_or_load_graph
-from src.graph_retriever import GraphRetriever
-from src.analysis_engine import AnalysisEngine
+from src.self_rag_engine import SelfRAGEngine
 from src.labor_market_skill import LaborMarketSkill
 
 log = get_logger(__name__)
 
 MANIFEST_FILE = "chroma_db/indexed_manifest.json"
 
-
-# ── Detecção de mudanças ──────────────────────────────────────────────────────
 
 def _get_data_snapshot(data_dir: str) -> dict:
     snapshot = {}
@@ -42,16 +38,18 @@ def _get_data_snapshot(data_dir: str) -> dict:
     return snapshot
 
 
-def _load_manifest() -> dict:
-    if os.path.exists(MANIFEST_FILE):
-        with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+def _load_manifest(db_path: str) -> dict:
+    path = os.path.join(db_path, "indexed_manifest.json")
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
 
-def _save_manifest(snapshot: dict) -> None:
-    os.makedirs(os.path.dirname(MANIFEST_FILE), exist_ok=True)
-    with open(MANIFEST_FILE, "w", encoding="utf-8") as f:
+def _save_manifest(db_path: str, snapshot: dict) -> None:
+    os.makedirs(db_path, exist_ok=True)
+    path = os.path.join(db_path, "indexed_manifest.json")
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(snapshot, f, indent=2)
 
 
@@ -62,11 +60,9 @@ def _detect_changes(snapshot: dict, manifest: dict) -> list[str]:
     ]
 
 
-# ── Inicialização principal ───────────────────────────────────────────────────
-
-def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = False) -> tuple[AnalysisEngine, object]:
+def initialize(base_dir: str, data_dir: str | None = None) -> tuple[SelfRAGEngine, object]:
     """
-    Inicializa o sistema completo e retorna (engine, interp_llm).
+    Inicializa o Self-RAG e retorna (engine, interp_llm).
 
     Parâmetros
     ----------
@@ -74,17 +70,6 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
         Diretório raiz do RAG (onde fica /chroma_db).
     data_dir : str | None
         Diretório dos documentos PDF. Se None, usa base_dir/data.
-        Útil quando evaluate.py roda de um diretório diferente do RAG.
-    use_graph : bool
-        Se True, constrói/carrega o grafo de conhecimento e habilita a
-        4ª fonte "graph" no AnalysisEngine.
-
-    Retorna
-    -------
-    engine : AnalysisEngine
-        Engine pronta para receber queries.
-    interp_llm : OpenAI
-        LLM leve usado pelo Query Interpreter.
     """
     if not os.environ.get("OPENAI_API_KEY"):
         raise EnvironmentError(
@@ -94,20 +79,18 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
 
     setup_logging()
     data_dir = data_dir or os.path.join(base_dir, "data")
-    db_path = os.path.join(base_dir, "chroma_db")
+    db_path  = os.path.join(base_dir, "chroma_db")
 
-    log.info("Inicializando RAG Estatistico SP")
+    log.info("Inicializando Self-RAG")
 
-    # 1. Detecção de mudanças nos documentos
     snapshot = _get_data_snapshot(data_dir)
-    manifest = _load_manifest()
-    changed = _detect_changes(snapshot, manifest)
+    manifest = _load_manifest(db_path)
+    changed  = _detect_changes(snapshot, manifest)
 
     db = chromadb.PersistentClient(path=db_path)
     col = db.get_or_create_collection("estatisticas")
     already_indexed = col.count() > 0
 
-    # 2. Ingestão e processamento (somente se necessário)
     nodes = []
     if changed:
         log.info("[1] Documentos novos/modificados: %s — reindexando", changed)
@@ -124,59 +107,35 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
         else:
             log.warning("Nenhum documento encontrado em /data")
     else:
-        log.info("[1] Banco atualizado (%d vetores) — sem mudancas", col.count())
+        log.info("[1] Banco atualizado (%d vetores) — sem mudanças", col.count())
 
-    # 3. Indexação vetorial
     log.info("[2] Indexando vetores no ChromaDB")
     index = create_or_load_index(nodes, db_path=db_path)
 
     if changed or not already_indexed:
-        _save_manifest(snapshot)
+        _save_manifest(db_path, snapshot)
 
-    # 4. LLMs
     log.info("[3] Carregando modelos de linguagem")
-    llm = OpenAI(model="gpt-5-chat-latest", temperature=0.0, timeout=60.0)
+    llm        = OpenAI(model="gpt-5-chat-latest", temperature=0.0, timeout=60.0)
     Settings.llm = llm
-    interp_llm  = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
+    interp_llm = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
 
-    # 5. Retriever híbrido compartilhado + reranker
     log.info("[4] Inicializando retrievers")
     bm25_nodes = load_nodes_cache()
     retriever  = build_hybrid_retriever(index, bm25_nodes)
-    # choice_batch_size=30 iguala o top_k do retriever → todos os candidatos
-    # são comparados num único LLM call (sem viés de batch)
     reranker   = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
 
-    # 6. Três retrievers especializados
     text_ret   = TextRetriever(retriever, reranker)
     tables_ret = TablesRetriever(retriever, reranker, llm)
     ts_ret     = TimeSeriesRetriever(retriever, reranker, llm)
 
-    # 7. Labor Market Skill (opcional — carrega se o arquivo existir)
     labor_skill = LaborMarketSkill(base_dir)
     if labor_skill.is_loaded():
         log.info("[5] Skill de mercado de trabalho carregada")
     else:
-        log.info("[5] Skill de mercado de trabalho nao encontrada (opcional)")
+        log.info("[5] Skill de mercado de trabalho não encontrada (opcional)")
 
-    # 8. Grafo de conhecimento (opcional — apenas se use_graph=True)
-    graph_ret = None
-    if use_graph:
-        log.info("[6] Inicializando grafo de conhecimento")
-        all_nodes = load_nodes_cache()
-        force_rebuild = bool(changed)
-        graph_index = build_or_load_graph(all_nodes, base_dir, llm, force_rebuild=force_rebuild)
-        graph_ret = GraphRetriever(graph_index, interp_llm)
-        log.info("[6] Grafo pronto")
-    else:
-        log.info("[6] Grafo desativado (use --use-graph para habilitar)")
+    engine = SelfRAGEngine(text_ret, tables_ret, ts_ret, llm, labor_market_skill=labor_skill)
 
-    # 9. Analysis Engine
-    engine = AnalysisEngine(
-        text_ret, tables_ret, ts_ret, llm,
-        labor_market_skill=labor_skill,
-        graph_retriever=graph_ret,
-    )
-
-    log.info("Sistema pronto")
+    log.info("Self-RAG pronto")
     return engine, interp_llm

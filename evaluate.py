@@ -97,7 +97,7 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
             })
             print(f"         ✅ OK | fontes: {interp['sources']} | chunks: {len(contexts)}")
         except Exception as exc:
-            print(f"         ❌ ERRO: {exc}")
+            print(f"         ❌ ERRO: {type(exc).__name__}: {exc}")
             records.append({
                 "question":     question,
                 "answer":       f"[ERRO] {exc}",
@@ -205,6 +205,12 @@ def main():
         default="rag_principal",
         help="Pasta do RAG a avaliar (padrão: rag_principal)",
     )
+    parser.add_argument(
+        "--use-graph",
+        action="store_true",
+        default=False,
+        help="Habilita o GraphRetriever como 4ª fonte (apenas rag_principal)",
+    )
     args = parser.parse_args()
 
     load_dotenv()
@@ -224,7 +230,10 @@ def main():
 
     print(f"Inicializando pipeline RAG ({args.rag})...")
     data_dir = os.path.join(root_dir, "data")
-    engine, interp_llm = initialize(rag_dir, data_dir=data_dir)
+    init_kwargs = {"data_dir": data_dir}
+    if args.use_graph:
+        init_kwargs["use_graph"] = True
+    engine, interp_llm = initialize(rag_dir, **init_kwargs)
 
     splits = ["dev", "test", "adversarial"] if args.split == "all" else [args.split]
 

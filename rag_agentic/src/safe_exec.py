@@ -26,11 +26,14 @@ _SAFE_BUILTINS: dict = {
     "format": format,
     # Inspeção de tipo (usada por pandas internamente)
     "isinstance": isinstance, "type": type, "hasattr": hasattr,
+    "vars": vars,
     # print bloqueado silenciosamente (LLM às vezes gera, não deve causar erro)
     "print": lambda *a, **kw: None,
 }
 
 _FORBIDDEN = (ast.Import, ast.ImportFrom)
+
+_PREAPPROVED_MODULES = frozenset({"pandas"})
 
 
 def safe_exec(code: str, ns: dict) -> None:
@@ -60,6 +63,10 @@ def safe_exec(code: str, ns: dict) -> None:
 
     for node in ast.walk(tree):
         if isinstance(node, _FORBIDDEN):
+            if isinstance(node, ast.Import):
+                imported = {alias.name.split(".")[0] for alias in node.names}
+                if imported <= _PREAPPROVED_MODULES:
+                    continue
             stmt = ast.unparse(node) if hasattr(ast, "unparse") else ast.dump(node)
             log.warning(
                 "Codigo gerado pelo LLM bloqueado por import proibido: '%s'", stmt,

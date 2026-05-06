@@ -8,6 +8,7 @@ chroma_db/
 
 # ── Cache e artefatos de indexação ───────────────────────────────────────────
 nodes_cache.pkl
+documents/
 __pycache__/
 *.pyc
 *.pyo
