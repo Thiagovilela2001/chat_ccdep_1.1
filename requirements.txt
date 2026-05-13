@@ -9,6 +9,9 @@ pymupdf
 camelot-py[cv]
 tabulate
 python-dotenv
+fastapi
+uvicorn
+aiofiles
 chromadb
 sentence-transformers
 llama-index-retrievers-bm25

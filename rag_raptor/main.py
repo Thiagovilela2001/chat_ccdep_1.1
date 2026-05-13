@@ -19,6 +19,15 @@ if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
 
+def _run_server(host: str, port: int) -> None:
+    import uvicorn
+    from src.logger import setup_logging
+    setup_logging()
+    print(f"Iniciando RAPTOR RAG em http://{host}:{port}")
+    print(f"Documentacao interativa: http://127.0.0.1:{port}/docs\n")
+    uvicorn.run("src.api:app", host=host, port=port, reload=False)
+
+
 def _run_cli() -> None:
     import asyncio
     from dotenv import load_dotenv
@@ -94,11 +103,7 @@ def main() -> None:
     if args.cli:
         _run_cli()
     else:
-        import uvicorn
-        from src.logger import setup_logging
-        setup_logging()
-        print(f"Iniciando RAPTOR RAG em http://{args.host}:{args.port}")
-        print("API não implementada ainda. Use --cli para modo interativo.")
+        _run_server(args.host, args.port)
 
 
 if __name__ == "__main__":

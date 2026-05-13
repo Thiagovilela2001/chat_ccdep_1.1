@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RAG Estatístico SP</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <section class="home-screen" id="homeScreen" aria-label="Página inicial">
+      <header class="home-header">
+        <a class="home-brand" href="#" aria-label="Nadia AI Assistant">
+          <span class="home-brand-mark" aria-hidden="true"></span>
+          <span>
+            <strong>Nadia</strong>
+            <small>AI Assistant</small>
+          </span>
+        </a>
+
+        <nav class="home-nav" aria-label="Navegação principal">
+          <button class="is-active" type="button">Home</button>
+          <button type="button">Dashboards</button>
+          <button type="button">Municípios</button>
+          <button type="button">Explorar</button>
+          <button type="button">Empresas</button>
+          <button type="button">Rede</button>
+          <button type="button">Data Lab</button>
+        </nav>
+
+        <button class="home-menu" type="button" aria-label="Menu">☰</button>
+      </header>
+
+      <main class="home-hero">
+        <section class="home-copy">
+          <h2>Nadia - Núcleo de Análise de Dados e Inteligência Artificial</h2>
+          <p>Projeto experimental da gerência de economia da Fundação Seade</p>
+
+          <div class="home-mode">
+            <span>Selecione o modo de interação:</span>
+            <div class="home-actions">
+              <button class="home-action secondary" id="voiceMode" type="button">
+                <span aria-hidden="true">≈</span>
+                Conversar por Voz
+              </button>
+              <button class="home-action primary" id="openChat" type="button">
+                <span aria-hidden="true">◌</span>
+                Abrir Chat
+              </button>
+            </div>
+          </div>
+
+          <div class="home-rag-block">
+            <span>Escolha o tipo de RAG:</span>
+            <div class="home-rag-options" aria-label="Escolha o tipo de RAG">
+              <button class="is-active" type="button" data-rag-choice="principal">Principal</button>
+              <button type="button" data-rag-choice="agentic">Agentic</button>
+              <button type="button" data-rag-choice="raptor">RAPTOR</button>
+              <button type="button" data-rag-choice="selfrag">Self-RAG</button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="home-visual" aria-hidden="true">
+          <canvas id="sphereCanvas"></canvas>
+        </aside>
+      </main>
+
+      <footer class="home-footer">
+        <strong>Fundação Seade</strong>
+        <span>Laboratório de Inteligência Artificial</span>
+        <span>Centro de Ciência de Dados para Políticas Públicas - CCDEP</span>
+        <small>A Nadia pode apresentar falhas. Para validação oficial, contate a Fundação Seade.</small>
+      </footer>
+    </section>
+
+    <div class="app-shell is-hidden" id="chatApp">
+      <aside class="sidebar" aria-label="Painel lateral">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">SP</div>
+          <div>
+            <p class="eyebrow">RAG Estatístico</p>
+            <h1>Consulta CCDEP</h1>
+          </div>
+        </header>
+
+        <button class="new-chat-button" id="newChat" type="button">
+          <span aria-hidden="true">+</span>
+          Nova consulta
+        </button>
+
+        <section class="panel">
+          <div class="section-heading">
+            <span>Status da API</span>
+            <button class="ghost-button" id="refreshHealth" type="button">Atualizar</button>
+          </div>
+          <div class="status-row" aria-live="polite">
+            <span class="status-dot" id="statusDot" data-state="checking"></span>
+            <div>
+              <strong id="statusLabel">Verificando</strong>
+              <small id="statusDetail">Conectando ao backend</small>
+            </div>
+          </div>
+          <label class="field-label" for="ragType">Tipo de RAG</label>
+          <select id="ragType">
+            <option value="principal">RAG Principal</option>
+            <option value="agentic">Agentic RAG</option>
+            <option value="raptor">RAPTOR RAG</option>
+            <option value="selfrag">Self-RAG</option>
+          </select>
+          <label class="field-label" for="apiBase">Endpoint</label>
+          <div class="endpoint-row">
+            <input id="apiBase" type="url" spellcheck="false" autocomplete="off">
+            <button class="small-button" id="saveApiBase" type="button">OK</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <span>Perguntas rápidas</span>
+          </div>
+          <div class="quick-prompts">
+            <button type="button" data-prompt="Como evoluiu o emprego formal em São Paulo nos boletins mais recentes?">
+              Emprego formal recente
+            </button>
+            <button type="button" data-prompt="Quais setores mais contribuíram para o crescimento econômico paulista?">
+              Setores em destaque
+            </button>
+            <button type="button" data-prompt="Compare a evolução de indústria, serviços e comércio no período analisado.">
+              Indústria, serviços e comércio
+            </button>
+          </div>
+        </section>
+
+        <section class="panel history-panel">
+          <div class="section-heading">
+            <span>Histórico</span>
+            <button class="ghost-button" id="clearHistory" type="button">Limpar</button>
+          </div>
+          <ol class="history-list" id="historyList"></ol>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <header class="workspace-header">
+          <div>
+            <span>Consulta CCDEP</span>
+            <strong id="activeRagLabel">RAG Principal</strong>
+          </div>
+          <div class="rag-switcher" aria-label="Escolha o tipo de RAG">
+            <button class="is-active" type="button" data-rag-choice="principal">Principal</button>
+            <button type="button" data-rag-choice="agentic">Agentic</button>
+            <button type="button" data-rag-choice="raptor">RAPTOR</button>
+            <button type="button" data-rag-choice="selfrag">Self-RAG</button>
+          </div>
+        </header>
+
+        <section class="conversation-panel" aria-label="Conversa">
+          <div class="messages" id="messages" aria-live="polite">
+            <article class="message assistant-message empty-state">
+              <div class="message-meta">Consulta CCDEP</div>
+              <div class="message-body">
+                <h2>Tudo pronto? Então vamos lá.</h2>
+                <p>Pergunte sobre emprego, PIB, indústria, serviços, comércio ou indicadores econômicos de São Paulo.</p>
+              </div>
+            </article>
+          </div>
+
+          <form class="composer" id="queryForm">
+            <div class="composer-box">
+              <button class="composer-plus" type="button" aria-label="Nova pergunta">+</button>
+              <textarea
+                id="question"
+                name="question"
+                rows="1"
+                maxlength="1200"
+                placeholder="Pergunte alguma coisa"
+                required
+              ></textarea>
+              <div class="composer-actions">
+                <button class="ghost-button" id="cancelRequest" type="button" hidden>Cancelar</button>
+                <button class="send-button" id="sendButton" type="submit" aria-label="Enviar">Enviar</button>
+              </div>
+            </div>
+            <div class="action-chips">
+              <button type="button" data-prompt="Como evoluiu o emprego formal em São Paulo nos boletins mais recentes?">
+                Emprego formal
+              </button>
+              <button type="button" data-prompt="Quais setores mais contribuíram para o crescimento econômico paulista?">
+                Setores em destaque
+              </button>
+              <button type="button" data-prompt="Compare a evolução de indústria, serviços e comércio no período analisado.">
+                Comparar indicadores
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="inspector" aria-label="Detalhes da resposta">
+          <section class="inspector-section">
+            <div class="section-heading">
+              <span>Consulta</span>
+            </div>
+            <p class="muted-text" id="rewrittenQuery">Nenhuma consulta enviada.</p>
+          </section>
+
+          <section class="inspector-section">
+            <div class="section-heading">
+              <span>Fontes usadas</span>
+            </div>
+            <div class="tag-list" id="sourcesUsed"></div>
+            <ul class="source-list" id="sourceList"></ul>
+          </section>
+
+          <section class="inspector-section">
+            <div class="section-heading">
+              <span>Validação numérica</span>
+            </div>
+            <div class="validation-summary" id="validationSummary">
+              <strong>0/0</strong>
+              <span>números verificados</span>
+            </div>
+            <ul class="unverified-list" id="unverifiedList"></ul>
+          </section>
+
+          <section class="inspector-section">
+            <div class="section-heading">
+              <span>Resposta</span>
+              <button class="ghost-button" id="copyAnswer" type="button" disabled>Copiar</button>
+            </div>
+            <p class="muted-text" id="answerMeta">Aguardando consulta.</p>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

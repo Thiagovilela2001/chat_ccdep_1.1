@@ -1,13 +1,9 @@
 """
-API — FastAPI app do RAG Estatístico SP.
+FastAPI app do Self-RAG.
 
 Endpoints:
-    POST /query   — recebe pergunta, retorna resposta + fontes + validação numérica
-    GET  /health  — verifica se o sistema está pronto
-
-Inicialização (lifespan):
-    Detecta mudanças em /data, reindexada se necessário, monta todos os
-    retrievers e o AnalysisEngine antes de aceitar requisições.
+    POST /query   - recebe pergunta, retorna resposta + fontes + validacao numerica
+    GET  /health  - verifica se o sistema esta pronto
 """
 import os
 import sys
@@ -15,23 +11,19 @@ import time
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.logger import get_logger, setup_logging
-from src.query_interpreter import interpret_query
 from src.numerical_validator import validate_numbers
+from src.query_interpreter import interpret_query
 from src.startup import initialize
 
-RAG_TYPE = "principal"
-RAG_LABEL = "RAG Principal"
+RAG_TYPE = "selfrag"
+RAG_LABEL = "Self-RAG"
 
 log = get_logger(__name__)
-
-# ── Estado global da aplicação ────────────────────────────────────────────────
 
 _engine = None
 _interp_llm = None
@@ -42,14 +34,6 @@ def _cors_origins() -> list[str]:
     origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
     return origins or ["*"]
 
-
-def _frontend_dir() -> str:
-    return os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
-    )
-
-
-# ── Lifespan (startup / shutdown) ─────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,20 +47,18 @@ async def lifespan(app: FastAPI):
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     _engine, _interp_llm = initialize(base_dir)
-    log.info("API pronta para receber requisicoes")
+    log.info("%s API pronta para receber requisicoes", RAG_LABEL)
 
-    yield  # API ativa
+    yield
 
     _engine = None
     _interp_llm = None
-    log.info("API encerrada")
+    log.info("%s API encerrada", RAG_LABEL)
 
-
-# ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="RAG Estatístico SP",
-    description="Sistema de perguntas e respostas sobre dados econômicos do Estado de São Paulo.",
+    title=RAG_LABEL,
+    description="API do Self-RAG para consultas sobre dados economicos de Sao Paulo.",
     version="2.0.0",
     lifespan=lifespan,
 )
@@ -89,8 +71,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ── Schemas ───────────────────────────────────────────────────────────────────
 
 class QueryRequest(BaseModel):
     question: str
@@ -117,11 +97,9 @@ class QueryResponse(BaseModel):
     rag_label: str
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
-
-@app.get("/", include_in_schema=False)
+@app.get("/")
 async def root():
-    return RedirectResponse(url="/app/")
+    return {"name": RAG_LABEL, "rag_type": RAG_TYPE}
 
 
 @app.get("/health")
@@ -137,23 +115,17 @@ async def health():
 @app.post("/query", response_model=QueryResponse)
 async def query(request: QueryRequest):
     if _engine is None or _interp_llm is None:
-        raise HTTPException(status_code=503, detail="Sistema ainda não inicializado.")
+        raise HTTPException(status_code=503, detail="Sistema ainda nao inicializado.")
 
     question = request.question.strip()
     if not question:
-        raise HTTPException(status_code=400, detail="A pergunta não pode ser vazia.")
+        raise HTTPException(status_code=400, detail="A pergunta nao pode ser vazia.")
 
     t0 = time.monotonic()
-    log.info(
-        "Requisicao recebida",
-        extra={"question": question[:120]},
-    )
+    log.info("Requisicao recebida", extra={"question": question[:120], "rag_type": RAG_TYPE})
 
     try:
-        # 1. Query Interpreter — decide fontes e reescreve query
         interp = interpret_query(question, _interp_llm)
-
-        # 2. Analysis Engine — retrievers paralelos + síntese LLM
         answer, source_nodes = await _engine.answer(
             question=question,
             sources=interp["sources"],
@@ -161,7 +133,6 @@ async def query(request: QueryRequest):
             is_labor_market=interp.get("is_labor_market", False),
         )
 
-        # 3. Numeric Validator
         checks = validate_numbers(answer, source_nodes)
         unverified = [c.value for c in checks if not c.verified]
 
@@ -170,23 +141,18 @@ async def query(request: QueryRequest):
             "Requisicao concluida",
             extra={
                 "question": question[:120],
+                "rag_type": RAG_TYPE,
                 "sources": interp["sources"],
                 "chunks": len(source_nodes),
                 "latency_ms": latency_ms,
                 "verified": f"{len(checks) - len(unverified)}/{len(checks)}",
             },
         )
-        if unverified:
-            log.warning(
-                "Numeros nao verificados na resposta",
-                extra={"question": question[:120], "unverified": unverified},
-            )
-
     except Exception as exc:
         latency_ms = round((time.monotonic() - t0) * 1000)
         log.error(
             "Erro ao processar requisicao",
-            extra={"question": question[:120], "latency_ms": latency_ms},
+            extra={"question": question[:120], "rag_type": RAG_TYPE, "latency_ms": latency_ms},
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -209,13 +175,4 @@ async def query(request: QueryRequest):
         ),
         rag_type=RAG_TYPE,
         rag_label=RAG_LABEL,
-    )
-
-
-_frontend_path = _frontend_dir()
-if os.path.isdir(_frontend_path):
-    app.mount(
-        "/app",
-        StaticFiles(directory=_frontend_path, html=True),
-        name="frontend",
     )
