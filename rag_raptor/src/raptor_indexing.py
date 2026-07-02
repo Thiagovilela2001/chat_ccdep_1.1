@@ -145,10 +145,10 @@ def build_raptor_tree(
             node = TextNode(
                 text=summary,
                 metadata={
-                    "raptor_level": level,
+                    "raptor_level": str(level),
                     "source_file": source_files[0] if source_files else "raptor_summary",
                     "source_files": ", ".join(sorted(source_files)),
-                    "cluster_size": len(indices),
+                    "cluster_size": str(len(indices)),
                     "type": "text",
                 },
             )
