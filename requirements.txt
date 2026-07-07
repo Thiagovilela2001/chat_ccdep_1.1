@@ -1,20 +1,47 @@
-llama-index
-llama-index-embeddings-huggingface
-llama-index-llms-openai
-llama-index-vector-stores-chroma
-pandas
-openpyxl
-xlrd
-pymupdf
-camelot-py[cv]
-tabulate
-python-dotenv
-fastapi
-uvicorn
-aiofiles
-chromadb
-sentence-transformers
-llama-index-retrievers-bm25
-rank_bm25
-ragas
-datasets
+# Dependências fixadas para reprodutibilidade (deploy + avaliação).
+# Versões correspondem ao ambiente validado; atualize com um único
+# `pip install -U <pacote>` seguido de nova rodada de `evaluate.py`.
+
+# ── LlamaIndex (core + integrações) ──────────────────────────────────────────
+llama-index==0.14.20
+llama-index-embeddings-huggingface==0.7.0
+llama-index-llms-openai==0.7.5
+llama-index-vector-stores-chroma==0.5.5
+llama-index-retrievers-bm25==0.7.1
+
+# ── LLM / embeddings ─────────────────────────────────────────────────────────
+openai==1.83.0
+sentence-transformers==5.4.1
+# Dep transitiva pinada de propósito: a série 5.x quebra com o restante do
+# ambiente (exige huggingface_hub>=1.5 e tokenizers>=0.22).
+transformers==4.46.3
+
+# ── Armazenamento vetorial e busca lexical ───────────────────────────────────
+chromadb==1.1.1
+rank_bm25==0.2.2
+
+# ── Parsing de dados (PDFs, tabelas, planilhas) ──────────────────────────────
+langchain-text-splitters==1.1.1
+pandas==2.3.3
+openpyxl==3.1.5
+xlrd==2.0.2
+tabulate==0.9.0
+pymupdf==1.26.7
+camelot-py[cv]==1.0.9
+
+# ── Graph RAG (indexação e exportação de imagem do grafo) ────────────────────
+networkx==3.5
+matplotlib==3.10.6
+
+# ── API (FastAPI) e cliente HTTP do orquestrador ─────────────────────────────
+fastapi==0.103.2
+uvicorn==0.23.2
+requests==2.32.5
+python-dotenv==1.1.1
+
+# ── Frontend (Streamlit) ─────────────────────────────────────────────────────
+streamlit==1.51.0
+
+# ── Avaliação (RAGAS) ────────────────────────────────────────────────────────
+ragas==0.4.3
+datasets==4.8.4
