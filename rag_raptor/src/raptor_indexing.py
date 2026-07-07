@@ -22,6 +22,8 @@ import math
 import numpy as np
 from openai import OpenAI
 from sklearn.cluster import KMeans
+
+from rag_core.llm import openai_client_kwargs
 from llama_index.core.schema import TextNode
 
 from rag_core.logger import get_logger
@@ -97,7 +99,8 @@ def build_raptor_tree(
     max_levels       : profundidade máxima da árvore (padrão 3)
     min_cluster_size : mínimo de nós para tentar uma nova camada
     """
-    client = OpenAI(api_key=api_key)
+    # api_key (legado) é ignorado em favor da configuração central do provedor.
+    client = OpenAI(**openai_client_kwargs())
 
     # Marca leaf nodes com raptor_level=0
     for node in leaf_nodes:

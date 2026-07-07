@@ -8,10 +8,10 @@ import os
 import json
 
 import chromadb
-from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
 
+from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.ingestion import load_documents
 from rag_core.processing import process_documents
@@ -71,11 +71,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[SelfRAGEngin
     data_dir : str | None
         Diretório dos documentos PDF. Se None, usa base_dir/data.
     """
-    if not os.environ.get("OPENAI_API_KEY"):
-        raise EnvironmentError(
-            "OPENAI_API_KEY não encontrada. "
-            "Crie um arquivo .env com: OPENAI_API_KEY=sua_chave"
-        )
+    require_api_key()
 
     setup_logging()
     data_dir = data_dir or os.path.join(base_dir, "data")
@@ -116,9 +112,9 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[SelfRAGEngin
         _save_manifest(db_path, snapshot)
 
     log.info("[3] Carregando modelos de linguagem")
-    llm        = OpenAI(model=os.getenv("RAG_LLM_MODEL", "gpt-5-chat-latest"), temperature=0.0, timeout=60.0)
+    llm        = make_llm(temperature=0.0, timeout=60.0)
     Settings.llm = llm
-    interp_llm = OpenAI(model=os.getenv("RAG_INTERP_MODEL", "gpt-5-mini"), temperature=0.0, timeout=30.0)
+    interp_llm = make_llm(interp=True, temperature=0.0, timeout=30.0)
 
     log.info("[4] Inicializando retrievers")
     bm25_nodes = load_nodes_cache(db_path)

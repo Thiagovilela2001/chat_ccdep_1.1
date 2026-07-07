@@ -17,6 +17,8 @@ import os
 
 from openai import AsyncOpenAI
 
+from rag_core.llm import openai_client_kwargs
+
 from rag_core.logger import get_logger
 
 log = get_logger(__name__)
@@ -138,7 +140,7 @@ class AgenticEngine:
         self._ts     = timeseries_retriever
         self._model  = getattr(llm, "model", "gpt-5-chat-latest")
         self._labor_skill = labor_market_skill
-        self._client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        self._client = AsyncOpenAI(**openai_client_kwargs())
 
     def _call_tool(self, name: str, query: str, source_nodes: list) -> str:
         """Executa a tool síncrona e coleta source_nodes."""

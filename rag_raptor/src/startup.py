@@ -19,11 +19,10 @@ import os
 import chromadb
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
-from llama_index.llms.openai import OpenAI
-
 from rag_core.indexing import create_or_load_index, load_nodes_cache, setup_embeddings
 from rag_core.ingestion import load_documents
 from rag_core.labor_market_skill import LaborMarketSkill
+from rag_core.llm import interp_model, make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.processing import process_documents
 from src.raptor_engine import RaptorEngine
@@ -81,11 +80,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     data_dir : str | None
         Diretório dos documentos PDF. Se None, usa base_dir/data.
     """
-    if not os.environ.get("OPENAI_API_KEY"):
-        raise EnvironmentError(
-            "OPENAI_API_KEY não encontrada. "
-            "Crie um arquivo .env com: OPENAI_API_KEY=sua_chave"
-        )
+    require_api_key()
 
     setup_logging()
     data_dir = data_dir or os.path.join(base_dir, "data")
@@ -131,8 +126,8 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
             raptor_nodes = build_raptor_tree(
                 leaf_nodes,
                 embed_model=embed_model,
-                api_key=os.environ["OPENAI_API_KEY"],
-                llm_model=os.getenv("RAG_INTERP_MODEL", "gpt-5-mini"),
+                api_key="",  # legado — a chave vem da config central do provedor
+                llm_model=interp_model(),
                 max_levels=3,
                 min_cluster_size=4,
             )

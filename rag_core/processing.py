@@ -1,5 +1,4 @@
 import json
-import os
 import re
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -9,7 +8,7 @@ from llama_index.core.node_parser import LangchainNodeParser
 from llama_index.core.extractors import TitleExtractor, KeywordExtractor
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import TextNode
-from llama_index.llms.openai import OpenAI
+from rag_core.llm import interp_model, make_llm
 
 
 # Tabelas com até este número de linhas são indexadas como um único chunk.
@@ -181,9 +180,8 @@ def process_documents(documents):
     # --- Tabelas ---
     table_nodes = []
     if table_docs:
-        _model = os.getenv("RAG_INTERP_MODEL", "gpt-5-mini")
-        print(f"  Enriquecendo metadados e aplicando chunking nas tabelas ({_model})...")
-        llm = OpenAI(model=_model, temperature=0.0, timeout=30.0)
+        print(f"  Enriquecendo metadados e aplicando chunking nas tabelas ({interp_model()})...")
+        llm = make_llm(interp=True, temperature=0.0, timeout=30.0)
 
         # Paraleliza as chamadas LLM de enriquecimento (I/O-bound → ThreadPoolExecutor)
         max_workers = min(8, len(table_docs))

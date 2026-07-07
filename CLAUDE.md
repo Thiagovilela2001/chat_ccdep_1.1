@@ -33,12 +33,28 @@ engine adiciona o diretório-pai ao `sys.path` para tornar `rag_core` importáve
 | `rag_core/labor_market_skill.py` | Carrega a skill e detecta queries de mercado de trabalho |
 | `rag_core/api_security.py` | API key opcional (`RAG_API_KEY`) + rate limiting (`RAG_RATE_LIMIT`) |
 | `<engine>/src/startup.py` | Inicialização da engine: indexação, LLMs, retrievers |
+| `rag_core/llm.py` | Fábrica única de LLM: escolhe o provedor (Maritaca/OpenAI) por env |
 | `<engine>/src/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |
 | `<engine>/src/api.py` | FastAPI: endpoint POST /query |
 | `<engine>/main.py` | Entrypoint: servidor HTTP ou CLI interativo |
 
-Modelos LLM configuráveis via env: `RAG_LLM_MODEL` (síntese) e
-`RAG_INTERP_MODEL` (interpretação/crítica/enriquecimento).
+### Provedor de LLM (`rag_core/llm.py`)
+
+Todo o projeto usa a API no formato OpenAI; o provedor é configurável por
+ambiente (embeddings continuam locais — `BAAI/bge-m3`). Todos os sites de LLM
+passam por `make_llm(...)` (LlamaIndex) ou `openai_client_kwargs()` (cliente
+cru), então trocar de LLM é só configuração:
+
+| Env | Padrão | Função |
+|---|---|---|
+| `RAG_LLM_PROVIDER` | `maritaca` | `maritaca` \| `openai` |
+| `RAG_LLM_MODEL` | `sabia-4` (maritaca) | Modelo de síntese |
+| `RAG_INTERP_MODEL` | `sabia-4` (maritaca) | Interpretação/crítica/enriquecimento |
+| `RAG_LLM_BASE_URL` / `RAG_LLM_API_KEY` | — | Sobrescrevem base/chave (provedor custom) |
+
+Chaves: Maritaca usa `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.
+Nomes de modelo fora do catálogo OpenAI (ex.: `sabia-4`) exigem `OpenAILike`,
+por isso `llama-index-llms-openai-like` está nas dependências.
 
 ## Dados indexados
 

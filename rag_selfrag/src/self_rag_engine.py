@@ -23,6 +23,7 @@ import re
 
 from openai import AsyncOpenAI
 
+from rag_core.llm import interp_model, openai_client_kwargs
 from rag_core.logger import get_logger
 
 log = get_logger(__name__)
@@ -122,9 +123,9 @@ class SelfRAGEngine:
         self._tables       = tables_retriever
         self._ts           = timeseries_retriever
         self._model        = getattr(llm, "model", "gpt-5-chat-latest")
-        self._critic_model = os.getenv("RAG_INTERP_MODEL", "gpt-5-mini")
+        self._critic_model = interp_model()
         self._labor_skill  = labor_market_skill
-        self._client       = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        self._client       = AsyncOpenAI(**openai_client_kwargs())
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 

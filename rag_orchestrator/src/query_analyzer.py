@@ -15,6 +15,8 @@ from __future__ import annotations
 import json
 import os
 
+from rag_core.llm import interp_model, openai_client_kwargs
+
 _SYSTEM = (
     "Você é um roteador de consultas para um sistema RAG sobre os Boletins de "
     "Conjuntura Paulista (Fundação Seade, dados econômicos de São Paulo, "
@@ -59,7 +61,7 @@ Diretrizes:
 Pergunta: {question}
 """
 
-_DEFAULT_MODEL = os.getenv("ORCHESTRATOR_ANALYZER_MODEL", "gpt-5-mini")
+_DEFAULT_MODEL = os.getenv("ORCHESTRATOR_ANALYZER_MODEL") or interp_model()
 
 # Chaves esperadas no resultado (para completar defaults com segurança).
 _DEFAULTS = {
@@ -93,7 +95,7 @@ class QueryAnalyzer:
     def _get_client(self):
         if self._client is None:
             from openai import OpenAI  # import tardio: evita custo se nunca usado
-            self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self._client = OpenAI(**openai_client_kwargs())
         return self._client
 
     def analyze(self, question: str) -> dict:
