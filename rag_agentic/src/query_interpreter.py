@@ -7,7 +7,7 @@ Aqui, o agente decide internamente — o interpreter apenas:
   2. Retorna sources=["text","tables","timeseries"] (todas — agente filtra).
   3. Retorna a query original como rewritten_query.
 """
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 log = get_logger(__name__)
 

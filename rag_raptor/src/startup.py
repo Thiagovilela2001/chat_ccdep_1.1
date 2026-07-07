@@ -21,16 +21,16 @@ from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.llms.openai import OpenAI
 
-from src.indexing import create_or_load_index, load_nodes_cache, setup_embeddings
-from src.ingestion import load_documents
-from src.labor_market_skill import LaborMarketSkill
-from src.logger import get_logger, setup_logging
-from src.processing import process_documents
+from rag_core.indexing import create_or_load_index, load_nodes_cache, setup_embeddings
+from rag_core.ingestion import load_documents
+from rag_core.labor_market_skill import LaborMarketSkill
+from rag_core.logger import get_logger, setup_logging
+from rag_core.processing import process_documents
 from src.raptor_engine import RaptorEngine
 from src.raptor_indexing import build_raptor_tree
-from src.tables_retriever import TablesRetriever
-from src.text_retriever import TextRetriever, build_hybrid_retriever
-from src.timeseries_retriever import TimeSeriesRetriever
+from rag_core.tables_retriever import TablesRetriever
+from rag_core.text_retriever import TextRetriever, build_hybrid_retriever
+from rag_core.timeseries_retriever import TimeSeriesRetriever
 
 log = get_logger(__name__)
 
@@ -132,7 +132,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
                 leaf_nodes,
                 embed_model=embed_model,
                 api_key=os.environ["OPENAI_API_KEY"],
-                llm_model="gpt-5-mini",
+                llm_model=os.getenv("RAG_INTERP_MODEL", "gpt-5-mini"),
                 max_levels=3,
                 min_cluster_size=4,
             )
@@ -155,14 +155,14 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
 
     # ── Fase 4: modelos de linguagem ─────────────────────────────────────────
     log.info("[5] Carregando modelos de linguagem")
-    llm        = OpenAI(model="gpt-5-chat-latest", temperature=0.0, timeout=60.0)
+    llm        = OpenAI(model=os.getenv("RAG_LLM_MODEL", "gpt-5-chat-latest"), temperature=0.0, timeout=60.0)
     Settings.llm = llm
-    interp_llm = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
+    interp_llm = OpenAI(model=os.getenv("RAG_INTERP_MODEL", "gpt-5-mini"), temperature=0.0, timeout=30.0)
 
     # ── Fase 5: retrievers ───────────────────────────────────────────────────
     log.info("[6] Inicializando retrievers sobre índice RAPTOR")
     # BM25 usa todos os nós do índice RAPTOR (folhas + resumos)
-    all_nodes = load_nodes_cache()
+    all_nodes = load_nodes_cache(db_path)
     retriever = build_hybrid_retriever(index, all_nodes)
     reranker  = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
 

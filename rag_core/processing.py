@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -180,8 +181,9 @@ def process_documents(documents):
     # --- Tabelas ---
     table_nodes = []
     if table_docs:
-        print("  Enriquecendo metadados e aplicando chunking nas tabelas (gpt-5-mini)...")
-        llm = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
+        _model = os.getenv("RAG_INTERP_MODEL", "gpt-5-mini")
+        print(f"  Enriquecendo metadados e aplicando chunking nas tabelas ({_model})...")
+        llm = OpenAI(model=_model, temperature=0.0, timeout=30.0)
 
         # Paraleliza as chamadas LLM de enriquecimento (I/O-bound → ThreadPoolExecutor)
         max_workers = min(8, len(table_docs))

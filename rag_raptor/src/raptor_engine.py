@@ -19,7 +19,7 @@ import os
 
 from openai import AsyncOpenAI
 
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 log = get_logger(__name__)
 

@@ -4,7 +4,7 @@ Query Interpreter — versão simplificada para o Self-RAG.
 Detecta is_labor_market via keywords. O engine decide internamente
 se e como buscar.
 """
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 log = get_logger(__name__)
 

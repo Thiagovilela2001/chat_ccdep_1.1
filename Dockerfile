@@ -20,6 +20,7 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip \
     && pip install -r requirements.txt
 
+COPY rag_core/ ./rag_core/
 COPY rag_principal/ ./rag_principal/
 COPY rag_agentic/ ./rag_agentic/
 COPY rag_raptor/ ./rag_raptor/

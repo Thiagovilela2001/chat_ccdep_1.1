@@ -6,7 +6,7 @@ Variáveis de ambiente:
     LOG_FORMAT  : "text" (padrão, legível) ou "json" (produção, estruturado)
 
 Uso nos módulos:
-    from src.logger import get_logger
+    from .logger import get_logger
     log = get_logger(__name__)
     log.info("mensagem")
     log.warning("aviso", extra={"question": "...", "latency_ms": 42})

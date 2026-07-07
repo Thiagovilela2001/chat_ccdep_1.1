@@ -9,6 +9,7 @@ Modos de uso:
 import sys
 import os
 import argparse
+import src  # noqa: F401 — bootstrap: torna rag_core/ importável
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -16,7 +17,7 @@ if sys.stdout.encoding != "utf-8":
 
 def _run_server(host: str, port: int) -> None:
     import uvicorn
-    from src.logger import setup_logging
+    from rag_core.logger import setup_logging
     setup_logging()
     print(f"Iniciando Self-RAG em http://{host}:{port}")
     print(f"Documentacao interativa: http://127.0.0.1:{port}/docs\n")
@@ -28,7 +29,7 @@ def _run_cli() -> None:
     from dotenv import load_dotenv
     from src.startup import initialize
     from src.query_interpreter import interpret_query
-    from src.numerical_validator import validate_numbers, format_validation_report
+    from rag_core.numerical_validator import validate_numbers, format_validation_report
 
     load_dotenv()
 

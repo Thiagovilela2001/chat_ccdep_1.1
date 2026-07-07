@@ -9,7 +9,7 @@ Deduplicação: remove nós já presentes no contexto de outros retrievers para
 evitar repetição de conteúdo na síntese.
 """
 from llama_index.core.indices.property_graph import LLMSynonymRetriever
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 log = get_logger(__name__)
 

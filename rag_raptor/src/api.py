@@ -11,12 +11,13 @@ import time
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from src.logger import get_logger, setup_logging
-from src.numerical_validator import validate_numbers
+from rag_core.api_security import enforce_rate_limit, require_api_key
+from rag_core.logger import get_logger, setup_logging
+from rag_core.numerical_validator import validate_numbers
 from src.query_interpreter import interpret_query
 from src.startup import initialize
 
@@ -113,7 +114,11 @@ async def health():
 
 
 @app.post("/query", response_model=QueryResponse)
-async def query(request: QueryRequest):
+async def query(
+    request: QueryRequest,
+    _rl: None = Depends(enforce_rate_limit),
+    _auth: None = Depends(require_api_key),
+):
     if _engine is None or _interp_llm is None:
         raise HTTPException(status_code=503, detail="Sistema ainda nao inicializado.")
 

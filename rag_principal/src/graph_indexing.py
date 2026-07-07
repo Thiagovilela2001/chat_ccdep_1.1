@@ -16,7 +16,7 @@ from llama_index.core.graph_stores import SimplePropertyGraphStore
 from llama_index.core.graph_stores.simple_labelled import LabelledPropertyGraph
 from llama_index.core.indices.property_graph import DynamicLLMPathExtractor
 
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 try:
     import networkx as nx

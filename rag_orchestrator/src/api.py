@@ -14,10 +14,11 @@ import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from rag_core.api_security import enforce_rate_limit, require_api_key
 from src.orchestrator import Orchestrator
 from src.registry import get_client, get_profiles
 
@@ -64,7 +65,11 @@ async def health():
 
 
 @app.post("/query")
-async def query(request: QueryRequest):
+async def query(
+    request: QueryRequest,
+    _rl: None = Depends(enforce_rate_limit),
+    _auth: None = Depends(require_api_key),
+):
     if _orchestrator is None:
         raise HTTPException(status_code=503, detail="Orquestrador não inicializado.")
     question = request.question.strip()

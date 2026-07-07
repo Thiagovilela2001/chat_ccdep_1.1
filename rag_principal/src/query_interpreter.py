@@ -4,7 +4,7 @@ Query Interpreter — analisa a pergunta e determina:
   - versão reescrita da query para melhor recuperação
 """
 import json
-from src.labor_market_skill import is_labor_market_query
+from rag_core.labor_market_skill import is_labor_market_query
 
 INTERPRET_PROMPT = """\
 Você é um roteador de consultas para um sistema RAG de dados econômicos do Estado de São Paulo.

@@ -1,23 +1,31 @@
 """
-Tables Retriever — recupera dados de tabelas estáticas via pandas.
+Tables Retriever — recupera dados de tabelas estáticas (não temporais) e os
+estrutura via pandas para o Analysis Engine.
+
+"Estática" = tabela com valores pontuais, rankings ou comparações entre categorias
+(ex: emprego por setor, PIB por região). Distingue-se de TimeSeries pela granularidade.
 """
 import re
 import pandas as pd
 
-from src.logger import get_logger
-from src.safe_exec import safe_exec
+from .logger import get_logger
+from .safe_exec import safe_exec
 
 log = get_logger(__name__)
 _FALLBACK_TOP_N = 3
 
 
 def _sanitize(text: str) -> str:
+    """Remove caracteres de controle inválidos que podem quebrar o JSON da API."""
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
 
+# Granularidades que indicam série temporal → excluídas deste retriever
 _TEMPORAL_KEYWORDS = {
     "mensal", "trimestral", "semestral", "bimestral",
     "semanal", "diário", "diaria", "diária",
 }
+
+# ── Prompts ───────────────────────────────────────────────────────────────────
 
 _EXTRACT_PROMPT = """\
 Você é um extrator de dados. Leia os trechos de tabelas abaixo e extraia os dados \
@@ -46,7 +54,7 @@ Armazene o resultado final como string formatada e legível na variável `result
 Regras:
 - Não importe nada. `pd` e `df`/`data` já estão disponíveis.
 - Não use print().
-- Ao acessar um valor de Series de um único elemento, use `.iloc[0]`.
+- Ao acessar um valor de Series de um único elemento, use `.iloc[0]` (ex: `float(df['col'].iloc[0])`).
 - Formate números com separador de milhar e 2 casas decimais quando aplicável.
 
 Pergunta: {question}
@@ -57,8 +65,10 @@ Dados disponíveis:
 ```python
 ```"""
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _is_static_table(node) -> bool:
+    """True se o node for tabela com granularidade não-temporal."""
     if node.metadata.get("type") != "table":
         return False
     gran = node.metadata.get("table_granularidade", "").lower()
@@ -70,7 +80,16 @@ def _extract_code_block(text: str) -> str:
     return match.group(1).strip() if match else text.strip()
 
 
+# ── Retriever ─────────────────────────────────────────────────────────────────
+
 class TablesRetriever:
+    """
+    Recupera chunks de tabelas estáticas e extrai dados estruturados via pandas.
+
+    Fluxo: retrieve (top-20) → filtra tabelas estáticas → rerank → extração pandas
+    Retorna (structured_data: str, nodes: list) ou None se sem tabelas relevantes.
+    """
+
     def __init__(self, retriever, reranker, llm):
         self._retriever = retriever
         self._reranker = reranker
@@ -83,6 +102,7 @@ class TablesRetriever:
         if not table_nodes:
             return None
 
+        # Sanitiza antes do reranker
         for n in table_nodes:
             n.node.text = _sanitize(n.node.text)
 
@@ -100,6 +120,7 @@ class TablesRetriever:
         return structured, reranked
 
     def _extract_and_calculate(self, question: str, context: str) -> str:
+        # Fase 1: extração de dados em DataFrame
         extract_resp = self._llm.complete(
             _EXTRACT_PROMPT.format(context=context, question=question)
         )
@@ -122,6 +143,7 @@ class TablesRetriever:
         else:
             return "[Sem dados estruturados extraídos da tabela]"
 
+        # Fase 2: cálculo via pandas
         calc_resp = self._llm.complete(
             _CALCULATE_PROMPT.format(question=question, data_preview=data_preview)
         )

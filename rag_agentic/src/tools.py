@@ -6,7 +6,7 @@ para decidir quando e como chamar cada ferramenta.
 """
 import asyncio
 from llama_index.core.tools import FunctionTool
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 log = get_logger(__name__)
 

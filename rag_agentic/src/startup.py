@@ -12,15 +12,15 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
 
-from src.logger import get_logger, setup_logging
-from src.ingestion import load_documents
-from src.processing import process_documents
-from src.indexing import create_or_load_index, load_nodes_cache
-from src.text_retriever import build_hybrid_retriever, TextRetriever
-from src.tables_retriever import TablesRetriever
-from src.timeseries_retriever import TimeSeriesRetriever
+from rag_core.logger import get_logger, setup_logging
+from rag_core.ingestion import load_documents
+from rag_core.processing import process_documents
+from rag_core.indexing import create_or_load_index, load_nodes_cache
+from rag_core.text_retriever import build_hybrid_retriever, TextRetriever
+from rag_core.tables_retriever import TablesRetriever
+from rag_core.timeseries_retriever import TimeSeriesRetriever
 from src.agent_engine import AgenticEngine
-from src.labor_market_skill import LaborMarketSkill
+from rag_core.labor_market_skill import LaborMarketSkill
 
 log = get_logger(__name__)
 
@@ -116,12 +116,12 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
         _save_manifest(db_path, snapshot)
 
     log.info("[3] Carregando modelos de linguagem")
-    llm        = OpenAI(model="gpt-5-chat-latest", temperature=0.0, timeout=60.0)
+    llm        = OpenAI(model=os.getenv("RAG_LLM_MODEL", "gpt-5-chat-latest"), temperature=0.0, timeout=60.0)
     Settings.llm = llm
-    interp_llm = OpenAI(model="gpt-5-mini", temperature=0.0, timeout=30.0)
+    interp_llm = OpenAI(model=os.getenv("RAG_INTERP_MODEL", "gpt-5-mini"), temperature=0.0, timeout=30.0)
 
     log.info("[4] Inicializando retrievers")
-    bm25_nodes = load_nodes_cache()
+    bm25_nodes = load_nodes_cache(db_path)
     retriever  = build_hybrid_retriever(index, bm25_nodes)
     reranker   = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
 

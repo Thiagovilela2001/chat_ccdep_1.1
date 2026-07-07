@@ -24,7 +24,7 @@ from openai import OpenAI
 from sklearn.cluster import KMeans
 from llama_index.core.schema import TextNode
 
-from src.logger import get_logger
+from rag_core.logger import get_logger
 
 log = get_logger(__name__)
 

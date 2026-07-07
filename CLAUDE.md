@@ -16,22 +16,35 @@ Tópicos que ativam a skill (exemplos):
 
 ## Arquitetura do projeto
 
+Quatro engines RAG (`rag_principal/`, `rag_agentic/`, `rag_raptor/`,
+`rag_selfrag/`) + orquestrador (`rag_orchestrator/`, Meta RAG). A
+infraestrutura comum vive em **`rag_core/`** (raiz do repo); cada engine mantém
+em `<engine>/src/` apenas o que a diferencia. O `src/__init__.py` de cada
+engine adiciona o diretório-pai ao `sys.path` para tornar `rag_core` importável.
+
 | Módulo | Função |
 |---|---|
-| `src/startup.py` | Inicialização: indexação, LLMs, retrievers, AnalysisEngine |
-| `src/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |
-| `src/analysis_engine.py` | Orquestra retrievers em paralelo e sintetiza resposta |
-| `src/text_retriever.py` | Retrieval híbrido (Vector + BM25) para texto narrativo |
-| `src/tables_retriever.py` | Extração de dados de tabelas estáticas via pandas |
-| `src/timeseries_retriever.py` | Extração e análise de séries temporais via pandas |
-| `src/labor_market_skill.py` | Carrega a skill e detecta queries de mercado de trabalho |
-| `src/api.py` | FastAPI: endpoint POST /query |
-| `main.py` | Entrypoint: servidor HTTP ou CLI interativo |
+| `rag_core/ingestion.py` / `processing.py` / `indexing.py` | Pipeline PDF → nós → ChromaDB (+ cache BM25 ancorado ao db_path) |
+| `rag_core/text_retriever.py` | Retrieval híbrido (Vector + BM25) para texto narrativo |
+| `rag_core/tables_retriever.py` | Extração de dados de tabelas estáticas via pandas |
+| `rag_core/timeseries_retriever.py` | Extração e análise de séries temporais via pandas |
+| `rag_core/safe_exec.py` | Sandbox p/ código pandas gerado por LLM (AST + builtins + timeout) |
+| `rag_core/numerical_validator.py` | Confere números da resposta contra as fontes |
+| `rag_core/labor_market_skill.py` | Carrega a skill e detecta queries de mercado de trabalho |
+| `rag_core/api_security.py` | API key opcional (`RAG_API_KEY`) + rate limiting (`RAG_RATE_LIMIT`) |
+| `<engine>/src/startup.py` | Inicialização da engine: indexação, LLMs, retrievers |
+| `<engine>/src/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |
+| `<engine>/src/api.py` | FastAPI: endpoint POST /query |
+| `<engine>/main.py` | Entrypoint: servidor HTTP ou CLI interativo |
+
+Modelos LLM configuráveis via env: `RAG_LLM_MODEL` (síntese) e
+`RAG_INTERP_MODEL` (interpretação/crítica/enriquecimento).
 
 ## Dados indexados
 
 Boletins de Conjuntura Paulista (PDFs, 2022–2025) em `/data/`.
-Banco vetorial: ChromaDB em `/chroma_db/`.
+Banco vetorial: ChromaDB em `<engine>/chroma_db/`.
+Testes: `rag_principal/tests/` (pytest) e `rag_orchestrator/tests/` (scripts).
 
 ## Avaliação
 
