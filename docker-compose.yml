@@ -54,5 +54,47 @@ services:
       - ./rag_selfrag/chroma_db:/app/rag_selfrag/chroma_db
       - hf_cache:/cache/huggingface
 
+  # Meta RAG — orquestrador. Não indexa; roteia via HTTP para as engines,
+  # endereçadas por nome de serviço na rede Docker (não localhost).
+  rag-orchestrator:
+    <<: *rag-base
+    container_name: rag-ccdep-orchestrator
+    working_dir: /app/rag_orchestrator
+    command: ["python", "main.py", "--host", "0.0.0.0", "--port", "8010"]
+    environment:
+      RAG_CORS_ORIGINS: "*"
+      HF_HOME: /cache/huggingface
+      RAG_PRINCIPAL_URL: "http://rag-principal:8000"
+      RAG_AGENTIC_URL: "http://rag-agentic:8001"
+      RAG_RAPTOR_URL: "http://rag-raptor:8002"
+      RAG_SELFRAG_URL: "http://rag-selfrag:8003"
+    ports:
+      - "8010:8010"
+    volumes:
+      - hf_cache:/cache/huggingface
+    depends_on:
+      - rag-principal
+      - rag-agentic
+      - rag-raptor
+      - rag-selfrag
+
+  # Frontend Streamlit. Só fala HTTP; alcança os backends por nome de serviço.
+  frontend:
+    <<: *rag-base
+    container_name: rag-ccdep-frontend
+    working_dir: /app
+    command: ["streamlit", "run", "meta_rag_ui/app.py", "--server.address", "0.0.0.0", "--server.port", "8501", "--browser.gatherUsageStats", "false"]
+    environment:
+      META_URL: "http://rag-orchestrator:8010"
+      PRINCIPAL_URL: "http://rag-principal:8000"
+      AGENTIC_URL: "http://rag-agentic:8001"
+      RAPTOR_URL: "http://rag-raptor:8002"
+      SELFRAG_URL: "http://rag-selfrag:8003"
+    ports:
+      - "8501:8501"
+    volumes: []
+    depends_on:
+      - rag-orchestrator
+
 volumes:
   hf_cache:

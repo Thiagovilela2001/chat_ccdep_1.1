@@ -25,6 +25,8 @@ COPY rag_principal/ ./rag_principal/
 COPY rag_agentic/ ./rag_agentic/
 COPY rag_raptor/ ./rag_raptor/
 COPY rag_selfrag/ ./rag_selfrag/
+COPY rag_orchestrator/ ./rag_orchestrator/
+COPY meta_rag_ui/ ./meta_rag_ui/
 COPY frontend/ ./frontend/
 COPY .agents/ ./rag_principal/.agents/
 COPY .agents/ ./rag_agentic/.agents/

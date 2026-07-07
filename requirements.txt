@@ -20,7 +20,7 @@ sentence-transformers==5.4.1
 transformers==4.46.3
 
 # ── Armazenamento vetorial e busca lexical ───────────────────────────────────
-chromadb==1.1.1
+chromadb==1.5.9
 rank_bm25==0.2.2
 
 # ── Parsing de dados (PDFs, tabelas, planilhas) ──────────────────────────────

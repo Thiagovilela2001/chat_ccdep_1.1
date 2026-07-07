@@ -4,6 +4,7 @@ informações do sistema, engines registradas e métricas da última resposta.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import streamlit as st
@@ -11,13 +12,14 @@ import streamlit as st
 from components import metrics
 from utils.session import clear_messages
 
-# Mesmas portas do docker-compose.yml.
+# Portas padrão (docker-compose.yml). Cada URL é sobrescrevível por env para
+# funcionar dentro da rede Docker (nomes de serviço) sem alterar o código.
 PRESETS: dict[str, str] = {
-    "🧠 Meta RAG (orquestrador)": "http://localhost:8010",
-    "RAG Principal (híbrido + grafo)": "http://localhost:8000",
-    "RAG Agentic (function calling)": "http://localhost:8001",
-    "RAG RAPTOR (hierárquico)": "http://localhost:8002",
-    "RAG Self-RAG (self-reflective)": "http://localhost:8003",
+    "🧠 Meta RAG (orquestrador)": os.getenv("META_URL", "http://localhost:8010"),
+    "RAG Principal (híbrido + grafo)": os.getenv("PRINCIPAL_URL", "http://localhost:8000"),
+    "RAG Agentic (function calling)": os.getenv("AGENTIC_URL", "http://localhost:8001"),
+    "RAG RAPTOR (hierárquico)": os.getenv("RAPTOR_URL", "http://localhost:8002"),
+    "RAG Self-RAG (self-reflective)": os.getenv("SELFRAG_URL", "http://localhost:8003"),
     "Outro (URL customizada)": "",
 }
 
