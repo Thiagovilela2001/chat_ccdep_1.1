@@ -28,7 +28,7 @@ docker-compose up          # sobe principal:8000, agentic:8001, raptor:8002, sel
 # 2. Suba o orquestrador (roda no ambiente atual, sem transformers):
 cd rag_orchestrator && python main.py --port 8010
 
-# 3. Use o chat:  streamlit run streamlit_app.py  → selecione "🧠 Meta RAG"
+# 3. Use o chat:  streamlit run meta_rag_ui/app.py
 ```
 
 Inspeção sem executar engine (só a decisão de roteamento):

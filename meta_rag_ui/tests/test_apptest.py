@@ -52,6 +52,24 @@ def main():
     assert not at.exception, f"Render com histórico levantou exceção: {at.exception}"
     print("  [OK ] render de métricas + painel dev com dados simulados")
 
+    # Resposta de engine DIRETA (sem route): fontes + validação numérica.
+    at.session_state["messages"] = [
+        {"role": "user", "content": "qual o PIB de SP?", "meta": None},
+        {"role": "assistant", "content": "O PIB cresceu 0,4%.", "meta": {
+            "answer": "O PIB cresceu 0,4%.",
+            "rag_type": "principal",
+            "rag_label": "RAG Principal",
+            "sources_used": ["text", "tables"],
+            "rewritten_query": "variação PIB São Paulo 1º trimestre 2024",
+            "sources": [{"file": "boletim_1trim2024.pdf", "score": 0.87}],
+            "validation": {"verified": 1, "total": 2, "unverified": ["3,1%"]},
+            "_client_roundtrip_ms": 950.0,
+        }},
+    ]
+    at.run()
+    assert not at.exception, f"Render de engine direta levantou exceção: {at.exception}"
+    print("  [OK ] render de resposta de engine direta (fontes + validação)")
+
     print("\nFrontend OK.")
 
 
