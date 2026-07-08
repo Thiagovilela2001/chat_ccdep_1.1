@@ -48,11 +48,19 @@ class LaborMarketSkill:
     (glossário de indicadores + checklist de interpretação).
     """
 
+    _SKILL_REL = os.path.join(
+        ".agents", "skills", "labor_market_analysis", "SKILL.md",
+    )
+
     def __init__(self, base_dir: str):
-        skill_path = os.path.join(
-            base_dir,
-            ".agents", "skills", "labor_market_analysis", "SKILL.md",
-        )
+        # Procura tanto em <base_dir>/.agents (layout do Docker, que copia
+        # .agents para dentro de cada engine) quanto na raiz do repo
+        # (diretório-pai — layout de execução local, onde .agents fica na raiz).
+        candidates = [
+            os.path.join(base_dir, self._SKILL_REL),
+            os.path.join(os.path.dirname(base_dir), self._SKILL_REL),
+        ]
+        skill_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
         self._context = self._load(skill_path)
 
     def _load(self, path: str) -> str:
