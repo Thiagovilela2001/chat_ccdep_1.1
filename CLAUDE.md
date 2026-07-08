@@ -53,8 +53,10 @@ cru), então trocar de LLM é só configuração:
 | `RAG_LLM_BASE_URL` / `RAG_LLM_API_KEY` | — | Sobrescrevem base/chave (provedor custom) |
 
 Chaves: Maritaca usa `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.
-Nomes de modelo fora do catálogo OpenAI (ex.: `sabia-4`) exigem `OpenAILike`,
-por isso `llama-index-llms-openai-like` está nas dependências.
+Nomes de modelo fora do catálogo OpenAI (ex.: `sabia-4`) são registrados em
+tempo de execução no catálogo do LlamaIndex (`_register_model` em `llm.py`),
+usando a classe `OpenAI` base — sem depender do pacote `openai-like`, cuja
+versão colide com o `llama-index-llms-openai` fixado pelo core.
 
 ## Dados indexados
 

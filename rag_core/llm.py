@@ -19,9 +19,11 @@ Maritaca usa a chave `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.
 Dois consumidores
 -----------------
 - `make_llm(...)`          → objeto LLM do LlamaIndex (startups, processing).
-                             Usa OpenAILike quando o provedor tem base URL
-                             própria (nomes como "sabia-4" ficam fora do
-                             catálogo validado pela classe OpenAI do LlamaIndex).
+                             Para provedores com base URL própria, registra o
+                             modelo (ex.: "sabia-4") no catálogo do LlamaIndex
+                             e usa a classe `OpenAI` base — sem depender do
+                             pacote `openai-like`, cuja versão colide com o
+                             `llama-index-llms-openai` já resolvido pelo core.
 - `openai_client_kwargs()` → kwargs para `openai.OpenAI`/`AsyncOpenAI` cru
                              (agentic, self-rag, raptor, orchestrator analyzer).
 """
@@ -89,6 +91,18 @@ def openai_client_kwargs() -> dict:
     return kwargs
 
 
+def _register_model(model: str, context_window: int) -> None:
+    """
+    Registra um modelo fora do catálogo OpenAI (ex.: "sabia-4") no LlamaIndex,
+    para a classe `OpenAI` base aceitá-lo sem exigir o pacote `openai-like`.
+    Idempotente (`setdefault`).
+    """
+    from llama_index.llms.openai import utils as _ou
+
+    _ou.ALL_AVAILABLE_MODELS.setdefault(model, context_window)
+    _ou.CHAT_MODELS.setdefault(model, context_window)
+
+
 def make_llm(
     *,
     interp: bool = False,
@@ -102,23 +116,20 @@ def make_llm(
     interp=True usa o modelo de interpretação/crítica (mais leve, quando o
     provedor distingue); caso contrário, o modelo de síntese.
     """
+    from llama_index.llms.openai import OpenAI
+
     cfg = _cfg()
     mdl = model or (cfg["interp_model"] if interp else cfg["main_model"])
 
     if cfg["base_url"]:
-        # Provedor compatível com nome de modelo fora do catálogo OpenAI.
-        from llama_index.llms.openai_like import OpenAILike
-
-        return OpenAILike(
+        # Provedor compatível (Maritaca): registra o modelo e aponta a base URL.
+        _register_model(mdl, cfg["context_window"])
+        return OpenAI(
             model=mdl,
             api_base=cfg["base_url"],
             api_key=cfg["api_key"],
-            is_chat_model=True,
-            context_window=cfg["context_window"],
             temperature=temperature,
             timeout=timeout,
         )
-
-    from llama_index.llms.openai import OpenAI
 
     return OpenAI(model=mdl, api_key=cfg["api_key"], temperature=temperature, timeout=timeout)
