@@ -5,7 +5,6 @@ Idêntico ao rag_principal/src/startup.py, exceto que instancia
 AgenticEngine em vez de AnalysisEngine.
 """
 import os
-import json
 
 import chromadb
 from llama_index.core import Settings
@@ -15,50 +14,21 @@ from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.ingestion import load_documents
 from rag_core.processing import process_documents
-from rag_core.indexing import create_or_load_index, load_nodes_cache
+from rag_core.index_manifest import (
+    data_snapshot,
+    detect_changes,
+    load_manifest,
+    resolve_data_dir,
+    save_manifest,
+)
+from rag_core.indexing import create_or_load_index, load_nodes_cache, reset_nodes_cache
 from rag_core.text_retriever import build_hybrid_retriever, TextRetriever
 from rag_core.tables_retriever import TablesRetriever
 from rag_core.timeseries_retriever import TimeSeriesRetriever
-from src.agent_engine import AgenticEngine
+from .agent_engine import AgenticEngine
 from rag_core.labor_market_skill import LaborMarketSkill
 
 log = get_logger(__name__)
-
-MANIFEST_FILE = "chroma_db/indexed_manifest.json"
-
-
-def _get_data_snapshot(data_dir: str) -> dict:
-    snapshot = {}
-    if not os.path.isdir(data_dir):
-        return snapshot
-    for fname in os.listdir(data_dir):
-        fpath = os.path.join(data_dir, fname)
-        if os.path.isfile(fpath):
-            snapshot[fname] = os.path.getmtime(fpath)
-    return snapshot
-
-
-def _load_manifest(db_path: str) -> dict:
-    path = os.path.join(db_path, "indexed_manifest.json")
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-
-def _save_manifest(db_path: str, snapshot: dict) -> None:
-    os.makedirs(db_path, exist_ok=True)
-    path = os.path.join(db_path, "indexed_manifest.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2)
-
-
-def _detect_changes(snapshot: dict, manifest: dict) -> list[str]:
-    return [
-        fname for fname, mtime in snapshot.items()
-        if fname not in manifest or manifest[fname] != mtime
-    ]
-
 
 def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngine, object]:
     """
@@ -69,19 +39,20 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
     base_dir : str
         Diretório raiz do RAG (onde fica /chroma_db).
     data_dir : str | None
-        Diretório dos documentos PDF. Se None, usa base_dir/data.
+        Diretório dos documentos. Se None, resolve a base compartilhada local
+        ou base_dir/data (container).
     """
     require_api_key()
 
     setup_logging()
-    data_dir = data_dir or os.path.join(base_dir, "data")
+    data_dir = resolve_data_dir(base_dir, data_dir)
     db_path  = os.path.join(base_dir, "chroma_db")
 
     log.info("Inicializando Agentic RAG")
 
-    snapshot = _get_data_snapshot(data_dir)
-    manifest = _load_manifest(db_path)
-    changed  = _detect_changes(snapshot, manifest)
+    snapshot = data_snapshot(data_dir)
+    manifest = load_manifest(db_path)
+    changed  = detect_changes(snapshot, manifest)
 
     db = chromadb.PersistentClient(path=db_path)
     col = db.get_or_create_collection("estatisticas")
@@ -90,18 +61,25 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
     nodes = []
     if changed:
         log.info("[1] Documentos novos/modificados: %s — reindexando", changed)
+        docs = load_documents(data_dir)
+        if not docs:
+            raise RuntimeError(
+                f"Nenhum documento encontrado em '{data_dir}'; índice anterior preservado."
+            )
+        nodes = process_documents(docs)
+        if not nodes:
+            raise RuntimeError("Processamento não produziu nós; índice anterior preservado.")
+        reset_nodes_cache(db_path)
         db.delete_collection("estatisticas")
         col = db.get_or_create_collection("estatisticas")
-        docs = load_documents(data_dir)
-        if docs:
-            nodes = process_documents(docs)
     elif not already_indexed:
         log.info("[1] Banco vazio — carregando documentos")
+        reset_nodes_cache(db_path)
         docs = load_documents(data_dir)
         if docs:
             nodes = process_documents(docs)
         else:
-            log.warning("Nenhum documento encontrado em /data")
+            raise RuntimeError(f"Nenhum documento encontrado em '{data_dir}'.")
     else:
         log.info("[1] Banco atualizado (%d vetores) — sem mudanças", col.count())
 
@@ -109,7 +87,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
     index = create_or_load_index(nodes, db_path=db_path)
 
     if changed or not already_indexed:
-        _save_manifest(db_path, snapshot)
+        save_manifest(db_path, snapshot)
 
     log.info("[3] Carregando modelos de linguagem")
     llm        = make_llm(temperature=0.0, timeout=60.0)

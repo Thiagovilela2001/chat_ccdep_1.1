@@ -9,7 +9,13 @@ import re
 import pandas as pd
 
 from .logger import get_logger
-from .safe_exec import safe_exec
+from .runtime import limit_context
+from .structured_output import (
+    StructuredOutputError,
+    parse_json_object,
+    result_text,
+    tabular_payload,
+)
 
 log = get_logger(__name__)
 _FALLBACK_TOP_N = 3
@@ -49,16 +55,20 @@ def _df_is_valid_timeseries(df) -> bool:
     if df is None or df.shape[0] < 2 or df.shape[1] < 2:
         return False
     first_col = df.iloc[:, 0]
-    # Coluna de período deve ser object/string, não inteiros ou floats
+    # Anos vindos de CSV/XLSX frequentemente chegam como inteiros.
     if pd.api.types.is_numeric_dtype(first_col):
-        return False
+        numeric = pd.to_numeric(first_col, errors="coerce")
+        if numeric.isna().any():
+            return False
+        years = numeric.astype(float)
+        return bool(years.between(1900, 2100).all())
     return True
 
 
 # Granularidades que indicam série temporal → incluídas neste retriever
 _TEMPORAL_KEYWORDS = {
     "mensal", "trimestral", "semestral", "bimestral",
-    "semanal", "diário", "diaria", "diária",
+    "semanal", "diário", "diaria", "diária", "anual", "ano a ano",
 }
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
@@ -67,31 +77,28 @@ _EXTRACT_PROMPT = """\
 Você é um extrator de séries temporais. Leia os trechos abaixo e extraia os dados \
 em formato de série temporal para responder à pergunta.
 
-Retorne SOMENTE um bloco de código Python entre ```python e ```.
-O código deve definir uma variável `df` como DataFrame pandas com colunas de período e valor.
-Se os dados forem muito simples, defina um dicionário `data` com pares período→valor.
+Retorne SOMENTE um objeto JSON válido, sem markdown ou texto adicional.
+Para uma série tabular, use:
+{{"columns": ["Período", "Valor"], "rows": [["2023", 1.2], ["2024", 1.4]]}}
+Para uma série simples, use:
+{{"data": {{"2023": 1.2, "2024": 1.4}}}}
 Regras:
-- Não importe pandas — ele já está disponível como `pd`.
+- Use apenas strings, números, booleanos ou null nas células.
 - Ordene os dados cronologicamente quando possível.
 - Use nomes de colunas em português (ex: "Período", "Valor", "Variação").
-- Não inclua nada fora do bloco de código.
+- Não inclua código, comentários ou campos adicionais.
 
 Trechos:
 {context}
 
 Pergunta: {question}
-
-```python
-```"""
+"""
 
 _ANALYZE_PROMPT = """\
-Você tem uma série temporal disponível como `df` (DataFrame pandas) ou `data` (dict).
-Escreva SOMENTE o código Python (entre ```python e ```) que analisa a série para responder à pergunta.
-Armazene o resultado final como string descritiva na variável `resultado`.
+Você tem uma série temporal estruturada abaixo. Analise-a usando exclusivamente esses dados.
+Retorne SOMENTE JSON válido no formato {{"resultado": "texto final"}}.
 Regras:
-- Não importe nada. `pd` e `df`/`data` já estão disponíveis.
-- Não use print().
-- Ao acessar um valor de Series de um único elemento, use `.iloc[0]` (ex: `float(df['col'].iloc[0])`).
+- Não inclua código ou explicações fora do campo `resultado`.
 - Calcule variações, tendências e estatísticas relevantes para a pergunta.
 - Formate números com separador de milhar e 2 casas decimais.
 
@@ -99,9 +106,7 @@ Pergunta: {question}
 
 Série temporal disponível:
 {data_preview}
-
-```python
-```"""
+"""
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -109,13 +114,8 @@ def _is_temporal_table(node) -> bool:
     """True se o node for tabela com granularidade temporal."""
     if node.metadata.get("type") != "table":
         return False
-    gran = node.metadata.get("table_granularidade", "").lower()
+    gran = str(node.metadata.get("table_granularidade") or "").lower()
     return any(kw in gran for kw in _TEMPORAL_KEYWORDS)
-
-
-def _extract_code_block(text: str) -> str:
-    match = re.search(r"```(?:python)?\n(.*?)```", text, re.DOTALL)
-    return match.group(1).strip() if match else text.strip()
 
 
 # ── Retriever ─────────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ class TimeSeriesRetriever:
         if not reranked:
             reranked = ts_nodes[:_FALLBACK_TOP_N]
 
-        context = "\n\n---\n\n".join(n.get_content() for n in reranked)
+        context = limit_context("\n\n---\n\n".join(n.get_content() for n in reranked))
 
         # Pré-filtro: contexto sem rótulo temporal → não vale chamar o LLM de extração
         if not _context_has_temporal_labels(context):
@@ -174,21 +174,16 @@ class TimeSeriesRetriever:
         return structured, reranked
 
     def _extract_and_analyze(self, question: str, context: str) -> str:
-        # Fase 1: extração da série temporal em DataFrame
+        # Fase 1: extração estruturada em JSON (nenhum código do LLM é executado)
         extract_resp = self._llm.complete(
             _EXTRACT_PROMPT.format(context=context, question=question)
         )
-        extract_code = _extract_code_block(extract_resp.text)
-
-        ns = {"pd": pd}
         try:
-            safe_exec(extract_code, ns)
-        except (ValueError, RuntimeError) as exc:
-            log.warning("Extracao de serie temporal falhou: %s", exc)
-            return f"[Erro na extração da série temporal: {exc}]"
-
-        df = ns.get("df")
-        data = ns.get("data")
+            payload = parse_json_object(extract_resp.text)
+            df, data = tabular_payload(payload)
+        except StructuredOutputError as exc:
+            log.warning("Extracao estruturada de serie temporal falhou: %s", exc)
+            return None
 
         if df is not None:
             if not _df_is_valid_timeseries(df):
@@ -205,16 +200,12 @@ class TimeSeriesRetriever:
         else:
             return "[Sem dados de série temporal extraídos]"
 
-        # Fase 2: análise da série (tendências, variações)
+        # Fase 2: análise pelo LLM com saída JSON estrita, sem execução de Python
         analyze_resp = self._llm.complete(
             _ANALYZE_PROMPT.format(question=question, data_preview=data_preview)
         )
-        analyze_code = _extract_code_block(analyze_resp.text)
-
         try:
-            safe_exec(analyze_code, ns)
-        except (ValueError, RuntimeError) as exc:
-            log.warning("Analise de serie temporal falhou: %s", exc)
-            return f"[Erro na análise da série temporal: {exc}]"
-
-        return str(ns.get("resultado", data_preview))
+            return result_text(parse_json_object(analyze_resp.text))
+        except StructuredOutputError as exc:
+            log.warning("Analise estruturada de serie temporal falhou: %s", exc)
+            return data_preview

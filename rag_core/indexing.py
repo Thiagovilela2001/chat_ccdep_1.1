@@ -15,15 +15,29 @@ def _nodes_cache_path(db_path: str) -> str:
 
 def save_nodes_cache(nodes, db_path="./chroma_db"):
     os.makedirs(db_path, exist_ok=True)
-    with open(_nodes_cache_path(db_path), "wb") as f:
+    path = _nodes_cache_path(db_path)
+    temporary = path + ".tmp"
+    with open(temporary, "wb") as f:
         pickle.dump(nodes, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temporary, path)
 
 def load_nodes_cache(db_path="./chroma_db"):
     path = _nodes_cache_path(db_path)
     if os.path.exists(path):
-        with open(path, "rb") as f:
-            return pickle.load(f)
+        try:
+            with open(path, "rb") as f:
+                return pickle.load(f)
+        except (OSError, EOFError, pickle.UnpicklingError):
+            return []
     return []
+
+def reset_nodes_cache(db_path="./chroma_db"):
+    """Remove o cache lexical quando o índice vetorial será reconstruído."""
+    path = _nodes_cache_path(db_path)
+    if os.path.exists(path):
+        os.remove(path)
 
 def setup_embeddings():
     """

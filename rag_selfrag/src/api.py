@@ -13,13 +13,22 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import PlainTextResponse
 
-from rag_core.api_security import enforce_rate_limit, require_api_key
+load_dotenv()
+
+from rag_core.api_security import (
+    SecurityHeadersMiddleware,
+    cors_origins,
+    enforce_rate_limit,
+    require_api_key,
+)
 from rag_core.logger import get_logger, setup_logging
-from rag_core.numerical_validator import validate_numbers
-from src.query_interpreter import interpret_query
-from src.startup import initialize
+from rag_core.api_models import QueryRequest, QueryResponse
+from rag_core.query_service import execute_engine_query
+from rag_core.metrics import MetricsMiddleware, render_prometheus
+from .query_interpreter import interpret_query
+from .startup import initialize
 
 RAG_TYPE = "selfrag"
 RAG_LABEL = "Self-RAG"
@@ -30,17 +39,10 @@ _engine = None
 _interp_llm = None
 
 
-def _cors_origins() -> list[str]:
-    raw = os.getenv("RAG_CORS_ORIGINS", "*")
-    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
-    return origins or ["*"]
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _engine, _interp_llm
 
-    load_dotenv()
     setup_logging()
 
     if sys.stdout.encoding != "utf-8":
@@ -66,36 +68,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins(),
+    allow_origins=cors_origins(),
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
-
-
-class QueryRequest(BaseModel):
-    question: str
-
-
-class SourceInfo(BaseModel):
-    file: str
-    score: float
-
-
-class ValidationInfo(BaseModel):
-    verified: int
-    total: int
-    unverified: list[str]
-
-
-class QueryResponse(BaseModel):
-    answer: str
-    sources_used: list[str]
-    rewritten_query: str
-    sources: list[SourceInfo]
-    validation: ValidationInfo
-    rag_type: str
-    rag_label: str
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(MetricsMiddleware, service_name=RAG_TYPE)
 
 
 @app.get("/")
@@ -111,6 +90,11 @@ async def health():
         "rag_type": RAG_TYPE,
         "rag_label": RAG_LABEL,
     }
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+async def metrics():
+    return render_prometheus()
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -130,29 +114,32 @@ async def query(
     log.info("Requisicao recebida", extra={"question": question[:120], "rag_type": RAG_TYPE})
 
     try:
-        interp = interpret_query(question, _interp_llm)
-        answer, source_nodes = await _engine.answer(
+        response, diagnostics = await execute_engine_query(
             question=question,
-            sources=interp["sources"],
-            rewritten_query=interp["rewritten_query"],
-            is_labor_market=interp.get("is_labor_market", False),
+            engine=_engine,
+            interp_llm=_interp_llm,
+            interpreter=interpret_query,
+            rag_type=RAG_TYPE,
+            rag_label=RAG_LABEL,
         )
-
-        checks = validate_numbers(answer, source_nodes)
-        unverified = [c.value for c in checks if not c.verified]
-
         latency_ms = round((time.monotonic() - t0) * 1000)
         log.info(
             "Requisicao concluida",
             extra={
                 "question": question[:120],
                 "rag_type": RAG_TYPE,
-                "sources": interp["sources"],
-                "chunks": len(source_nodes),
+                "sources": diagnostics.sources,
+                "chunks": diagnostics.chunks,
                 "latency_ms": latency_ms,
-                "verified": f"{len(checks) - len(unverified)}/{len(checks)}",
+                "verified": f"{diagnostics.verified}/{diagnostics.total}",
+                "estimated_input_tokens": diagnostics.estimated_input_tokens,
+                "estimated_output_tokens": diagnostics.estimated_output_tokens,
+                "estimated_cost_usd": diagnostics.estimated_cost_usd,
             },
         )
+    except TimeoutError as exc:
+        log.warning("Timeout global ao processar requisicao", extra={"question": question[:120]})
+        raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc
     except Exception as exc:
         latency_ms = round((time.monotonic() - t0) * 1000)
         log.error(
@@ -160,24 +147,8 @@ async def query(
             extra={"question": question[:120], "rag_type": RAG_TYPE, "latency_ms": latency_ms},
             exc_info=True,
         )
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=500, detail="Falha interna ao processar a consulta."
+        ) from exc
 
-    return QueryResponse(
-        answer=answer,
-        sources_used=interp["sources"],
-        rewritten_query=interp["rewritten_query"],
-        sources=[
-            SourceInfo(
-                file=n.metadata.get("source_file") or n.metadata.get("file_name", "?"),
-                score=round((n.score or 0) / 10.0, 2),
-            )
-            for n in source_nodes
-        ],
-        validation=ValidationInfo(
-            verified=len(checks) - len(unverified),
-            total=len(checks),
-            unverified=unverified,
-        ),
-        rag_type=RAG_TYPE,
-        rag_label=RAG_LABEL,
-    )
+    return response

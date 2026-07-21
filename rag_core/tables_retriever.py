@@ -6,10 +6,15 @@ estrutura via pandas para o Analysis Engine.
 (ex: emprego por setor, PIB por região). Distingue-se de TimeSeries pela granularidade.
 """
 import re
-import pandas as pd
 
 from .logger import get_logger
-from .safe_exec import safe_exec
+from .runtime import limit_context
+from .structured_output import (
+    StructuredOutputError,
+    parse_json_object,
+    result_text,
+    tabular_payload,
+)
 
 log = get_logger(__name__)
 _FALLBACK_TOP_N = 3
@@ -22,7 +27,7 @@ def _sanitize(text: str) -> str:
 # Granularidades que indicam série temporal → excluídas deste retriever
 _TEMPORAL_KEYWORDS = {
     "mensal", "trimestral", "semestral", "bimestral",
-    "semanal", "diário", "diaria", "diária",
+    "semanal", "diário", "diaria", "diária", "anual", "ano a ano",
 }
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
@@ -31,39 +36,35 @@ _EXTRACT_PROMPT = """\
 Você é um extrator de dados. Leia os trechos de tabelas abaixo e extraia os dados \
 numéricos necessários para responder à pergunta.
 
-Retorne SOMENTE um bloco de código Python entre ```python e ```.
-O código deve definir uma variável chamada `df` como um pandas DataFrame com os dados extraídos.
-Se os dados forem poucos para uma tabela, defina um dicionário simples chamado `data`.
+Retorne SOMENTE um objeto JSON válido, sem markdown ou texto adicional.
+Para dados tabulares, use:
+{{"columns": ["Coluna 1", "Coluna 2"], "rows": [["valor", 1.2]]}}
+Para poucos pares chave-valor, use:
+{{"data": {{"chave": "valor"}}}}
 Regras:
-- Não importe pandas — ele já está disponível como `pd`.
-- Não inclua nada fora do bloco de código.
+- Use apenas strings, números, booleanos ou null nas células.
+- Não inclua código, comentários ou campos adicionais.
 - Use nomes de colunas em português quando possível.
 
 Trechos:
 {context}
 
 Pergunta: {question}
-
-```python
-```"""
+"""
 
 _CALCULATE_PROMPT = """\
-Você tem os dados abaixo disponíveis como variável `df` (DataFrame pandas) ou `data` (dict).
-Escreva SOMENTE o código Python (entre ```python e ```) que calcula a resposta para a pergunta.
-Armazene o resultado final como string formatada e legível na variável `resultado`.
+Você tem os dados estruturados abaixo. Calcule a resposta usando exclusivamente esses dados.
+Retorne SOMENTE JSON válido no formato {{"resultado": "texto final"}}.
 Regras:
-- Não importe nada. `pd` e `df`/`data` já estão disponíveis.
-- Não use print().
-- Ao acessar um valor de Series de um único elemento, use `.iloc[0]` (ex: `float(df['col'].iloc[0])`).
+- Não inclua código ou explicações fora do campo `resultado`.
 - Formate números com separador de milhar e 2 casas decimais quando aplicável.
+- Se a pergunta exigir uma conta, apresente a operação no texto final.
 
 Pergunta: {question}
 
 Dados disponíveis:
 {data_preview}
-
-```python
-```"""
+"""
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -71,13 +72,8 @@ def _is_static_table(node) -> bool:
     """True se o node for tabela com granularidade não-temporal."""
     if node.metadata.get("type") != "table":
         return False
-    gran = node.metadata.get("table_granularidade", "").lower()
+    gran = str(node.metadata.get("table_granularidade") or "").lower()
     return not any(kw in gran for kw in _TEMPORAL_KEYWORDS)
-
-
-def _extract_code_block(text: str) -> str:
-    match = re.search(r"```(?:python)?\n(.*?)```", text, re.DOTALL)
-    return match.group(1).strip() if match else text.strip()
 
 
 # ── Retriever ─────────────────────────────────────────────────────────────────
@@ -115,26 +111,21 @@ class TablesRetriever:
         if not reranked:
             reranked = table_nodes[:_FALLBACK_TOP_N]
 
-        context = "\n\n---\n\n".join(n.get_content() for n in reranked)
+        context = limit_context("\n\n---\n\n".join(n.get_content() for n in reranked))
         structured = self._extract_and_calculate(question, context)
         return structured, reranked
 
     def _extract_and_calculate(self, question: str, context: str) -> str:
-        # Fase 1: extração de dados em DataFrame
+        # Fase 1: extração estruturada em JSON (nenhum código do LLM é executado)
         extract_resp = self._llm.complete(
             _EXTRACT_PROMPT.format(context=context, question=question)
         )
-        extract_code = _extract_code_block(extract_resp.text)
-
-        ns = {"pd": pd}
         try:
-            safe_exec(extract_code, ns)
-        except (ValueError, RuntimeError) as exc:
-            log.warning("Extracao de tabela falhou: %s", exc)
-            return f"[Erro na extração de dados da tabela: {exc}]"
-
-        df = ns.get("df")
-        data = ns.get("data")
+            payload = parse_json_object(extract_resp.text)
+            df, data = tabular_payload(payload)
+        except StructuredOutputError as exc:
+            log.warning("Extracao estruturada de tabela falhou: %s", exc)
+            return "[Sem dados estruturados extraídos da tabela]"
 
         if df is not None:
             data_preview = df.to_string(max_rows=20)
@@ -143,16 +134,12 @@ class TablesRetriever:
         else:
             return "[Sem dados estruturados extraídos da tabela]"
 
-        # Fase 2: cálculo via pandas
+        # Fase 2: cálculo pelo LLM com saída JSON estrita, sem execução de Python
         calc_resp = self._llm.complete(
             _CALCULATE_PROMPT.format(question=question, data_preview=data_preview)
         )
-        calc_code = _extract_code_block(calc_resp.text)
-
         try:
-            safe_exec(calc_code, ns)
-        except (ValueError, RuntimeError) as exc:
-            log.warning("Calculo sobre tabela falhou: %s", exc)
-            return f"[Erro no cálculo sobre a tabela: {exc}]"
-
-        return str(ns.get("resultado", data_preview))
+            return result_text(parse_json_object(calc_resp.text))
+        except StructuredOutputError as exc:
+            log.warning("Calculo estruturado sobre tabela falhou: %s", exc)
+            return data_preview

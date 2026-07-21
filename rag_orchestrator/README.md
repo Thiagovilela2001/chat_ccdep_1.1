@@ -9,12 +9,12 @@ nenhuma engine e **não importa `transformers`** — apenas encaminha via HTTP.
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `src/registry.py` | Perfis declarativos das estratégias + cliente HTTP das engines |
+| `src/registry.py` | Perfis, cliente HTTP autenticado e circuit breaker das engines |
 | `src/query_analyzer.py` | Classificação semântica da consulta (LLM + fallback) |
 | `src/router.py` | Política de seleção (scoring de perfis) — função pura |
 | `src/fusion.py` | Execução multi-engine opcional + seleção da melhor resposta |
 | `src/quality_gate.py` | Recusa + validação numérica reaproveitada das engines |
-| `src/orchestrator.py` | Pipeline: analisar → rotear → encaminhar → montar envelope |
+| `src/orchestrator.py` | Pipeline: analisar → rotear → health/failover → montar envelope |
 | `src/api.py` | FastAPI `:8010` — `POST /query`, `POST /route`, `GET /health` |
 | `main.py` | Entrypoint: servidor, `--cli` ou `--route "pergunta"` |
 
@@ -42,8 +42,14 @@ python main.py --route "Faça um panorama da economia paulista em 2024"
 |---|---|---|
 | `RAG_PRINCIPAL_URL` … `RAG_SELFRAG_URL` | `localhost:8000..8003` | URLs dos backends |
 | `ORCHESTRATOR_MULTI_ENGINE` | `0` | `1` habilita execução multi-engine em ambiguidade |
-| `ORCHESTRATOR_ANALYZER_MODEL` | `gpt-5-mini` | modelo da análise semântica |
-| `OPENAI_API_KEY` | — | chave para o analyzer (sem ela, cai no fallback heurístico) |
+| `ORCHESTRATOR_ANALYZER_MODEL` | `RAG_INTERP_MODEL` (`sabia-4`) | modelo da análise semântica |
+| `RAG_BACKEND_API_KEY` | — | autentica chamadas do orquestrador para as engines |
+| `RAG_REQUEST_TIMEOUT` | `180` | deadline total da consulta |
+| `RAG_CIRCUIT_FAILURE_THRESHOLD` | `3` | falhas antes de abrir o circuito |
+| `RAG_CIRCUIT_RECOVERY_SECONDS` | `30` | intervalo para nova tentativa |
+
+O analyzer usa o provedor central de `rag_core/llm.py` (`MARITACA_API_KEY`,
+`OPENAI_API_KEY` ou `RAG_LLM_API_KEY`). Se ele falhar, aplica o fallback heurístico.
 
 ## Adicionar uma nova estratégia (extensibilidade)
 

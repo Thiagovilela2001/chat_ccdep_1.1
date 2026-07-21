@@ -12,39 +12,33 @@ from __future__ import annotations
 
 import streamlit as st
 
-from components import chat, developer_panel, sidebar, status
+from components import chat, developer_panel, hero, sidebar, status
 from services.api import RagClient
+from utils import theme
 from utils.session import init_session, last_assistant_meta
 
-st.set_page_config(page_title="RAG Estatístico SP", page_icon="📊", layout="wide")
+st.set_page_config(page_title="RAG Estatístico SP", page_icon="◆", layout="wide")
+theme.inject()
 init_session()
 
-# ── Barra lateral: conexão + API key + modo desenvolvedor ─────────────────────
+# ── Barra lateral: metodologia + configuração + status + debug ────────────────
 with st.sidebar:
-    st.title("📊 RAG Estatístico SP")
     base_url = sidebar.render_connection()
-    api_key = sidebar.render_api_key()
-    dev_mode = sidebar.render_dev_toggle()
-    st.divider()
+    dev_mode = sidebar.render_config()
 
-client = RagClient(base_url, api_key=api_key)
+client = RagClient(base_url, api_key=st.session_state.get("api_key", ""))
 health = client.health()
 
 with st.sidebar:
-    sidebar.render(health, base_url, last_assistant_meta())
+    sidebar.render_status(health, base_url)
+    sidebar.render_debug(dev_mode)
 
 # ── Área principal ────────────────────────────────────────────────────────────
-titulo = (health or {}).get("rag_label") or "RAG Estatístico SP"
-st.title(f"📊 {titulo}")
-st.caption(
-    "Perguntas e respostas sobre os Boletins de Conjuntura Paulista (Seade). "
-    "Escolha o backend na barra lateral — o Meta RAG seleciona automaticamente "
-    "a melhor estratégia de recuperação para cada pergunta."
-)
+hero.render(health)
 
-abas = ["💬 Conversa", "🩺 Serviços"]
+abas = ["Conversa", "Serviços"]
 if dev_mode:
-    abas.append("🛠️ Desenvolvedor")
+    abas.append("Desenvolvedor")
 tabs = st.tabs(abas)
 
 with tabs[0]:

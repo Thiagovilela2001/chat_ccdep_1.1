@@ -38,6 +38,31 @@ class FakeClient:
         return {"engine_ready": True}
 
 
+class HealthClient(FakeClient):
+    def __init__(self, resp, healthy):
+        super().__init__(resp)
+        self.healthy = healthy
+
+    async def health(self):
+        return {"engine_ready": True} if self.healthy else None
+
+
+def test_engine_client_headers():
+    """A credencial interna deve ser encaminhada às engines."""
+    from src.registry import EngineClient
+
+    old = os.environ.get("RAG_BACKEND_API_KEY")
+    os.environ["RAG_BACKEND_API_KEY"] = "internal-test-key"
+    try:
+        check("header interno encaminhado",
+              EngineClient._headers() == {"x-api-key": "internal-test-key"})
+    finally:
+        if old is None:
+            os.environ.pop("RAG_BACKEND_API_KEY", None)
+        else:
+            os.environ["RAG_BACKEND_API_KEY"] = old
+
+
 def check(nome, cond):
     print(f"  [{'OK ' if cond else 'FALHOU'}] {nome}")
     assert cond, nome
@@ -45,6 +70,8 @@ def check(nome, cond):
 
 def main():
     print("Smoke do pipeline:")
+
+    test_engine_client_headers()
 
     # 1. Single-best encaminha para principal e monta o envelope.
     cls = {"query_type": "pontual", "confidence": 0.9, "in_scope": True,
@@ -80,7 +107,21 @@ def main():
     check("multi → 2 engines na rota", len(res["route"]["engines_used"]) == 2)
     check("multi → escolhe a não-recusa", res["answer"] == "Panorama detalhado.")
 
-    # 4. Backend fora do ar → envelope de erro.
+    # 4. Backend primário fora do ar → failover para engine saudável.
+    fallback = {"answer": "Resposta via failover.", "sources": [],
+                "validation": {"verified": 0, "total": 0, "unverified": []}}
+    clients = {
+        "principal": HealthClient({}, False),
+        "agentic": HealthClient({}, False),
+        "selfrag": HealthClient({}, False),
+        "raptor": HealthClient(fallback, True),
+    }
+    orch_mod.get_client = lambda key, timeout=180: clients[key]
+    res = asyncio.run(Orchestrator(analyzer=FakeAnalyzer(cls)).answer("qual a taxa?"))
+    check("failover escolhe engine saudável", res["route"]["engine"] == "raptor")
+    check("failover sinalizado", res["route"]["failover_from"] == "principal")
+
+    # 5. Todos os backends fora do ar → envelope de erro.
     def _boom(key, timeout=180):
         raise RuntimeError("connection refused")
     orch_mod.get_client = _boom

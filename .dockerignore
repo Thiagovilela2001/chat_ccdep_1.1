@@ -9,12 +9,15 @@ __pycache__/
 *.pyo
 *.pyd
 .cache/
+.claude/
 
 .env
 .env.*
 *.env
 
 data/
+*.zip
+chroma_backups_*/
 chroma_db/
 rag_principal/chroma_db/
 rag_agentic/chroma_db/

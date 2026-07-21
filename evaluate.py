@@ -14,11 +14,17 @@ Saída:
 import argparse
 import asyncio
 import importlib
+import importlib.metadata
 import os
 import sys
 import json
 import math
-from datetime import datetime
+import hashlib
+import platform
+import random
+import subprocess
+import time
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 if sys.stdout.encoding != "utf-8":
@@ -26,9 +32,11 @@ if sys.stdout.encoding != "utf-8":
 
 from datasets import Dataset
 from ragas import evaluate
-from ragas.metrics import Faithfulness, ContextPrecision, ContextRecall
+from ragas.metrics.collections import Faithfulness, ContextPrecision, ContextRecall
 from openai import OpenAI as OpenAIClient
 from ragas.llms import llm_factory
+from rag_core.citation_validator import validate_citations
+from rag_core.numerical_validator import validate_numbers
 
 DATASET_PATHS = {
     "dev":         "data/golden_dataset_dev.json",
@@ -48,6 +56,51 @@ REFUSAL_KEYWORDS = [
     "não está nos documentos",
     "informação não consta",
 ]
+
+_RUN_METADATA: dict = {}
+
+
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = min(round((len(ordered) - 1) * percentile), len(ordered) - 1)
+    return ordered[index]
+
+
+def _dataset_hash(path: str) -> str:
+    with open(path, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+def _run_metadata(args) -> dict:
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+            check=True, timeout=5,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        commit = "unknown"
+    packages = {}
+    for name in ("ragas", "datasets", "llama-index", "openai"):
+        try:
+            packages[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            packages[name] = "not-installed"
+    return {
+        "seed": args.seed,
+        "rag": args.rag,
+        "use_graph": args.use_graph,
+        "limit": args.limit,
+        "git_commit": commit,
+        "python": platform.python_version(),
+        "packages": packages,
+        "dataset_sha256": {
+            split: _dataset_hash(path) for split, path in DATASET_PATHS.items()
+            if os.path.exists(path)
+        },
+        "ragas_judge_model": os.getenv("RAGAS_JUDGE_MODEL", "gpt-5-chat-latest"),
+    }
 
 
 def load_dataset(path: str) -> list[dict]:
@@ -80,20 +133,36 @@ def is_refusal(response: str) -> bool:
 def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpret_query):
     print(f"\n  Rodando {len(dataset)} perguntas ({split})...")
     records = []
+    diagnostics = []
     for i, item in enumerate(dataset, 1):
         question     = item["question"]
         ground_truth = item.get("ground_truth", "").strip()
         q_type       = item.get("type", "?")
 
         print(f"  [{i}/{len(dataset)}] ({q_type}) {question[:70]}...")
+        started = time.perf_counter()
         try:
             answer, source_nodes, interp = run_question(question, engine, interp_llm, interpret_query)
             contexts = [n.get_content() for n in source_nodes]
+            number_checks = validate_numbers(answer, source_nodes)
+            citation_checks = validate_citations(answer, source_nodes)
             records.append({
                 "question":     question,
                 "answer":       answer,
                 "contexts":     contexts,
                 "ground_truth": ground_truth or "",
+            })
+            diagnostics.append({
+                "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+                "numeric_precision": (
+                    sum(check.verified for check in number_checks) / len(number_checks)
+                    if number_checks else None
+                ),
+                "citation_precision": (
+                    sum(check.verified for check in citation_checks) / len(citation_checks)
+                    if citation_checks else None
+                ),
+                "citation_count": len(citation_checks),
             })
             print(f"         ✅ OK | fontes: {interp['sources']} | chunks: {len(contexts)}")
         except Exception as exc:
@@ -104,16 +173,37 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
                 "contexts":     [],
                 "ground_truth": ground_truth or "",
             })
+            diagnostics.append({
+                "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+                "numeric_precision": None,
+                "citation_precision": None,
+                "citation_count": 0,
+            })
 
     ragas_model = os.getenv("RAGAS_JUDGE_MODEL", "gpt-5-chat-latest")
     print(f"\n  Computando métricas RAGAS (judge: {ragas_model})...")
-    ragas_llm = llm_factory(ragas_model, client=OpenAIClient(), max_tokens=8192)
+    ragas_llm = llm_factory(
+        ragas_model, client=OpenAIClient(), max_tokens=8192, temperature=0
+    )
     metrics = [Faithfulness(llm=ragas_llm), ContextPrecision(llm=ragas_llm), ContextRecall(llm=ragas_llm)]
     ds = Dataset.from_list(records)
     scores = evaluate(ds, metrics=metrics)
 
     scores_dict = scores.to_pandas().mean(numeric_only=True).to_dict()
     details = scores.to_pandas().rename(columns={"question": "user_input"}).to_dict(orient="records")
+    for detail, diagnostic in zip(details, diagnostics):
+        detail.update(diagnostic)
+
+    latencies = [item["latency_ms"] for item in diagnostics]
+    numeric = [item["numeric_precision"] for item in diagnostics if item["numeric_precision"] is not None]
+    citations = [item["citation_precision"] for item in diagnostics if item["citation_precision"] is not None]
+    scores_dict.update({
+        "numeric_precision": sum(numeric) / len(numeric) if numeric else math.nan,
+        "citation_precision": sum(citations) / len(citations) if citations else math.nan,
+        "citation_coverage": sum(item["citation_count"] > 0 for item in diagnostics) / len(diagnostics),
+        "latency_p50_ms": _percentile(latencies, 0.50),
+        "latency_p95_ms": _percentile(latencies, 0.95),
+    })
 
     return scores_dict, details
 
@@ -126,6 +216,7 @@ def run_adversarial_split(dataset: list[dict], engine, interp_llm, interpret_que
     for i, item in enumerate(dataset, 1):
         question = item["question"]
         print(f"  [{i}/{len(dataset)}] {question[:70]}...")
+        started = time.perf_counter()
         try:
             answer, _, _interp = run_question(question, engine, interp_llm, interpret_query)
             refused = is_refusal(answer)
@@ -141,6 +232,7 @@ def run_adversarial_split(dataset: list[dict], engine, interp_llm, interpret_que
             "user_input": question,
             "response":   answer,
             "refused":    refused,
+            "latency_ms": round((time.perf_counter() - started) * 1000, 1),
         })
 
     refusal_accuracy = refusals / len(dataset) if dataset else 0.0
@@ -155,6 +247,8 @@ def print_results(scores_dict: dict):
     for metric, value in scores_dict.items():
         if isinstance(value, float) and math.isnan(value):
             print(f"  {metric:<30} N/A")
+        elif metric.endswith("_ms"):
+            print(f"  {metric:<30} {value:.1f} ms")
         else:
             bar = "█" * int(value * 20)
             print(f"  {metric:<30} {value:.3f}  {bar}")
@@ -164,8 +258,9 @@ def save_results(split: str, scores_dict: dict, details: list):
     os.makedirs(RESULTS_DIR, exist_ok=True)
     path = os.path.join(RESULTS_DIR, f"results_{split}.json")
     output = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "split":     split,
+        "run":       _RUN_METADATA,
         "summary":   scores_dict,
         "details":   details,
     }
@@ -174,13 +269,15 @@ def save_results(split: str, scores_dict: dict, details: list):
     print(f"\n  Resultados salvos em: {path}\n")
 
 
-def run_split(split: str, engine, interp_llm, interpret_query):
+def run_split(split: str, engine, interp_llm, interpret_query, limit: int | None = None):
     print(f"\n{'=' * 55}")
     print(f" SPLIT: {split.upper()}")
     print(f"{'=' * 55}")
 
     print(f"\n1. Carregando dataset ({split})...")
     dataset = load_dataset(DATASET_PATHS[split])
+    if limit is not None:
+        dataset = dataset[:max(limit, 0)]
 
     if split == "adversarial":
         scores_dict, details = run_adversarial_split(dataset, engine, interp_llm, interpret_query)
@@ -200,6 +297,8 @@ def main():
         default="dev",
         help="Split a avaliar (padrão: dev)",
     )
+    parser.add_argument("--seed", type=int, default=42, help="Seed da avaliação (padrão: 42)")
+    parser.add_argument("--limit", type=int, default=None, help="Limita exemplos por split")
     parser.add_argument(
         "--rag",
         default="rag_principal",
@@ -212,8 +311,18 @@ def main():
         help="Habilita o GraphRetriever como 4ª fonte (apenas rag_principal)",
     )
     args = parser.parse_args()
+    if args.limit is not None and args.limit < 1:
+        parser.error("--limit deve ser maior ou igual a 1")
 
     load_dotenv()
+    random.seed(args.seed)
+    try:
+        import numpy as np
+        np.random.seed(args.seed)
+    except ImportError:
+        pass
+    global _RUN_METADATA
+    _RUN_METADATA = _run_metadata(args)
     root_dir = os.path.dirname(os.path.abspath(__file__))
     rag_dir  = os.path.join(root_dir, args.rag)
 
@@ -239,7 +348,9 @@ def main():
 
     all_scores = {}
     for split in splits:
-        all_scores[split] = run_split(split, engine, interp_llm, interpret_query)
+        all_scores[split] = run_split(
+            split, engine, interp_llm, interpret_query, limit=args.limit
+        )
 
     if args.split == "all":
         print("\n" + "=" * 55)
@@ -249,8 +360,11 @@ def main():
             print(f"\n  [{split.upper()}]")
             for metric, value in scores.items():
                 if isinstance(value, float) and not math.isnan(value):
-                    bar = "█" * int(value * 20)
-                    print(f"    {metric:<30} {value:.3f}  {bar}")
+                    if metric.endswith("_ms"):
+                        print(f"    {metric:<30} {value:.1f} ms")
+                    else:
+                        bar = "█" * int(value * 20)
+                        print(f"    {metric:<30} {value:.3f}  {bar}")
 
 
 if __name__ == "__main__":

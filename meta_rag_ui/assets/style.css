@@ -1,0 +1,350 @@
+/* ============================================================================
+   RAG Estatístico SP — interface premium (dark).
+   Referências: Linear · Vercel · OpenAI · Perplexity · Arc · Stripe.
+   Minimalista, elegante, muito respiro, poucas cores, tipografia forte.
+   Ícones: Lucide (inline via utils/icons.py). Sem emojis.
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;800&display=swap');
+
+:root {
+  --bg:            #0B0F17;
+  --card:          #111827;
+  --card-2:        #151d2e;
+  --sidebar:       #0F172A;
+  --border:        rgba(255,255,255,.06);
+  --border-2:      rgba(255,255,255,.10);
+  --fg:            #F8FAFC;
+  --fg-muted:      #94A3B8;
+  --fg-faint:      #64748B;
+  --accent:        #3B82F6;
+  --accent-hover:  #2563EB;
+  --accent-soft:   rgba(59,130,246,.12);
+  --success:       #22C55E;
+  --error:         #EF4444;
+
+  --radius:        14px;
+  --radius-sm:     10px;
+  --radius-lg:     18px;
+  --shadow-sm:     0 1px 2px rgba(0,0,0,.25);
+  --shadow:        0 1px 2px rgba(0,0,0,.30), 0 8px 24px -12px rgba(0,0,0,.55);
+  --shadow-hover:  0 2px 4px rgba(0,0,0,.30), 0 16px 40px -16px rgba(0,0,0,.65);
+  --ease:          cubic-bezier(.4,0,.2,1);
+  --font:          'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+html, body, .stApp, input, textarea, button, select, .stMarkdown, [class*="st-"] {
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.stApp { background: var(--bg); color: var(--fg); }
+[data-testid="stHeader"] { background: transparent; }
+[data-testid="stToolbar"], footer, #MainMenu { display: none !important; }
+
+/* Ícones Lucide inline herdam a cor do contexto */
+.lu { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.lu svg { display: block; }
+
+/* Reset: preservar a fonte dos ícones Material nativos do Streamlit */
+[data-testid="stIconMaterial"], .material-icons,
+.material-symbols-outlined, .material-symbols-rounded, [class*="material-symbols"] {
+  font-family: 'Material Symbols Rounded','Material Symbols Outlined','Material Icons' !important;
+}
+
+/* ── Tipografia ──────────────────────────────────────────────────────────── */
+h1, h2, h3, h4 { color: var(--fg); letter-spacing: -0.02em; line-height: 1.15; }
+p, li, span, label, .stMarkdown { font-size: 16px; }
+[data-testid="stCaptionContainer"], .stCaption, small { color: var(--fg-muted); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+/* ── Layout: conteúdo centrado, largura confortável, muito padding ───────── */
+[data-testid="stMainBlockContainer"] {
+  max-width: 1040px;
+  padding: 3rem 2.5rem 5rem;
+}
+[data-testid="stMain"] .stMainBlockContainer { margin-inline: auto; }
+[data-testid="stVerticalBlock"] { gap: 1rem; }
+
+/* ── Sidebar mais estreita, seções em cartão ─────────────────────────────── */
+[data-testid="stSidebar"] {
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  width: 312px !important; min-width: 312px !important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding: 1.4rem 1.15rem 2rem; }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: .5rem; }
+
+/* Cartões de seção: st.container(border=True) dentro da sidebar */
+[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+  background: var(--card);
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius);
+  padding: .9rem .95rem;
+  margin-bottom: .3rem;
+}
+[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: .55rem; }
+
+/* Cartão de seção da sidebar (variante em HTML puro, se necessário) */
+.side-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .95rem 1rem;
+  margin-bottom: .85rem;
+}
+.side-head {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--fg-muted); margin-bottom: .1rem;
+}
+.side-head .lu { color: var(--fg-faint); }
+
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+.hero { padding: .5rem 0 1.75rem; }
+.hero-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(160deg, var(--accent-soft), transparent),
+              var(--card);
+  border: 1px solid var(--border-2);
+  color: var(--accent);
+  margin-bottom: 1.15rem;
+}
+.hero h1 {
+  font-size: 48px; font-weight: 700; letter-spacing: -0.035em;
+  margin: 0 0 .6rem; line-height: 1.05;
+}
+.hero p {
+  font-size: 18px; font-weight: 400; color: var(--fg-muted);
+  max-width: 620px; margin: 0; line-height: 1.55;
+}
+
+/* Linha de badges (métricas do sistema) — pequenos cartões horizontais */
+.badge-row {
+  display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.6rem;
+}
+.badge {
+  display: flex; align-items: center; gap: .7rem;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .7rem .95rem; min-width: 150px;
+  transition: transform .18s var(--ease), border-color .18s var(--ease);
+}
+.badge:hover { transform: translateY(-2px) scale(1.02); border-color: var(--border-2); }
+.badge .lu { color: var(--fg-faint); }
+.badge-txt { display: flex; flex-direction: column; line-height: 1.25; }
+.badge-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-faint); }
+.badge-value { font-size: .95rem; font-weight: 600; color: var(--fg); }
+
+/* ── Status pill (● Online / Offline / Conectando) ───────────────────────── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: .55rem;
+  font-size: .85rem; font-weight: 500; color: var(--fg);
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; position: relative; }
+.status-dot::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  background: currentColor; opacity: .18;
+}
+.status-online  { color: var(--success); } .status-online  .status-dot { background: var(--success); }
+.status-offline { color: var(--error);   } .status-offline .status-dot { background: var(--error); }
+.status-connecting { color: var(--accent); } .status-connecting .status-dot { background: var(--accent); animation: pulse 1.2s var(--ease) infinite; }
+.status-pill .status-dot { color: inherit; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+.status-sub { color: var(--fg-faint); font-size: .78rem; margin-top: .35rem; }
+
+/* ── Botões (48px, radius 14px, micro-hover) ─────────────────────────────── */
+.stButton > button, .stFormSubmitButton > button, [data-testid="stBaseButton-secondary"] {
+  min-height: 48px; border-radius: var(--radius);
+  font-weight: 500; font-size: .95rem;
+  border: 1px solid var(--border-2);
+  background: var(--card-2); color: var(--fg);
+  box-shadow: var(--shadow); padding: 0 1.1rem;
+  transition: transform .15s var(--ease), background-color .15s var(--ease),
+              border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.stButton > button:hover, [data-testid="stBaseButton-secondary"]:hover {
+  background: #1a2436; border-color: var(--border-2);
+  transform: translateY(-1px); box-shadow: var(--shadow-hover);
+}
+.stButton > button:active { transform: translateY(0); }
+.stButton > button:focus-visible, .stFormSubmitButton > button:focus-visible {
+  outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px rgba(59,130,246,.5);
+}
+/* Primário: Enviar */
+.stFormSubmitButton > button {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff; font-weight: 600;
+}
+.stFormSubmitButton > button:hover {
+  background: var(--accent-hover); border-color: var(--accent-hover);
+  transform: translateY(-1px); box-shadow: var(--shadow-hover);
+}
+.stFormSubmitButton > button p::before {
+  content: ""; display: inline-block; width: 16px; height: 16px; margin-right: .1rem;
+  vertical-align: -3px;
+  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 7-7 7 7'/%3E%3Cpath d='M12 19V5'/%3E%3C/svg%3E");
+}
+/* Ícones em botões-chave via `st-key-*` */
+.st-key-btn_clear button p::before, .st-key-refresh_status button p::before {
+  content: ""; display: inline-block; width: 15px; height: 15px; margin-right: .45rem;
+  vertical-align: -2px; opacity: .8;
+  background: no-repeat center/contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6'/%3E%3Cpath d='M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2'/%3E%3C/svg%3E");
+}
+.st-key-refresh_status button p::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3Cpath d='M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16'/%3E%3Cpath d='M3 21v-5h5'/%3E%3C/svg%3E");
+}
+
+/* ── Inputs (48px, foco azul, borda fina) ────────────────────────────────── */
+[data-baseweb="input"], [data-baseweb="base-input"],
+.stTextArea textarea, [data-baseweb="select"] > div {
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--border-2) !important;
+  background: var(--card) !important;
+  min-height: 48px;
+}
+.stTextInput input, .stTextArea textarea {
+  color: var(--fg); font-size: 1rem; padding: .7rem .95rem;
+}
+.stTextInput input::placeholder, .stTextArea textarea::placeholder { color: var(--fg-faint); }
+[data-baseweb="input"]:focus-within, [data-baseweb="select"] > div:focus-within,
+.stTextArea textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important;
+}
+
+/* ── Selectbox como dropdown moderno ─────────────────────────────────────── */
+[data-baseweb="select"] > div {
+  padding: .15rem .35rem; cursor: pointer;
+  transition: border-color .15s var(--ease), background-color .15s var(--ease);
+}
+[data-baseweb="select"] > div:hover { background: var(--card-2) !important; border-color: var(--border-2) !important; }
+[data-baseweb="popover"] [role="listbox"] {
+  background: var(--card) !important; border: 1px solid var(--border-2) !important;
+  border-radius: var(--radius-sm) !important; box-shadow: var(--shadow-hover);
+  padding: .3rem !important;
+}
+[data-baseweb="popover"] li {
+  border-radius: 8px !important; margin: 1px 0; color: var(--fg);
+}
+[data-baseweb="popover"] li:hover { background: var(--accent-soft) !important; }
+
+/* ── Formulário do chat (campo grande, tipo ChatGPT) ─────────────────────── */
+[data-testid="stForm"] {
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+[data-testid="stForm"] .stTextInput input { min-height: 40px; font-size: 1.05rem; background: transparent; }
+[data-testid="stForm"] [data-baseweb="input"] { border-color: transparent !important; background: transparent !important; }
+[data-testid="stForm"] [data-baseweb="input"]:focus-within { box-shadow: none !important; }
+
+/* ── Mensagens do chat ───────────────────────────────────────────────────── */
+[data-testid="stChatMessage"] {
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem; margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  animation: fadein .35s var(--ease);
+}
+/* IA: cinza escuro; usuário: azul escuro */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+  background: rgba(37,99,235,.10);
+  border-color: rgba(59,130,246,.28);
+}
+[data-testid="stChatMessage"] p { line-height: 1.7; }
+[data-testid="stChatMessage"] pre {
+  background: #0c1017 !important; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: .9rem 1rem !important;
+}
+@keyframes fadein { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+
+/* Chips de métrica inline (render via HTML custom) */
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .85rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .76rem; font-weight: 500; color: var(--fg-muted);
+  background: var(--card-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: .28rem .65rem;
+}
+.chip .lu { color: var(--fg-faint); }
+.chip-accent { color: #bfdbfe; border-color: rgba(59,130,246,.3); background: var(--accent-soft); }
+.chip-ok { color: #86efac; border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.10); }
+.chip-warn { color: #fca5a5; border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.10); }
+
+/* Cartão de citação/fonte */
+.cite {
+  background: var(--card-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: .7rem .85rem; margin-bottom: .5rem;
+}
+.cite-k { color: var(--fg-faint); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.cite-v { color: var(--fg); font-size: .9rem; }
+
+/* ── Cartões de serviço (aba Serviços) ───────────────────────────────────── */
+.svc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.svc {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.1rem 1.15rem;
+  transition: transform .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease);
+}
+.svc:hover { transform: translateY(-2px); border-color: var(--border-2); box-shadow: var(--shadow-hover); }
+.svc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.svc-name { display: flex; align-items: center; gap: .55rem; font-weight: 600; font-size: 1rem; color: var(--fg); }
+.svc-name .lu { color: var(--accent); }
+.svc-rows { display: flex; flex-direction: column; gap: .45rem; }
+.svc-row { display: flex; align-items: center; justify-content: space-between; font-size: .85rem; }
+.svc-row .k { color: var(--fg-faint); display: inline-flex; align-items: center; gap: .4rem; }
+.svc-row .v { color: var(--fg); font-weight: 500; }
+
+/* ── Métricas nativas (fallback estilizado) ──────────────────────────────── */
+[data-testid="stMetric"] {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: .7rem .85rem;
+}
+[data-testid="stMetricLabel"] { color: var(--fg-muted); font-weight: 500; font-size: .75rem; }
+[data-testid="stMetricValue"] { color: var(--fg); font-weight: 600; }
+
+/* ── Expander ────────────────────────────────────────────────────────────── */
+[data-testid="stExpander"] {
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  background: var(--card);
+}
+[data-testid="stExpander"] summary { font-weight: 500; color: var(--fg); }
+[data-testid="stExpander"] summary:hover { color: var(--accent); }
+
+/* ── Tabelas ─────────────────────────────────────────────────────────────── */
+[data-testid="stTable"] table, .stDataFrame {
+  border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border);
+}
+[data-testid="stTable"] thead th {
+  background: var(--card-2); color: var(--fg-muted); font-weight: 600;
+  text-transform: uppercase; font-size: .7rem; letter-spacing: .04em;
+  border-bottom: 1px solid var(--border) !important;
+}
+[data-testid="stTable"] tbody td { font-size: .85rem; color: var(--fg); }
+
+/* ── Abas ────────────────────────────────────────────────────────────────── */
+[data-testid="stTabs"] [data-baseweb="tab-list"] { gap: .3rem; border-bottom: 1px solid var(--border); }
+[data-testid="stTabs"] [data-baseweb="tab"] {
+  font-weight: 500; font-size: .92rem; color: var(--fg-muted); padding: .6rem 1rem;
+}
+[data-testid="stTabs"] [aria-selected="true"] { color: var(--fg); }
+[data-testid="stTabs"] [data-baseweb="tab-highlight"] { background: var(--accent); height: 2px; }
+
+/* ── Alertas ─────────────────────────────────────────────────────────────── */
+[data-testid="stAlert"] { border-radius: var(--radius); border: 1px solid var(--border-2); }
+
+/* ── Toggle / switch ─────────────────────────────────────────────────────── */
+[data-baseweb="checkbox"] [aria-checked="true"] { background: var(--accent) !important; }
+
+/* ── Spinner moderno ─────────────────────────────────────────────────────── */
+.stSpinner > div { border-top-color: var(--accent) !important; border-width: 2px !important; }
+
+/* ── Divisórias ──────────────────────────────────────────────────────────── */
+hr { border-color: var(--border); margin: .6rem 0; }

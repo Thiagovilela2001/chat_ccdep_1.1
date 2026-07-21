@@ -360,16 +360,27 @@ plot_serie_temporal(df_pnadc, 'data', 'taxa_desocupacao',
 
 ## 4. Interpretação Econômica
 
+<!--
+  ATENÇÃO: as duas seções abaixo (Checklist de Interpretação e Glossário de
+  Indicadores-Chave) são extraídas por rag_core/labor_market_skill.py e
+  injetadas VERBATIM no prompt de síntese das engines RAG. Qualquer texto
+  adicionado aqui vira instrução de produção — editar com cuidado e manter
+  os títulos exatos das seções (o regex depende deles).
+-->
 ### Checklist de Interpretação
 
 Ao redigir a análise, o agente **deve** responder:
 
 1. **Nível e tendência**: O indicador está acima ou abaixo da média histórica? Qual é a tendência recente?
-2. **Ciclo econômico**: A variação está associada a algum ciclo de crescimento ou recessão?
-3. **Heterogeneidade**: Quais setores/regiões/grupos demográficos se distanciam da média nacional? Por quê?
-4. **Causalidade e mecanismos**: Quais são os possíveis mecanismos explicativos? Citar literatura (ver Seção 5)?
-5. **Limitações da fonte**: O que a fonte **não** captura? (ex.: CAGED não captura servidor estatutário; PNADC não identifica municípios menores)
-6. **Implicações de política**: Quais instrumentos de política pública são pertinentes? (seguro-desemprego, requalificação, regulação da jornada, etc.)
+2. **Ciclo econômico**: A variação está associada a algum ciclo de crescimento ou recessão **que os documentos mencionem**?
+3. **Heterogeneidade**: Quais setores/regiões/grupos demográficos se distanciam da média, **segundo as fontes**?
+4. **Causalidade e mecanismos**: Quais mecanismos explicativos **as próprias fontes** apontam? Não especular além do que os documentos afirmam.
+
+A análise **não** deve conter, salvo pedido explícito do usuário:
+
+- ressalvas sobre limitações metodológicas das fontes (ex.: o que a PNADC ou o CAGED não captura);
+- implicações ou recomendações de política pública (seguro-desemprego, requalificação, monitoramento etc.);
+- seções acessórias como "Limitações da fonte" ou "Implicações de política".
 
 ### Glossário de Indicadores-Chave
 
@@ -441,10 +452,10 @@ Ao redigir a análise, o agente **deve** responder:
 4. Visualizar (gráficos de linhas, mapas, barras)
                 │
                 ▼
-5. Interpretar (nível, tendência, heterogeneidade, implicações)
+5. Interpretar (nível, tendência, heterogeneidade, segundo as fontes)
                 │
                 ▼
-6. Documentar fontes, limitações e nota metodológica
+6. Documentar fontes
 ```
 
 ---

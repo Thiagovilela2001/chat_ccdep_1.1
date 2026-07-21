@@ -16,6 +16,8 @@ import json
 import os
 
 from rag_core.llm import interp_model, openai_client_kwargs
+from rag_core.runtime import bounded_float
+from rag_core.metrics import record_reported_usage
 
 _SYSTEM = (
     "Você é um roteador de consultas para um sistema RAG sobre os Boletins de "
@@ -29,7 +31,7 @@ _INSTRUCTION = """Classifique a pergunta abaixo e devolva este JSON:
 
 {{
   "intent": "consulta_dado | comparar | resumir | explicar | verificar",
-  "query_type": "pontual | tabular | temporal | ampla | relacional | multi_hop | verificacao",
+  "query_type": "pontual | tabular | temporal | ampla | comparativo | relacional | multi_hop | verificacao",
   "semantic_domain": "emprego | pib | industria | precos | comercio | servicos | geral",
   "specificity": "especifica | intermediaria | ampla",
   "expected_answer": "numerico | tabela | serie | narrativo | comparativo",
@@ -61,8 +63,6 @@ Diretrizes:
 Pergunta: {question}
 """
 
-_DEFAULT_MODEL = os.getenv("ORCHESTRATOR_ANALYZER_MODEL") or interp_model()
-
 # Chaves esperadas no resultado (para completar defaults com segurança).
 _DEFAULTS = {
     "intent": "consulta_dado",
@@ -84,12 +84,26 @@ _DEFAULTS = {
     "reasoning": "",
 }
 
+_ALLOWED = {
+    "intent": {"consulta_dado", "comparar", "resumir", "explicar", "verificar"},
+    "query_type": {
+        "pontual", "tabular", "temporal", "ampla", "comparativo",
+        "relacional", "multi_hop", "verificacao",
+    },
+    "semantic_domain": {"emprego", "pib", "industria", "precos", "comercio", "servicos", "geral"},
+    "specificity": {"especifica", "intermediaria", "ampla"},
+    "expected_answer": {"numerico", "tabela", "serie", "narrativo", "comparativo"},
+    "priority": {"precisao", "abrangencia"},
+    "retrieval_need": {"lexical", "semantica", "hibrida"},
+    "complexity": {"baixa", "media", "alta"},
+}
+
 
 class QueryAnalyzer:
     """Classificador semântico de consultas. `client` injetável para testes."""
 
-    def __init__(self, client=None, model: str = _DEFAULT_MODEL):
-        self.model = model
+    def __init__(self, client=None, model: str | None = None):
+        self.model = model or os.getenv("ORCHESTRATOR_ANALYZER_MODEL") or interp_model()
         self._client = client  # openai.OpenAI-compatível; criado sob demanda
 
     def _get_client(self):
@@ -110,7 +124,9 @@ class QueryAnalyzer:
                 ],
                 temperature=0,
                 response_format={"type": "json_object"},
+                timeout=bounded_float("RAG_LLM_CALL_TIMEOUT", 30.0, 5.0, 120.0),
             )
+            record_reported_usage("orchestrator", resp)
             raw = resp.choices[0].message.content
             data = json.loads(raw)
             return _merge_defaults(data)
@@ -123,8 +139,19 @@ def _merge_defaults(data: dict) -> dict:
     out = dict(_DEFAULTS)
     if isinstance(data, dict):
         out.update({k: v for k, v in data.items() if k in _DEFAULTS})
+    for key, allowed in _ALLOWED.items():
+        if not isinstance(out[key], str) or out[key] not in allowed:
+            out[key] = _DEFAULTS[key]
+    for key in ("technical_terms", "needs_multi_hop", "is_labor_market", "in_scope"):
+        if not isinstance(out[key], bool):
+            out[key] = _DEFAULTS[key]
+    for key in ("linguistic_patterns", "entities"):
+        if not isinstance(out[key], list):
+            out[key] = []
+        else:
+            out[key] = [str(value) for value in out[key] if value is not None]
     try:
-        out["confidence"] = float(out["confidence"])
+        out["confidence"] = min(max(float(out["confidence"]), 0.0), 1.0)
     except (TypeError, ValueError):
         out["confidence"] = 0.5
     return out
@@ -134,7 +161,10 @@ def _heuristic_fallback(question: str) -> dict:
     """Classificação mínima e conservadora quando o LLM não está disponível."""
     out = dict(_DEFAULTS)
     q = question.lower()
-    if any(t in q for t in ("panorama", "resumo", "resuma", "evolução", "visão geral")):
+    if any(t in q for t in ("compare", "comparação", "comparar", "versus", " vs ")):
+        out.update(query_type="comparativo", intent="comparar", priority="abrangencia",
+                   expected_answer="comparativo")
+    elif any(t in q for t in ("panorama", "resumo", "resuma", "evolução", "visão geral")):
         out.update(query_type="ampla", priority="abrangencia", specificity="ampla",
                    expected_answer="narrativo")
     elif any(t in q for t in ("relaç", "impacto", "influ", "correlaç")):

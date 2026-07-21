@@ -1,5 +1,5 @@
 """
-safe_exec — execução restrita de código Python gerado por LLM.
+safe_exec — helper legado para execução restrita de expressões pandas.
 
 Três camadas de proteção:
   1. AST — bloqueia **qualquer import** (o namespace já injeta ``pd``/``df``) e
@@ -13,8 +13,9 @@ Três camadas de proteção:
      ``timeout_s``, interrompendo laços infinitos (``while True``) que o LLM
      possa gerar. Funciona em qualquer plataforma (não usa ``signal``).
 
-O código executado vem de um LLM que lê PDFs — um vetor de *prompt injection* —
-portanto o objetivo é conter execução hostil, não só acidental.
+O fluxo RAG não executa mais Python gerado por LLM. Este helper permanece por
+compatibilidade com consumidores locais e aplica uma allowlist conservadora de
+atributos. Ele não deve ser tratado como substituto de isolamento de processo.
 """
 import ast
 import sys
@@ -36,13 +37,44 @@ _SAFE_BUILTINS: dict = {
     "zip": zip, "sorted": sorted, "reversed": reversed,
     # Strings e formatação
     "format": format,
-    # Inspeção de tipo (usada por pandas internamente)
-    "isinstance": isinstance, "type": type, "hasattr": hasattr,
+    # Inspeção de tipo limitada
+    "isinstance": isinstance,
     # print bloqueado silenciosamente (LLM às vezes gera, não deve causar erro)
     "print": lambda *a, **kw: None,
 }
 
 _FORBIDDEN = (ast.Import, ast.ImportFrom)
+
+_FORBIDDEN_STATEMENTS = (
+    ast.AsyncFunctionDef, ast.AsyncWith, ast.Await, ast.ClassDef,
+    ast.Delete, ast.FunctionDef, ast.Global, ast.Lambda, ast.Nonlocal,
+    ast.Raise, ast.Try, ast.With, ast.Yield, ast.YieldFrom,
+)
+
+# A allowlist é global de propósito: qualquer atributo fora dela é rejeitado,
+# independentemente do objeto usado como base. Isso bloqueia pd.read_*, df.to_*,
+# pd.io e outros caminhos de I/O/introspecção sem depender do nome da variável.
+_SAFE_ATTRIBUTES = {
+    # pandas: construção e conversão puramente em memória
+    "DataFrame", "Series", "Timestamp", "NA", "concat", "isna", "notna",
+    "to_numeric",
+    # propriedades/indexadores
+    "at", "columns", "dtypes", "dt", "empty", "iat", "iloc", "index",
+    "loc", "name", "ndim", "shape", "size", "str", "T", "values",
+    # agregações e transformações sem I/O
+    "abs", "agg", "aggregate", "all", "any", "astype", "count", "cummax",
+    "cummin", "cumprod", "cumsum", "diff", "drop_duplicates", "dropna",
+    "fillna", "first", "groupby", "idxmax", "idxmin", "item", "last",
+    "max", "mean", "median", "min", "mode", "nunique", "pct_change",
+    "prod", "quantile", "rank", "rename", "replace", "reset_index", "round",
+    "shift", "sort_index", "sort_values", "std", "sum", "to_dict", "unique",
+    "value_counts", "var",
+    # operações de string via Series.str
+    "contains", "endswith", "lower", "startswith", "strip", "upper",
+}
+
+MAX_CODE_CHARS = 20_000
+MAX_AST_NODES = 2_000
 
 # Tempo máximo de execução do código gerado (segundos).
 DEFAULT_TIMEOUT_S = 5.0
@@ -54,7 +86,11 @@ class SafeExecTimeout(RuntimeError):
 
 def _validate_ast(tree: ast.AST) -> None:
     """Camada 1 — rejeita imports não aprovados e acesso a atributos dunder."""
-    for node in ast.walk(tree):
+    nodes = list(ast.walk(tree))
+    if len(nodes) > MAX_AST_NODES:
+        raise ValueError("Código gerado acima do limite de complexidade.")
+
+    for node in nodes:
         # Imports — proibidos por completo (o namespace já injeta pd/df).
         if isinstance(node, _FORBIDDEN):
             stmt = ast.unparse(node) if hasattr(ast, "unparse") else ast.dump(node)
@@ -63,6 +99,11 @@ def _validate_ast(tree: ast.AST) -> None:
                 extra={"event": "safe_exec_blocked"},
             )
             raise ValueError(f"Import não permitido no código gerado: '{stmt}'")
+
+        if isinstance(node, _FORBIDDEN_STATEMENTS):
+            raise ValueError(
+                f"Construção Python não permitida: '{type(node).__name__}'"
+            )
 
         # Acesso a atributo dunder — fecha o escape via __class__/__subclasses__/…
         if isinstance(node, ast.Attribute) and node.attr.startswith("__"):
@@ -73,6 +114,13 @@ def _validate_ast(tree: ast.AST) -> None:
             raise ValueError(
                 f"Acesso a atributo interno não permitido: '.{node.attr}'"
             )
+
+        if isinstance(node, ast.Attribute) and node.attr not in _SAFE_ATTRIBUTES:
+            log.warning(
+                "Codigo gerado bloqueado por atributo fora da allowlist: '.%s'",
+                node.attr, extra={"event": "safe_exec_blocked"},
+            )
+            raise ValueError(f"Atributo não permitido: '.{node.attr}'")
 
 
 def safe_exec(code: str, ns: dict, timeout_s: float = DEFAULT_TIMEOUT_S) -> None:
@@ -98,6 +146,9 @@ def safe_exec(code: str, ns: dict, timeout_s: float = DEFAULT_TIMEOUT_S) -> None
     RuntimeError
         Se a execução lançar qualquer outra exceção.
     """
+    if not isinstance(code, str) or len(code) > MAX_CODE_CHARS:
+        raise ValueError("Código ausente ou acima do limite permitido.")
+
     # Camada 1 — validação AST (antes de qualquer execução)
     try:
         tree = ast.parse(code)

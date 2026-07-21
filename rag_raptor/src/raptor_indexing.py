@@ -27,6 +27,8 @@ from rag_core.llm import openai_client_kwargs
 from llama_index.core.schema import TextNode
 
 from rag_core.logger import get_logger
+from rag_core.metrics import record_reported_usage
+from rag_core.runtime import limit_context
 
 log = get_logger(__name__)
 
@@ -66,13 +68,15 @@ def _cluster_texts(embeddings: np.ndarray, n_clusters: int) -> list[list[int]]:
 def _summarize_cluster(texts: list[str], client: OpenAI, model: str) -> str:
     """Sumariza um cluster de textos em um único parágrafo coeso."""
     # Limita a 20 trechos para não estourar o contexto do LLM
-    combined = "\n\n---\n\n".join(texts[:20])
+    combined = limit_context("\n\n---\n\n".join(texts[:20]))
     prompt = _SUMMARY_PROMPT.format(chunks=combined)
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         max_completion_tokens=600,
+        timeout=60.0,
     )
+    record_reported_usage("raptor_indexing", response)
     return response.choices[0].message.content.strip()
 
 
@@ -148,7 +152,7 @@ def build_raptor_tree(
             node = TextNode(
                 text=summary,
                 metadata={
-                    "raptor_level": str(level),
+                    "raptor_level": level,
                     "source_file": source_files[0] if source_files else "raptor_summary",
                     "source_files": ", ".join(sorted(source_files)),
                     "cluster_size": str(len(indices)),

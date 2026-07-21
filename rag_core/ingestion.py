@@ -17,8 +17,9 @@ from llama_index.core import Document
 SUPPORTED_EXTS = {'.pdf', '.csv', '.xlsx', '.xls', '.txt'}
 
 
-def extract_pdf_text(pdf_path: Path) -> list:
+def extract_pdf_text(pdf_path: Path, source_file: str | None = None) -> list:
     """Extrai texto por página via PyMuPDF."""
+    source_file = source_file or pdf_path.name
     chunks = []
     doc = fitz.open(str(pdf_path))
     for page_num, page in enumerate(doc, start=1):
@@ -26,7 +27,7 @@ def extract_pdf_text(pdf_path: Path) -> list:
         if text:
             chunks.append({
                 "chunk_id": str(uuid.uuid4()),
-                "source_file": pdf_path.name,
+                "source_file": source_file,
                 "page": page_num,
                 "text": text,
                 "type": "text",
@@ -35,8 +36,9 @@ def extract_pdf_text(pdf_path: Path) -> list:
     return chunks
 
 
-def extract_pdf_tables(pdf_path: Path) -> list:
+def extract_pdf_tables(pdf_path: Path, source_file: str | None = None) -> list:
     """Extrai tabelas de PDF via Camelot (lattice → stream como fallback)."""
+    source_file = source_file or pdf_path.name
     tables = []
     try:
         result = camelot.read_pdf(str(pdf_path), pages="all", flavor="lattice")
@@ -49,7 +51,7 @@ def extract_pdf_tables(pdf_path: Path) -> list:
                 continue
             tables.append({
                 "table_id": str(uuid.uuid4()),
-                "source_file": pdf_path.name,
+                "source_file": source_file,
                 "page": table.page,
                 "table_index": i,
                 "markdown": df.to_markdown(index=False),
@@ -62,8 +64,9 @@ def extract_pdf_tables(pdf_path: Path) -> list:
     return tables
 
 
-def extract_spreadsheet(file_path: Path) -> list:
+def extract_spreadsheet(file_path: Path, source_file: str | None = None) -> list:
     """Extrai tabelas de CSV/XLSX/XLS via pandas. Cada aba vira uma tabela."""
+    source_file = source_file or file_path.name
     tables = []
     try:
         if file_path.suffix.lower() == ".csv":
@@ -89,7 +92,7 @@ def extract_spreadsheet(file_path: Path) -> list:
                 continue
             tables.append({
                 "table_id": str(uuid.uuid4()),
-                "source_file": file_path.name,
+                "source_file": source_file,
                 "page": sheet_name,
                 "table_index": 0,
                 "markdown": df.to_markdown(index=False),
@@ -175,20 +178,21 @@ def load_documents(data_dir: str) -> list:
     all_text_chunks, all_tables, file_metadata = [], [], []
 
     for file_path in arquivos:
-        print(f"  Processando: {file_path.name}")
+        source_file = file_path.relative_to(path).as_posix()
+        print(f"  Processando: {source_file}")
         text_chunks, tables = [], []
 
         if file_path.suffix.lower() == ".pdf":
-            text_chunks = extract_pdf_text(file_path)
-            tables = extract_pdf_tables(file_path)
+            text_chunks = extract_pdf_text(file_path, source_file)
+            tables = extract_pdf_tables(file_path, source_file)
         elif file_path.suffix.lower() in {".csv", ".xlsx", ".xls"}:
-            tables = extract_spreadsheet(file_path)
+            tables = extract_spreadsheet(file_path, source_file)
         elif file_path.suffix.lower() == ".txt":
             text = file_path.read_text(encoding="utf-8", errors="ignore").strip()
             if text:
                 text_chunks.append({
                     "chunk_id": str(uuid.uuid4()),
-                    "source_file": file_path.name,
+                    "source_file": source_file,
                     "page": 1,
                     "text": text,
                     "type": "text",
@@ -197,7 +201,7 @@ def load_documents(data_dir: str) -> list:
         all_text_chunks.extend(text_chunks)
         all_tables.extend(tables)
         file_metadata.append({
-            "file_name": file_path.name,
+            "file_name": source_file,
             "file_type": file_path.suffix.lower().lstrip("."),
             "text_chunks": len(text_chunks),
             "tables": len(tables),

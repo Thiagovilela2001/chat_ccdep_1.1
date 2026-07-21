@@ -1,6 +1,7 @@
 (function () {
   const STORAGE_KEYS = {
     apiBase: "ragFrontend.apiBase",
+    apiKey: "ragFrontend.apiKey",
     history: "ragFrontend.history",
     ragType: "ragFrontend.ragType",
   };
@@ -12,11 +13,14 @@
     selfrag: { label: "Self-RAG", port: "8003" },
   };
 
-  marked.use({ gfm: true, breaks: false });
+  if (typeof marked !== "undefined") {
+    marked.use({ gfm: true, breaks: false });
+  }
 
   const elements = {
     activeRagLabel: document.getElementById("activeRagLabel"),
     apiBase: document.getElementById("apiBase"),
+    apiKey: document.getElementById("apiKey"),
     answerMeta: document.getElementById("answerMeta"),
     chatApp: document.getElementById("chatApp"),
     cancelRequest: document.getElementById("cancelRequest"),
@@ -75,6 +79,70 @@
 
   function getApiBase() {
     return elements.apiBase.value.trim().replace(/\/+$/, "");
+  }
+
+  function requestHeaders(includeJson = false) {
+    const headers = { Accept: "application/json" };
+    const apiKey = elements.apiKey.value.trim();
+    if (includeJson) {
+      headers["Content-Type"] = "application/json";
+    }
+    if (apiKey) {
+      headers["x-api-key"] = apiKey;
+    }
+    return headers;
+  }
+
+  const ALLOWED_MARKDOWN_TAGS = new Set([
+    "A", "BLOCKQUOTE", "BR", "CODE", "DEL", "EM", "H1", "H2", "H3",
+    "H4", "H5", "H6", "HR", "LI", "OL", "P", "PRE", "STRONG",
+    "TABLE", "TBODY", "TD", "TH", "THEAD", "TR", "UL",
+  ]);
+
+  function safeLink(href) {
+    if (!href) return null;
+    if (href.startsWith("#")) return href;
+    try {
+      const url = new URL(href, window.location.origin);
+      return ["http:", "https:", "mailto:"].includes(url.protocol) ? url.href : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function sanitizeHtml(html) {
+    const template = document.createElement("template");
+    template.innerHTML = String(html || "");
+    const nodes = Array.from(template.content.querySelectorAll("*"));
+    nodes.forEach((node) => {
+      if (!ALLOWED_MARKDOWN_TAGS.has(node.tagName)) {
+        node.replaceWith(document.createTextNode(node.textContent || ""));
+        return;
+      }
+
+      const originalHref = node.tagName === "A" ? node.getAttribute("href") : null;
+      Array.from(node.attributes).forEach((attribute) => {
+        node.removeAttribute(attribute.name);
+      });
+
+      if (node.tagName === "A") {
+        const href = safeLink(originalHref);
+        if (href) {
+          node.setAttribute("href", href);
+          node.setAttribute("rel", "noopener noreferrer");
+        }
+      }
+    });
+    return template.innerHTML;
+  }
+
+  function renderMarkdown(text) {
+    if (typeof marked === "undefined") {
+      const fallback = document.createElement("p");
+      fallback.textContent = String(text || "");
+      return fallback.outerHTML;
+    }
+    return sanitizeHtml(marked.parse(String(text || "")));
   }
 
   function readHistory() {
@@ -177,7 +245,7 @@
       const response = await fetchWithTimeout(
         `${apiBase}/health`,
         {
-          headers: { Accept: "application/json" },
+          headers: requestHeaders(),
           cache: "no-store",
         },
         5000
@@ -213,7 +281,7 @@
     const body = document.createElement("div");
     body.className = "message-body";
     if (options.markdown) {
-      body.innerHTML = marked.parse(text);
+      body.innerHTML = renderMarkdown(text);
     } else {
       body.textContent = text;
     }
@@ -273,6 +341,9 @@
 
   function renderInspector(response, elapsedMs) {
     const validation = response.validation || { verified: 0, total: 0, unverified: [] };
+    const citationValidation = response.citation_validation || {
+      verified: 0, total: 0, unverified: []
+    };
     state.currentAnswer = response.answer || "";
     elements.workspace.classList.add("has-response");
 
@@ -305,7 +376,8 @@
       const item = document.createElement("li");
       const name = document.createElement("span");
       name.className = "source-name";
-      name.textContent = source.file || "Fonte sem nome";
+      const sourcePage = source.page === null || source.page === undefined ? "" : ` · p./aba ${source.page}`;
+      name.textContent = `${source.file || "Fonte sem nome"}${sourcePage}`;
       const score = document.createElement("span");
       score.className = "source-score";
       const numericScore = Number(source.score);
@@ -320,12 +392,26 @@
     const label = document.createElement("span");
     label.textContent = "números verificados";
     elements.validationSummary.append(verified, label);
+    if (citationValidation.total) {
+      const cited = document.createElement("strong");
+      cited.textContent = `${citationValidation.verified || 0}/${citationValidation.total}`;
+      const citedLabel = document.createElement("span");
+      citedLabel.textContent = "citações verificadas";
+      elements.validationSummary.append(cited, citedLabel);
+    }
 
     clearElement(elements.unverifiedList);
     const unverified = Array.isArray(validation.unverified) ? validation.unverified : [];
     unverified.forEach((value) => {
       const item = document.createElement("li");
       item.textContent = value;
+      elements.unverifiedList.appendChild(item);
+    });
+    const unverifiedCitations = Array.isArray(citationValidation.unverified)
+      ? citationValidation.unverified : [];
+    unverifiedCitations.forEach((value) => {
+      const item = document.createElement("li");
+      item.textContent = `Citação: ${value}`;
       elements.unverifiedList.appendChild(item);
     });
   }
@@ -410,10 +496,7 @@
     try {
       const response = await fetch(`${apiBase}/query`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: requestHeaders(true),
         body: JSON.stringify({ question }),
         signal: controller.signal,
       });
@@ -425,7 +508,9 @@
       const payload = await response.json();
       const elapsedMs = performance.now() - startedAt;
       pending.message.classList.remove("is-loading");
-      pending.body.innerHTML = marked.parse(payload.answer || "A API retornou uma resposta vazia.");
+      pending.body.innerHTML = renderMarkdown(
+        payload.answer || "A API retornou uma resposta vazia."
+      );
       renderInspector(payload, elapsedMs);
       saveToHistory(question, payload);
       checkHealth();
@@ -462,6 +547,7 @@
   elements.saveApiBase.addEventListener("click", () => {
     localStorage.setItem(STORAGE_KEYS.ragType, selectedRagType());
     localStorage.setItem(STORAGE_KEYS.apiBase, getApiBase());
+    sessionStorage.setItem(STORAGE_KEYS.apiKey, elements.apiKey.value.trim());
     checkHealth();
   });
 
@@ -543,6 +629,7 @@
     elements.ragType.value = savedRagType;
   }
   elements.apiBase.value = localStorage.getItem(STORAGE_KEYS.apiBase) || defaultApiBase();
+  elements.apiKey.value = sessionStorage.getItem(STORAGE_KEYS.apiKey) || "";
   updateActiveRagLabel();
   renderHistory();
   checkHealth();

@@ -13,9 +13,13 @@ from __future__ import annotations
 
 import asyncio
 import os
+import threading
+import time
 from dataclasses import dataclass, field
 
 import requests
+from rag_core.llm import main_model
+from rag_core.runtime import bounded_float, bounded_int
 
 # ── Endereços dos backends (mesmas portas do docker-compose.yml) ──────────────
 # Sobrescrevíveis por variável de ambiente RAG_<CHAVE>_URL.
@@ -47,7 +51,7 @@ class StrategyProfile:
     retrieval: tuple[str, ...]       # "lexical" | "semantica" | "hibrida"
     complexity: tuple[str, ...] = () # níveis de complexidade que suporta bem
     prototypes: tuple[str, ...] = () # frases-protótipo p/ rota rápida por embeddings
-    llm_model: str = "gpt-5-chat-latest"     # LLM de geração usado pela engine
+    llm_model: str = field(default_factory=main_model)  # LLM de geração da engine
     embed_model: str = "BAAI/bge-m3"         # modelo de embeddings da engine
 
 
@@ -56,9 +60,12 @@ class StrategyProfile:
 STRATEGIES: dict[str, StrategyProfile] = {
     "principal": StrategyProfile(
         key="principal",
-        label="RAG Principal (híbrido + grafo)",
+        label="RAG Principal (híbrido + grafo opcional)",
         base_url=_url("principal"),
-        description="Híbrido Vector+BM25 + retrievers de tabela/série + grafo de conhecimento.",
+        description=(
+            "Híbrido Vector+BM25 + retrievers de tabela/série; "
+            "grafo de conhecimento quando RAG_USE_GRAPH=1."
+        ),
         strengths=("fatos pontuais", "números", "tabelas", "séries temporais", "relações entre entidades"),
         limitations=("síntese ampla de muitos trechos",),
         good_for=("pontual", "tabular", "temporal", "relacional"),
@@ -146,6 +153,15 @@ def profile_dict(key: str) -> dict | None:
     }
 
 
+def health_is_ready(payload: dict | None) -> bool:
+    """Interpreta contratos de health atuais sem exigir novos campos."""
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("status", "ok") != "ok":
+        return False
+    return payload.get("engine_ready", True) is not False
+
+
 # ── Cliente HTTP para uma engine (não importa transformers/HuggingFace) ───────
 
 class EngineClient:
@@ -157,36 +173,90 @@ class EngineClient:
     def __init__(self, profile: StrategyProfile, timeout: int = 180):
         self.profile = profile
         self.timeout = timeout
+        self._failures = 0
+        self._opened_at: float | None = None
+        self._circuit_lock = threading.Lock()
+
+    def _circuit_is_open(self) -> bool:
+        threshold = bounded_int("RAG_CIRCUIT_FAILURE_THRESHOLD", 3, 1, 20)
+        recovery = bounded_float("RAG_CIRCUIT_RECOVERY_SECONDS", 30.0, 1.0, 300.0)
+        with self._circuit_lock:
+            if self._failures < threshold or self._opened_at is None:
+                return False
+            return time.monotonic() - self._opened_at < recovery
+
+    def _record_success(self) -> None:
+        with self._circuit_lock:
+            self._failures = 0
+            self._opened_at = None
+
+    def _record_failure(self) -> None:
+        threshold = bounded_int("RAG_CIRCUIT_FAILURE_THRESHOLD", 3, 1, 20)
+        with self._circuit_lock:
+            self._failures += 1
+            if self._failures >= threshold:
+                self._opened_at = time.monotonic()
+
+    @staticmethod
+    def _headers() -> dict[str, str]:
+        """Credencial serviço-a-serviço; usa a chave pública como fallback."""
+        key = os.getenv("RAG_BACKEND_API_KEY") or os.getenv("RAG_API_KEY")
+        return {"x-api-key": key} if key else {}
 
     async def health(self) -> dict | None:
+        if self._circuit_is_open():
+            return None
+
         def _do():
             try:
-                r = requests.get(f"{self.profile.base_url}/health", timeout=5)
+                r = requests.get(
+                    f"{self.profile.base_url}/health",
+                    headers=self._headers(),
+                    timeout=5,
+                )
                 r.raise_for_status()
-                return r.json()
-            except requests.RequestException:
+                payload = r.json()
+                if not isinstance(payload, dict):
+                    raise ValueError("Resposta de health não é um objeto JSON.")
+                self._record_success()
+                return payload
+            except (requests.RequestException, ValueError):
+                self._record_failure()
                 return None
         return await asyncio.to_thread(_do)
 
     async def query(self, question: str) -> dict:
+        if self._circuit_is_open():
+            raise RuntimeError(f"Circuit breaker aberto para '{self.profile.key}'.")
+
         def _do():
-            r = requests.post(
-                f"{self.profile.base_url}/query",
-                json={"question": question},
-                timeout=self.timeout,
-            )
-            r.raise_for_status()
-            return r.json()
+            try:
+                r = requests.post(
+                    f"{self.profile.base_url}/query",
+                    json={"question": question},
+                    headers=self._headers(),
+                    timeout=self.timeout,
+                )
+                r.raise_for_status()
+                payload = r.json()
+                if not isinstance(payload, dict):
+                    raise ValueError("Resposta da engine não é um objeto JSON.")
+                self._record_success()
+                return payload
+            except Exception:
+                self._record_failure()
+                raise
         return await asyncio.to_thread(_do)
 
 
-_clients: dict[str, EngineClient] = {}
+_clients: dict[tuple[str, int], EngineClient] = {}
 
 
 def get_client(key: str, timeout: int = 180) -> EngineClient:
     """Cliente HTTP (cacheado) para a engine `key`."""
     if key not in STRATEGIES:
         raise KeyError(f"Estratégia desconhecida: {key!r}")
-    if key not in _clients:
-        _clients[key] = EngineClient(STRATEGIES[key], timeout=timeout)
-    return _clients[key]
+    cache_key = (key, timeout)
+    if cache_key not in _clients:
+        _clients[cache_key] = EngineClient(STRATEGIES[key], timeout=timeout)
+    return _clients[cache_key]

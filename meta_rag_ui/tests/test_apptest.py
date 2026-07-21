@@ -63,6 +63,7 @@ def main():
             "rewritten_query": "variação PIB São Paulo 1º trimestre 2024",
             "sources": [{"file": "boletim_1trim2024.pdf", "score": 0.87}],
             "validation": {"verified": 1, "total": 2, "unverified": ["3,1%"]},
+            "citation_validation": {"verified": 1, "total": 1, "unverified": []},
             "_client_roundtrip_ms": 950.0,
         }},
     ]

@@ -10,15 +10,18 @@ from __future__ import annotations
 
 import asyncio
 
-from src.quality_gate import quality_score
-from src.registry import get_client
+from .quality_gate import quality_score
+from .registry import get_client, health_is_ready
 
 
 async def run_engines(engines: list[str], question: str, timeout: int = 180) -> dict[str, dict]:
     """Executa as engines em paralelo; falhas viram entradas de erro (não abortam)."""
     async def _one(key: str):
         try:
-            return key, await get_client(key, timeout=timeout).query(question)
+            client = get_client(key, timeout=timeout)
+            if not health_is_ready(await client.health()):
+                return key, {"error": f"Engine '{key}' indisponível no health check."}
+            return key, await client.query(question)
         except Exception as exc:  # rede/backend fora → registra e segue
             return key, {"error": str(exc)}
 

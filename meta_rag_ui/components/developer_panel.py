@@ -19,7 +19,7 @@ _NOT_EXPOSED = "_Não exposto pelo backend nesta versão da API._"
 
 def render(meta: dict[str, Any] | None) -> None:
     """Renderiza o painel de depuração da última resposta."""
-    st.subheader("🛠️ Painel do Desenvolvedor")
+    st.subheader("Painel do Desenvolvedor")
     if not meta:
         st.info("Faça uma pergunta para inspecionar o pipeline.")
         return
@@ -29,7 +29,7 @@ def render(meta: dict[str, Any] | None) -> None:
 
     route = meta.get("route") or {}
 
-    with st.expander("🧭 Decisão de roteamento", expanded=True):
+    with st.expander("Decisão de roteamento", expanded=True):
         st.markdown(f"**Engine escolhida:** `{route.get('engine') or '—'}` "
                     f"({route.get('mode') or '—'})")
         st.markdown(f"**Motivo:** {route.get('reasoning') or '—'}")
@@ -43,10 +43,10 @@ def render(meta: dict[str, Any] | None) -> None:
         else:
             st.caption("—")
 
-    with st.expander("🔎 QueryProfile (Analyzer)"):
+    with st.expander("QueryProfile (Analyzer)"):
         st.json(meta.get("analysis") or {})
 
-    with st.expander("🧩 EngineProfile escolhido"):
+    with st.expander("EngineProfile escolhido"):
         prof = meta.get("engine_profile")
         if prof:
             st.markdown(f"**{prof.get('label')}** — {prof.get('description')}")
@@ -57,14 +57,14 @@ def render(meta: dict[str, Any] | None) -> None:
         else:
             st.caption("—")
 
-    with st.expander("⏱️ Tempo detalhado do pipeline"):
+    with st.expander("Tempo detalhado do pipeline"):
         timings = meta.get("timings") or {}
         st.markdown(f"- **Analyzer:** {format_ms(timings.get('analyzer_ms'))}")
         st.markdown(f"- **Router:** {format_ms(timings.get('router_ms'))}")
         st.markdown(f"- **Engine:** {format_ms(timings.get('engine_ms'))}")
         st.markdown(f"- **Total:** {format_ms(timings.get('total_ms'))}")
 
-    with st.expander("📄 Documentos recuperados + metadados"):
+    with st.expander("Documentos recuperados + metadados"):
         sources = meta.get("sources") or []
         if sources:
             st.table(sources)
@@ -73,10 +73,10 @@ def render(meta: dict[str, Any] | None) -> None:
         else:
             st.caption("Nenhum documento retornado.")
 
-    with st.expander("🧾 Prompt final enviado à LLM"):
+    with st.expander("Prompt final enviado à LLM"):
         st.markdown(meta.get("prompt") or _NOT_EXPOSED)
 
-    with st.expander("📋 Logs do backend"):
+    with st.expander("Logs do backend"):
         logs = meta.get("logs")
         if logs:
             st.code(logs if isinstance(logs, str) else pretty_json(logs))

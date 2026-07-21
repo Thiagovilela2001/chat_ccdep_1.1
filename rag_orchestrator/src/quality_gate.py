@@ -32,15 +32,27 @@ def quality_score(response: dict) -> float:
     if is_refusal(response.get("answer", "")):
         return -1.0
     n_sources = len(response.get("sources", []) or [])
-    return verify_ratio(response) * 10.0 + min(n_sources, 5)
+    citations = response.get("citation_validation") or {}
+    citation_total = citations.get("total", 0) or 0
+    citation_verified = citations.get("verified", 0) or 0
+    citation_ratio = citation_verified / citation_total if citation_total else 0.0
+    return verify_ratio(response) * 10.0 + citation_ratio * 3.0 + min(n_sources, 5)
 
 
 def summarize(response: dict) -> dict:
     """Resumo de qualidade anexado à resposta final (rastreabilidade)."""
     v = response.get("validation") or {}
+    citations = response.get("citation_validation") or {}
+    citation_total = citations.get("total", 0) or 0
+    citation_verified = citations.get("verified", 0) or 0
     return {
         "refused": is_refusal(response.get("answer", "")),
         "verify_ratio": round(verify_ratio(response), 3),
         "numbers_verified": f"{v.get('verified', 0)}/{v.get('total', 0)}",
         "n_sources": len(response.get("sources", []) or []),
+        "citation_precision": round(
+            citation_verified / citation_total if citation_total else 0.0, 3
+        ),
+        "citation_coverage": citation_total > 0,
+        "citations_verified": f"{citation_verified}/{citation_total}",
     }

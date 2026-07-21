@@ -1,16 +1,18 @@
 """
 Testes de api_security: autenticação por API key e rate limiting.
 
-Exercita as dependências como funções puras (sem HTTP), evitando o TestClient —
-que depende de uma combinação específica de starlette/httpx.
+Exercita as dependências como funções puras e valida os headers no middleware.
 
 Rode a partir de rag_principal/:
     cd rag_principal && python -m pytest tests/test_api_security.py -q
 """
 from types import SimpleNamespace
+import asyncio
 
 import pytest
 from fastapi import HTTPException
+from starlette.requests import Request
+from starlette.responses import Response
 
 import rag_core.api_security as sec
 
@@ -22,7 +24,10 @@ def _fake_request(host: str = "1.2.3.4"):
 @pytest.fixture(autouse=True)
 def _reset(monkeypatch):
     sec._hits.clear()
-    for var in ("RAG_API_KEY", "RAG_RATE_LIMIT", "RAG_RATE_WINDOW"):
+    for var in (
+        "RAG_API_KEY", "RAG_BACKEND_API_KEY", "RAG_RATE_LIMIT", "RAG_RATE_WINDOW",
+        "RAG_CORS_ORIGINS", "RAG_CONTENT_SECURITY_POLICY", "RAG_ENABLE_HSTS",
+    ):
         monkeypatch.delenv(var, raising=False)
     yield
     sec._hits.clear()
@@ -47,6 +52,36 @@ def test_api_key_ausente_ou_errada_401(monkeypatch):
 def test_api_key_correta_passa(monkeypatch):
     monkeypatch.setenv("RAG_API_KEY", "segredo")
     assert sec.require_api_key("segredo") is None
+
+
+def test_api_key_interna_passa(monkeypatch):
+    monkeypatch.setenv("RAG_BACKEND_API_KEY", "interna")
+    assert sec.require_api_key("interna") is None
+
+
+def test_comparacao_rejeita_prefixo(monkeypatch):
+    monkeypatch.setenv("RAG_API_KEY", "segredo-completo")
+    with pytest.raises(HTTPException):
+        sec.require_api_key("segredo")
+
+
+def test_cors_default_nao_e_wildcard():
+    assert "*" not in sec.cors_origins()
+
+
+def test_middleware_adiciona_headers_defensivos(monkeypatch):
+    monkeypatch.setenv("RAG_ENABLE_HSTS", "1")
+    middleware = sec.SecurityHeadersMiddleware(lambda scope, receive, send: None)
+    request = Request({"type": "http", "method": "GET", "path": "/", "headers": []})
+
+    async def call_next(_request):
+        return Response("ok")
+
+    response = asyncio.run(middleware.dispatch(request, call_next))
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert "object-src 'none'" in response.headers["content-security-policy"]
+    assert response.headers["strict-transport-security"].startswith("max-age=")
 
 
 # ── Rate limiting ─────────────────────────────────────────────────────────────

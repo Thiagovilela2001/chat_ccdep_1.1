@@ -24,7 +24,9 @@ _DATE_FORMAT = "%H:%M:%S"
 # Campos extras reconhecidos pelo JsonFormatter
 _EXTRA_FIELDS = (
     "request_id", "question", "sources", "latency_ms",
-    "chunks", "fallback", "event",
+    "chunks", "fallback", "event", "rag_type", "engine",
+    "verified", "estimated_input_tokens", "estimated_output_tokens",
+    "estimated_cost_usd",
 )
 
 

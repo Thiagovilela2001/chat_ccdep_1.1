@@ -13,20 +13,31 @@ O custo extra (sumarização dos clusters) ocorre apenas na primeira indexação
 ou quando os documentos mudam. Nas execuções seguintes, tudo é carregado do
 cache em chroma_db/bm25_nodes.pkl.
 """
-import json
 import os
 
 import chromadb
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
-from rag_core.indexing import create_or_load_index, load_nodes_cache, setup_embeddings
+from rag_core.index_manifest import (
+    data_snapshot,
+    detect_changes,
+    load_manifest,
+    resolve_data_dir,
+    save_manifest,
+)
+from rag_core.indexing import (
+    create_or_load_index,
+    load_nodes_cache,
+    reset_nodes_cache,
+    setup_embeddings,
+)
 from rag_core.ingestion import load_documents
 from rag_core.labor_market_skill import LaborMarketSkill
 from rag_core.llm import interp_model, make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.processing import process_documents
-from src.raptor_engine import RaptorEngine
-from src.raptor_indexing import build_raptor_tree
+from .raptor_engine import RaptorEngine
+from .raptor_indexing import build_raptor_tree
 from rag_core.tables_retriever import TablesRetriever
 from rag_core.text_retriever import TextRetriever, build_hybrid_retriever
 from rag_core.timeseries_retriever import TimeSeriesRetriever
@@ -34,39 +45,6 @@ from rag_core.timeseries_retriever import TimeSeriesRetriever
 log = get_logger(__name__)
 
 _RAPTOR_COLLECTION = "estatisticas_raptor"
-
-
-def _get_data_snapshot(data_dir: str) -> dict:
-    snapshot = {}
-    if not os.path.isdir(data_dir):
-        return snapshot
-    for fname in os.listdir(data_dir):
-        fpath = os.path.join(data_dir, fname)
-        if os.path.isfile(fpath):
-            snapshot[fname] = os.path.getmtime(fpath)
-    return snapshot
-
-
-def _load_manifest(db_path: str) -> dict:
-    path = os.path.join(db_path, "indexed_manifest.json")
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-
-def _save_manifest(db_path: str, snapshot: dict) -> None:
-    os.makedirs(db_path, exist_ok=True)
-    path = os.path.join(db_path, "indexed_manifest.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2)
-
-
-def _detect_changes(snapshot: dict, manifest: dict) -> list[str]:
-    return [
-        fname for fname, mtime in snapshot.items()
-        if fname not in manifest or manifest[fname] != mtime
-    ]
 
 
 def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine, object]:
@@ -83,14 +61,14 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     require_api_key()
 
     setup_logging()
-    data_dir = data_dir or os.path.join(base_dir, "data")
+    data_dir = resolve_data_dir(base_dir, data_dir)
     db_path  = os.path.join(base_dir, "chroma_db")
 
     log.info("Inicializando RAPTOR RAG")
 
-    snapshot = _get_data_snapshot(data_dir)
-    manifest = _load_manifest(db_path)
-    changed  = _detect_changes(snapshot, manifest)
+    snapshot = data_snapshot(data_dir)
+    manifest = load_manifest(db_path)
+    changed  = detect_changes(snapshot, manifest)
 
     db = chromadb.PersistentClient(path=db_path)
     col = db.get_or_create_collection(_RAPTOR_COLLECTION)
@@ -104,35 +82,46 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     if needs_rebuild:
         if changed:
             log.info("[1] Documentos novos/modificados: %s — reindexando", changed)
-            db.delete_collection(_RAPTOR_COLLECTION)
-            col = db.get_or_create_collection(_RAPTOR_COLLECTION)
         else:
             log.info("[1] Banco vazio — indexando documentos pela primeira vez")
 
         docs = load_documents(data_dir)
-        if docs:
-            log.info("[2] Processando documentos em nós folha")
-            leaf_nodes = process_documents(docs)
-
-            # ── Fase 2: construção da árvore RAPTOR ──────────────────────────
-            log.info("[3] Configurando embeddings para clustering RAPTOR")
-            embed_model = setup_embeddings()
-
-            log.info(
-                "[3] Construindo árvore RAPTOR sobre %d leaf nodes "
-                "(clustering + sumarização LLM)...",
-                len(leaf_nodes),
+        if not docs:
+            raise RuntimeError(
+                f"Nenhum documento encontrado em '{data_dir}'; índice anterior preservado."
             )
-            raptor_nodes = build_raptor_tree(
-                leaf_nodes,
-                embed_model=embed_model,
-                api_key="",  # legado — a chave vem da config central do provedor
-                llm_model=interp_model(),
-                max_levels=3,
-                min_cluster_size=4,
+        log.info("[2] Processando documentos em nós folha")
+        leaf_nodes = process_documents(docs)
+        if not leaf_nodes:
+            raise RuntimeError("Processamento não produziu nós; índice anterior preservado.")
+
+        # ── Fase 2: construção da árvore RAPTOR ──────────────────────────
+        log.info("[3] Configurando embeddings para clustering RAPTOR")
+        embed_model = setup_embeddings()
+
+        log.info(
+            "[3] Construindo árvore RAPTOR sobre %d leaf nodes "
+            "(clustering + sumarização LLM)...",
+            len(leaf_nodes),
+        )
+        raptor_nodes = build_raptor_tree(
+            leaf_nodes,
+            embed_model=embed_model,
+            api_key="",  # legado — a chave vem da config central do provedor
+            llm_model=interp_model(),
+            max_levels=3,
+            min_cluster_size=4,
+        )
+        if not raptor_nodes:
+            raise RuntimeError(
+                "Construção RAPTOR não produziu nós; índice anterior preservado."
             )
-        else:
-            log.warning("Nenhum documento encontrado em /data")
+
+        # Só substitui o índice depois que ingestão e árvore terminaram com sucesso.
+        reset_nodes_cache(db_path)
+        if already_indexed:
+            db.delete_collection(_RAPTOR_COLLECTION)
+            col = db.get_or_create_collection(_RAPTOR_COLLECTION)
     else:
         log.info("[1] Banco atualizado (%d vetores) — sem mudanças", col.count())
 
@@ -146,13 +135,13 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     # create_or_load_index salva automaticamente em chroma_db/bm25_nodes.pkl
 
     if needs_rebuild and raptor_nodes:
-        _save_manifest(db_path, snapshot)
+        save_manifest(db_path, snapshot)
 
     # ── Fase 4: modelos de linguagem ─────────────────────────────────────────
     log.info("[5] Carregando modelos de linguagem")
-    llm        = OpenAI(model=os.getenv("RAG_LLM_MODEL", "gpt-5-chat-latest"), temperature=0.0, timeout=60.0)
+    llm        = make_llm(temperature=0.0, timeout=60.0)
     Settings.llm = llm
-    interp_llm = OpenAI(model=os.getenv("RAG_INTERP_MODEL", "gpt-5-mini"), temperature=0.0, timeout=30.0)
+    interp_llm = make_llm(interp=True, temperature=0.0, timeout=30.0)
 
     # ── Fase 5: retrievers ───────────────────────────────────────────────────
     log.info("[6] Inicializando retrievers sobre índice RAPTOR")

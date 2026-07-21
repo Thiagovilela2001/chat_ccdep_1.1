@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from src.registry import StrategyProfile, get_profiles
+from .registry import StrategyProfile, get_profiles
 
 # Limiares (configuráveis) ------------------------------------------------------
 TAU_HIGH = 0.75   # acima disto: single-best com alta confiança

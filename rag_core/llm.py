@@ -37,7 +37,7 @@ _PROVIDERS: dict[str, dict] = {
         "key_env": "MARITACA_API_KEY",
         "main_model": "sabia-4",
         "interp_model": "sabia-4",
-        "context_window": 32000,
+        "context_window": 128000,
     },
     "openai": {
         "base_url": None,  # SDK usa o endpoint padrão da OpenAI

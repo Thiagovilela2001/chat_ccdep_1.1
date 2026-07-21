@@ -23,10 +23,18 @@ import re
 
 from openai import AsyncOpenAI
 
+from rag_core.answer_style import ANALYST_WRITING_GUIDE
 from rag_core.llm import interp_model, openai_client_kwargs
+from rag_core.runtime import bounded_int, limit_context
+from rag_core.provenance import format_source_context, source_labels
+from rag_core.metrics import record_reported_usage
 from rag_core.logger import get_logger
 
 log = get_logger(__name__)
+
+
+def _max_retries() -> int:
+    return bounded_int("RAG_SELFRAG_MAX_RETRIES", 1, 0, 2)
 
 # ── Prompts de critique ───────────────────────────────────────────────────────
 
@@ -58,18 +66,24 @@ Trechos:
 {passages}"""
 
 _GENERATE_SYSTEM = """\
-Você é um analista especialista em dados econômicos e estatísticos do Estado de São Paulo.
+Você é um analista de conjuntura econômica e estatística do Estado de São Paulo.
+Sua tarefa é redigir uma análise que responda à pergunta do usuário com base
+exclusivamente no contexto fornecido.
 
 Use SOMENTE o contexto abaixo para responder. Se a informação não constar no contexto,
 responda exatamente: 'A informação não consta nos documentos fornecidos.'
 
-Regras obrigatórias:
+FIDELIDADE ÀS FONTES (inegociável)
 1. Conhecimento externo é proibido.
-2. Cite a fonte de cada afirmação factual.
-3. Não combine fragmentos de fontes distintas para criar afirmação não expressa por nenhuma.
-4. Se a pergunta pede cálculo e os valores estão disponíveis, calcule e mostre.
+2. Todo fato e todo número deve ser rastreável ao contexto, com a fonte
+   correspondente citada no texto. Organizar, comparar e encadear fatos de
+   trechos diferentes em uma mesma narrativa é permitido e esperado; criar
+   fato novo, não: nenhuma afirmação causal, estimativa ou conclusão que
+   nenhum trecho sustente, direta ou numericamente.
+3. Se a pergunta pede cálculo e os valores estão disponíveis, calcule e
+   mostre a conta (ex: 3,4% − 2,8% = 0,6 p.p.).
 {skill_block}
-Linguagem clara, direta e profissional."""
+""" + ANALYST_WRITING_GUIDE
 
 _ISSUP_PROMPT = """\
 A resposta abaixo é suportada pelo contexto fornecido?
@@ -137,10 +151,12 @@ class SelfRAGEngine:
                 messages=[{"role": "user", "content": prompt}],
                 timeout=30.0,
             )
+            record_reported_usage("selfrag", resp)
             text = resp.choices[0].message.content or "{}"
             # Remove possíveis blocos ```json ... ```
             text = re.sub(r"```(?:json)?\s*(.*?)\s*```", r"\1", text, flags=re.DOTALL).strip()
-            return json.loads(text)
+            data = json.loads(text)
+            return data if isinstance(data, dict) else {}
         except Exception as exc:
             log.warning("SelfRAG: critique call falhou: %s", exc)
             return {}
@@ -154,7 +170,7 @@ class SelfRAGEngine:
             if nodes:
                 source_nodes.extend(nodes)
                 for n in nodes:
-                    passages.append(n.get_content())
+                    passages.append(format_source_context(n))
         except Exception as exc:
             log.warning("SelfRAG: text retriever falhou: %s", exc)
 
@@ -164,7 +180,7 @@ class SelfRAGEngine:
                 data, nodes = result
                 source_nodes.extend(nodes)
                 if data:
-                    passages.append(f"[Tabela]\n{data}")
+                    passages.append(f"[Tabela]\n{source_labels(nodes)}\n{data}")
         except Exception as exc:
             log.warning("SelfRAG: tables retriever falhou: %s", exc)
 
@@ -174,7 +190,7 @@ class SelfRAGEngine:
                 data, nodes = result
                 source_nodes.extend(nodes)
                 if data:
-                    passages.append(f"[Série Temporal]\n{data}")
+                    passages.append(f"[Série Temporal]\n{source_labels(nodes)}\n{data}")
         except Exception as exc:
             log.warning("SelfRAG: timeseries retriever falhou: %s", exc)
 
@@ -185,7 +201,8 @@ class SelfRAGEngine:
     async def _decide_retrieve(self, question: str) -> bool:
         """RETRIEVE? — decide se busca é necessária para esta pergunta."""
         result = await self._json_call(_RETRIEVE_PROMPT.format(question=question))
-        return bool(result.get("retrieve", True))  # default conservador: sempre busca
+        decision = result.get("retrieve", True)
+        return decision if isinstance(decision, bool) else True
 
     async def _filter_relevant(self, question: str, passages: list[str]) -> list[str]:
         """ISREL — filtra passages não-relevantes em batch (uma única chamada LLM)."""
@@ -223,6 +240,7 @@ class SelfRAGEngine:
                 temperature=0.0,
                 timeout=60.0,
             )
+            record_reported_usage("selfrag", resp)
             content = (resp.choices[0].message.content or "").strip()
             return content or "A informação não consta nos documentos fornecidos."
         except Exception as exc:
@@ -242,7 +260,8 @@ class SelfRAGEngine:
         result = await self._json_call(
             _REFINE_PROMPT.format(question=question, answer=answer[:300])
         )
-        return result.get("query", question)
+        query = result.get("query", question)
+        return query.strip() if isinstance(query, str) and query.strip() else question
 
     # ── Método principal ──────────────────────────────────────────────────────
 
@@ -282,7 +301,7 @@ class SelfRAGEngine:
 
         # ── 3. ISREL — filtra relevantes ──────────────────────────────────────
         relevant = await self._filter_relevant(question, passages)
-        context = "\n\n---\n\n".join(relevant)
+        context = limit_context("\n\n---\n\n".join(relevant))
 
         # ── 4. GENERATE ───────────────────────────────────────────────────────
         answer_text = await self._generate(question, context, skill_block)
@@ -293,7 +312,9 @@ class SelfRAGEngine:
         log.info("SelfRAG ISSUP: support=%s", support)
 
         # ── 6. RETRY — re-busca se suporte nulo ──────────────────────────────
-        if support == "none":
+        for retry in range(_max_retries()):
+            if support != "none":
+                break
             log.info("SelfRAG RETRY: suporte insuficiente — refinando query")
             refined_query = await self._refine_query(question, answer_text)
             log.info("SelfRAG RETRY: query=%s", refined_query[:80])
@@ -306,11 +327,17 @@ class SelfRAGEngine:
 
             if retry_passages:
                 relevant_retry = await self._filter_relevant(question, retry_passages)
-                context_retry = "\n\n---\n\n".join(relevant_retry)
+                context_retry = limit_context("\n\n---\n\n".join(relevant_retry))
                 answer_retry = await self._generate(question, context_retry, skill_block)
                 support_retry = await self._check_support(answer_retry, context_retry)
-                log.info("SelfRAG RETRY ISSUP: support=%s", support_retry)
+                log.info(
+                    "SelfRAG RETRY %d/%d ISSUP: support=%s",
+                    retry + 1, _max_retries(), support_retry,
+                )
                 answer_text = answer_retry
+                support = support_retry
+            else:
+                break
 
         # Deduplica source_nodes
         seen: set[int] = set()

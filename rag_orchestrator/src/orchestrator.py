@@ -10,11 +10,11 @@ from __future__ import annotations
 import asyncio
 import time
 
-from src.fusion import run_engines, select_best
-from src.query_analyzer import QueryAnalyzer
-from src.quality_gate import summarize
-from src.registry import get_client, get_profiles, profile_dict
-from src.router import RouteDecision, route
+from .fusion import run_engines, select_best
+from .query_analyzer import QueryAnalyzer
+from .quality_gate import summarize
+from .registry import get_client, get_profiles, health_is_ready, profile_dict
+from .router import RouteDecision, route
 
 REFUSAL_TEXT = "A informação não consta nos documentos fornecidos."
 
@@ -50,24 +50,79 @@ class Orchestrator:
 
         # 4. Execução da engine escolhida.
         t0 = time.perf_counter()
+        failover_from = None
         if decision.mode == "multi":
             results = await run_engines(decision.engines, question, self.timeout)
             chosen, resp = select_best(results)
         else:
             chosen = decision.engines[0]
             try:
-                resp = await get_client(chosen, self.timeout).query(question)
+                client = get_client(chosen, self.timeout)
+                if not health_is_ready(await client.health()):
+                    raise RuntimeError(f"Engine '{chosen}' indisponível no health check.")
+                resp = await client.query(question)
             except Exception as exc:
                 resp = {"error": str(exc)}
+
+        # Falha/health negativo: tenta as demais estratégias pela pontuação da rota.
+        if "error" in resp:
+            failover_from = chosen
+            fallback_key, fallback_resp = await self._fallback(
+                question, decision, excluded=set(decision.engines)
+            )
+            if fallback_key is not None:
+                chosen, resp = fallback_key, fallback_resp
         engine_ms = (time.perf_counter() - t0) * 1000
         timings = self._timings(analyzer_ms, router_ms, engine_ms, t_start)
 
         # 5. Erro de backend → envelope de erro (API traduz para 502).
         if "error" in resp:
             return self._envelope(resp, chosen=chosen, decision=decision, cls=cls,
-                                  timings=timings, error=resp["error"])
+                                  timings=timings, error=resp["error"],
+                                  failover_from=failover_from)
 
-        return self._envelope(resp, chosen=chosen, decision=decision, cls=cls, timings=timings)
+        return self._envelope(
+            resp, chosen=chosen, decision=decision, cls=cls, timings=timings,
+            failover_from=failover_from,
+        )
+
+    async def _fallback(
+        self, question: str, decision: RouteDecision, excluded: set[str]
+    ) -> tuple[str | None, dict]:
+        """Escolhe um backend saudável restante e tenta consultas em ordem de score."""
+        candidates = [
+            key for key, _score in sorted(
+                decision.scores.items(), key=lambda item: item[1], reverse=True
+            )
+            if key not in excluded
+        ]
+        clients = {}
+        for key in candidates:
+            try:
+                clients[key] = get_client(key, self.timeout)
+            except Exception:
+                continue
+        candidates = [key for key in candidates if key in clients]
+        if not candidates:
+            return None, {"error": "Nenhuma engine disponível para failover."}
+        checks = await asyncio.gather(
+            *(client.health() for client in clients.values()),
+            return_exceptions=True,
+        )
+        healthy = [
+            key for key, check in zip(candidates, checks)
+            if not isinstance(check, BaseException) and health_is_ready(check)
+        ]
+        last_error = "Nenhuma engine saudável disponível para failover."
+        for key in healthy:
+            try:
+                response = await clients[key].query(question)
+                if "error" not in response:
+                    return key, response
+                last_error = str(response["error"])
+            except Exception as exc:
+                last_error = str(exc)
+        return None, {"error": last_error}
 
     @staticmethod
     def _timings(analyzer_ms: float, router_ms: float, engine_ms: float,
@@ -88,7 +143,8 @@ class Orchestrator:
     # ── Montagem da resposta final ────────────────────────────────────────────
 
     def _envelope(self, resp: dict, *, chosen, decision: RouteDecision,
-                  cls: dict, timings: dict, error: str | None = None) -> dict:
+                  cls: dict, timings: dict, error: str | None = None,
+                  failover_from: str | None = None) -> dict:
         profiles = get_profiles()
         engine_profile = profile_dict(chosen) if chosen else None
         final = dict(resp)
@@ -96,6 +152,8 @@ class Orchestrator:
             **_route_dict(decision),
             "engine": chosen,
             "engine_label": profiles[chosen].label if chosen in profiles else None,
+            "failover_from": failover_from,
+            "degraded": failover_from is not None,
         }
         final["analysis"] = cls               # QueryProfile
         final["engine_profile"] = engine_profile

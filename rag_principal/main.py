@@ -29,14 +29,15 @@ def _run_server(host: str, port: int) -> None:
 def _run_cli(_use_graph: bool = False) -> None:
     import asyncio
     from dotenv import load_dotenv
-    from src.startup import initialize
+    from src.startup import graph_enabled_by_env, initialize
     from src.query_interpreter import interpret_query
     from rag_core.numerical_validator import validate_numbers, format_validation_report
+    from rag_core.provenance import relevance_score, source_file, source_page
 
     load_dotenv()
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    engine, interp_llm = initialize(base_dir, use_graph=_use_graph)
+    engine, interp_llm = initialize(base_dir, use_graph=_use_graph or graph_enabled_by_env())
 
     print("=" * 52)
     print(" RAG PRONTO — modo CLI interativo")
@@ -79,9 +80,10 @@ def _run_cli(_use_graph: bool = False) -> None:
 
             print("\nReferências:")
             for i, node in enumerate(source_nodes):
-                fname = node.metadata.get("source_file") or node.metadata.get("file_name", "?")
-                score = round((node.score or 0) / 10.0, 2)
-                print(f"  [{i+1}] {fname} (relevância: {score:.2f})")
+                fname = source_file(node)
+                page = source_page(node)
+                location = f", p./aba {page}" if page is not None else ""
+                print(f"  [{i+1}] {fname}{location} (relevância: {relevance_score(node):.2f})")
 
         except Exception as exc:
             print(f"\n[ERRO] {exc}\n")

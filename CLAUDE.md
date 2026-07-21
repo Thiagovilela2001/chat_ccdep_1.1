@@ -28,10 +28,13 @@ engine adiciona o diretório-pai ao `sys.path` para tornar `rag_core` importáve
 | `rag_core/text_retriever.py` | Retrieval híbrido (Vector + BM25) para texto narrativo |
 | `rag_core/tables_retriever.py` | Extração de dados de tabelas estáticas via pandas |
 | `rag_core/timeseries_retriever.py` | Extração e análise de séries temporais via pandas |
-| `rag_core/safe_exec.py` | Sandbox p/ código pandas gerado por LLM (AST + builtins + timeout) |
+| `rag_core/structured_output.py` | Validação de JSON tabular produzido pelo LLM; sem execução de código |
+| `rag_core/safe_exec.py` | Helper legado restrito; não usado pelo fluxo RAG e não é isolamento de segurança |
 | `rag_core/numerical_validator.py` | Confere números da resposta contra as fontes |
 | `rag_core/labor_market_skill.py` | Carrega a skill e detecta queries de mercado de trabalho |
-| `rag_core/api_security.py` | API key opcional (`RAG_API_KEY`) + rate limiting (`RAG_RATE_LIMIT`) |
+| `rag_core/api_security.py` | API keys, CORS/CSP, headers defensivos e rate limiting |
+| `rag_core/api_models.py` / `query_service.py` | Schemas e fluxo HTTP compartilhado pelas engines |
+| `rag_core/runtime.py` | Deadline, limites de iteração e orçamento de contexto |
 | `<engine>/src/startup.py` | Inicialização da engine: indexação, LLMs, retrievers |
 | `rag_core/llm.py` | Fábrica única de LLM: escolhe o provedor (Maritaca/OpenAI) por env |
 | `<engine>/src/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |

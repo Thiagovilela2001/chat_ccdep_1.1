@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+ARG APP_UID=1000
+ARG APP_GID=1000
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
@@ -20,18 +23,25 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip \
     && pip install -r requirements.txt
 
-COPY rag_core/ ./rag_core/
-COPY rag_principal/ ./rag_principal/
-COPY rag_agentic/ ./rag_agentic/
-COPY rag_raptor/ ./rag_raptor/
-COPY rag_selfrag/ ./rag_selfrag/
-COPY rag_orchestrator/ ./rag_orchestrator/
-COPY meta_rag_ui/ ./meta_rag_ui/
-COPY frontend/ ./frontend/
-COPY .agents/ ./rag_principal/.agents/
-COPY .agents/ ./rag_agentic/.agents/
-COPY .agents/ ./rag_raptor/.agents/
-COPY .agents/ ./rag_selfrag/.agents/
+RUN groupadd --gid "${APP_GID}" appuser \
+    && useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home appuser \
+    && mkdir -p /cache/huggingface \
+    && chown -R appuser:appuser /app /cache/huggingface
+
+COPY --chown=appuser:appuser rag_core/ ./rag_core/
+COPY --chown=appuser:appuser rag_principal/ ./rag_principal/
+COPY --chown=appuser:appuser rag_agentic/ ./rag_agentic/
+COPY --chown=appuser:appuser rag_raptor/ ./rag_raptor/
+COPY --chown=appuser:appuser rag_selfrag/ ./rag_selfrag/
+COPY --chown=appuser:appuser rag_orchestrator/ ./rag_orchestrator/
+COPY --chown=appuser:appuser meta_rag_ui/ ./meta_rag_ui/
+COPY --chown=appuser:appuser frontend/ ./frontend/
+COPY --chown=appuser:appuser .agents/ ./rag_principal/.agents/
+COPY --chown=appuser:appuser .agents/ ./rag_agentic/.agents/
+COPY --chown=appuser:appuser .agents/ ./rag_raptor/.agents/
+COPY --chown=appuser:appuser .agents/ ./rag_selfrag/.agents/
+
+USER appuser
 
 WORKDIR /app/rag_principal
 

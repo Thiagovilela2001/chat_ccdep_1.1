@@ -30,6 +30,7 @@ def _run_cli() -> None:
     from src.startup import initialize
     from src.query_interpreter import interpret_query
     from rag_core.numerical_validator import validate_numbers, format_validation_report
+    from rag_core.provenance import relevance_score, source_file, source_page
 
     load_dotenv()
 
@@ -76,9 +77,10 @@ def _run_cli() -> None:
 
             print("\nReferências:")
             for i, node in enumerate(source_nodes):
-                fname = node.metadata.get("source_file") or node.metadata.get("file_name", "?")
-                score = round((node.score or 0) / 10.0, 2)
-                print(f"  [{i+1}] {fname} (relevância: {score:.2f})")
+                fname = source_file(node)
+                page = source_page(node)
+                location = f", p./aba {page}" if page is not None else ""
+                print(f"  [{i+1}] {fname}{location} (relevância: {relevance_score(node):.2f})")
 
         except Exception as exc:
             print(f"\n[ERRO] {exc}\n")

@@ -56,8 +56,9 @@ class RagClient:
         try:
             resp = requests.get(self._url("/health"), timeout=5)
             resp.raise_for_status()
-            return resp.json()
-        except requests.RequestException:
+            data = resp.json()
+            return data if isinstance(data, dict) else None
+        except (requests.RequestException, ValueError):
             return None
 
     def query(self, question: str) -> dict[str, Any]:
@@ -89,7 +90,14 @@ class RagClient:
         if resp.status_code >= 400:
             raise ApiError(_extract_detail(resp), status=resp.status_code)
 
-        data = resp.json()
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise ApiError("Backend retornou JSON inválido.", status=resp.status_code) from exc
+        if not isinstance(data, dict):
+            raise ApiError("Backend retornou um contrato inválido.", status=resp.status_code)
+        if not isinstance(data.get("answer"), str) or not data["answer"].strip():
+            raise ApiError("Resposta do backend não contém texto válido.", status=resp.status_code)
         # Round-trip medido no cliente — fallback caso o backend não informe.
         data.setdefault("_client_roundtrip_ms", round(resp.elapsed.total_seconds() * 1000, 1))
         return data
@@ -107,7 +115,13 @@ class RagClient:
             raise ApiError(f"Falha de conexão com {self.base_url}: {exc}") from exc
         if resp.status_code >= 400:
             raise ApiError(_extract_detail(resp), status=resp.status_code)
-        return resp.json()
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise ApiError("Backend retornou JSON inválido.", status=resp.status_code) from exc
+        if not isinstance(data, dict):
+            raise ApiError("Backend retornou um contrato inválido.", status=resp.status_code)
+        return data
 
 
 # Compatibilidade com código anterior à unificação do frontend.

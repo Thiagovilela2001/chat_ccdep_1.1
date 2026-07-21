@@ -73,6 +73,31 @@ def test_builtin_perigoso_indisponivel(code):
         safe_exec(code, {"pd": pd, "df": pd.DataFrame({"a": [1]})})
 
 
+# ── Superfície pandas: I/O e acesso indireto ao sistema ───────────────────────
+
+@pytest.mark.parametrize("code", [
+    "x = pd.read_csv('/etc/passwd')",
+    "x = pd.read_pickle('payload.pkl')",
+    "df.to_csv('saida.csv')",
+    "df.to_pickle('saida.pkl')",
+    "x = pd.io.common.os.system('id')",
+    "x = df.plot()",
+])
+def test_io_e_atributos_pandas_perigosos_bloqueados(code):
+    with pytest.raises(ValueError):
+        safe_exec(code, {"pd": pd, "df": pd.DataFrame({"a": [1]})})
+
+
+@pytest.mark.parametrize("code", [
+    "def f():\n    return 1",
+    "class X:\n    pass",
+    "x = lambda value: value",
+])
+def test_definicoes_dinamicas_bloqueadas(code):
+    with pytest.raises(ValueError):
+        safe_exec(code, {"pd": pd})
+
+
 # ── Watchdog de timeout ───────────────────────────────────────────────────────
 
 def test_loop_infinito_abortado_por_timeout():

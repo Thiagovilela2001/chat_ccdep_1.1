@@ -14,7 +14,10 @@ import os
 from llama_index.core import PropertyGraphIndex
 from llama_index.core.graph_stores import SimplePropertyGraphStore
 from llama_index.core.graph_stores.simple_labelled import LabelledPropertyGraph
+from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
 from llama_index.core.indices.property_graph import DynamicLLMPathExtractor
+from llama_index.core.schema import TransformComponent
+from llama_index.core.vector_stores import SimpleVectorStore
 
 from rag_core.logger import get_logger
 
@@ -31,6 +34,7 @@ log = get_logger(__name__)
 
 _GRAPH_DIR = "graph_store"
 _GRAPH_FILE = "graph_store.json"
+_GRAPH_VEC_FILE = "graph_vectors.json"
 
 _ENTITY_TYPES = [
     "Indicador",   # ex: taxa de desocupação, PIB, IPCA, saldo de empregos
@@ -48,6 +52,37 @@ _RELATION_TYPES = [
     "MEDIDO_POR",    # indicador é medido/divulgado por uma fonte de dados
     "RELACIONA_COM", # indicador se relaciona com outro indicador ou setor
 ]
+
+
+def _normalize_entity_name(name: str) -> str:
+    """
+    Normaliza o nome de uma entidade para o formato que o LLMSynonymRetriever
+    aplica às keywords da query (`.strip().capitalize()`). O matching do
+    retriever é literal por id (= nome), então gravar em outro formato
+    significa nunca casar.
+    """
+    return " ".join(str(name).split()).capitalize()
+
+
+class EntityNormalizer(TransformComponent):
+    """
+    Normaliza nomes de entidades e endpoints de relações após a extração.
+
+    O DynamicLLMPathExtractor gera variantes do mesmo conceito ("Taxa de
+    desocupação" / "taxa de desocupação" / "TAXA DE DESOCUPAÇÃO"), o que
+    fragmenta o grafo. Como o id do EntityNode é o próprio nome, normalizar
+    aqui faz o upsert fundir as duplicatas em um único nó.
+    """
+
+    def __call__(self, nodes, **kwargs):
+        for node in nodes:
+            for ent in node.metadata.get(KG_NODES_KEY, []):
+                if hasattr(ent, "name"):
+                    ent.name = _normalize_entity_name(ent.name)
+            for rel in node.metadata.get(KG_RELATIONS_KEY, []):
+                rel.source_id = _normalize_entity_name(rel.source_id)
+                rel.target_id = _normalize_entity_name(rel.target_id)
+        return nodes
 
 
 def _save_graph_store(graph_store: SimplePropertyGraphStore, path: str) -> None:
@@ -103,9 +138,14 @@ def build_or_load_graph(
     base_dir: str,
     llm,
     force_rebuild: bool = False,
-) -> PropertyGraphIndex:
+) -> tuple[PropertyGraphIndex, SimpleVectorStore | None]:
     """
     Constrói o PropertyGraphIndex a partir dos nós de texto ou carrega do disco.
+
+    As entidades são embedadas (modelo local, via Settings.embed_model) e o
+    vector store resultante é persistido ao lado do grafo — ele habilita o
+    VectorContextRetriever como fallback quando o matching literal de
+    sinônimos não encontra a entidade.
 
     Parâmetros
     ----------
@@ -120,10 +160,12 @@ def build_or_load_graph(
 
     Retorna
     -------
-    PropertyGraphIndex pronto para uso.
+    (index, vector_store) — vector_store é None em caches antigos sem
+    embeddings (retrieval segue funcionando só com sinônimos).
     """
     graph_dir = os.path.join(base_dir, _GRAPH_DIR)
     graph_path = os.path.join(graph_dir, _GRAPH_FILE)
+    vec_path = os.path.join(graph_dir, _GRAPH_VEC_FILE)
 
     if not force_rebuild and os.path.exists(graph_path):
         try:
@@ -132,13 +174,23 @@ def build_or_load_graph(
             if not graph_store.graph.triplets:
                 log.warning("[Graph] Grafo em cache vazio — reconstruindo")
             else:
+                vec_store = None
+                if os.path.exists(vec_path):
+                    vec_store = SimpleVectorStore.from_persist_path(vec_path)
+                else:
+                    log.warning(
+                        "[Graph] Cache sem embeddings de entidades — retrieval "
+                        "vetorial desativado (reconstrua o grafo para habilitar)"
+                    )
                 image_path = os.path.join(graph_dir, "graph_store.png")
                 if not os.path.exists(image_path):
                     export_graph_image(graph_store, image_path)
-                return PropertyGraphIndex.from_existing(
+                index = PropertyGraphIndex.from_existing(
                     property_graph_store=graph_store,
-                    embed_kg_nodes=False,
+                    vector_store=vec_store,
+                    embed_kg_nodes=vec_store is not None,
                 )
+                return index, vec_store
         except Exception as exc:
             log.warning("[Graph] Cache inválido (%s) — reconstruindo", exc)
 
@@ -163,18 +215,23 @@ def build_or_load_graph(
     )
 
     graph_store = SimplePropertyGraphStore()
+    vec_store = SimpleVectorStore()
     index = PropertyGraphIndex(
         nodes=narrative_nodes,
-        kg_extractors=[extractor],
+        # EntityNormalizer roda após o extractor: funde variantes do mesmo
+        # conceito e alinha os nomes ao formato esperado pelo synonym matching
+        kg_extractors=[extractor, EntityNormalizer()],
         property_graph_store=graph_store,
-        embed_kg_nodes=False,
+        vector_store=vec_store,
+        embed_kg_nodes=True,
         show_progress=True,
     )
 
     _save_graph_store(graph_store, graph_path)
-    log.info("[Graph] Grafo salvo em %s", graph_path)
+    vec_store.persist(vec_path)
+    log.info("[Graph] Grafo salvo em %s (embeddings em %s)", graph_path, vec_path)
 
     image_path = os.path.join(graph_dir, "graph_store.png")
     export_graph_image(graph_store, image_path)
 
-    return index
+    return index, vec_store
