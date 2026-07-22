@@ -3,15 +3,41 @@ Text Retriever — retrieval híbrido (Vector + BM25) para chunks de texto narra
 
 Expõe também build_hybrid_retriever(), usado pelos outros retrievers.
 """
+import os
 import re
 
 from llama_index.core.retrievers import VectorIndexRetriever, QueryFusionRetriever
 from llama_index.retrievers.bm25 import BM25Retriever
 
 from .logger import get_logger
+from .llm import provider_name
 
 log = get_logger(__name__)
 _FALLBACK_TOP_N = 5
+
+
+def llm_reranking_enabled() -> bool:
+    """Define se os candidatos devem ser reranqueados por um LLM.
+
+    No Ollama local, o lote de candidatos excede facilmente a janela ativa do
+    modelo e o processamento em CPU adiciona dezenas de segundos à consulta.
+    O ranking híbrido Vector+BM25 é usado por padrão nesse caso.
+    """
+    raw = os.getenv("RAG_LLM_RERANK")
+    if raw is not None:
+        return raw.strip().lower() in {"1", "true", "yes", "on"}
+    return provider_name() != "ollama"
+
+
+class ScoreReranker:
+    """Reranker determinístico que preserva a ordem do retriever híbrido."""
+
+    def __init__(self, top_n: int = _FALLBACK_TOP_N):
+        self.top_n = top_n
+
+    def postprocess_nodes(self, nodes, query_str: str | None = None):
+        del query_str
+        return list(nodes[:self.top_n])
 
 
 def _sanitize(text: str) -> str:
@@ -69,8 +95,13 @@ class TextRetriever:
 
         try:
             reranked = self._reranker.postprocess_nodes(text_nodes, query_str=question)
-        except Exception:
-            log.warning("Reranker falhou — usando fallback por score", extra={"fallback": True})
+        except Exception as exc:
+            log.warning(
+                "Reranker falhou (%s: %s) — usando fallback por score",
+                type(exc).__name__,
+                exc,
+                extra={"fallback": True},
+            )
             reranked = []
 
         # Fallback: reranker vazio → top-N por score de recuperação

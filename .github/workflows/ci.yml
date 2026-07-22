@@ -30,8 +30,14 @@ jobs:
       - run: python rag_orchestrator/tests/test_router.py
       - run: python rag_orchestrator/tests/test_pipeline.py
       - run: python benchmarks/benchmark_core.py --iterations 1000
-      - run: python meta_rag_ui/tests/test_apptest.py
-      - run: node --check frontend/app.js
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
+      - run: npm test
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
       - run: touch .env
       - run: docker compose config --quiet
 
@@ -48,3 +54,11 @@ jobs:
           tags: rag-ccdep:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: false
+          tags: rag-ccdep-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend

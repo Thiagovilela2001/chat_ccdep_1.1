@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     environment:
-      RAG_CORS_ORIGINS: "${RAG_CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:8501,http://127.0.0.1:8501}"
+      RAG_CORS_ORIGINS: "${RAG_CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8501,http://127.0.0.1:8501}"
       HF_HOME: /cache/huggingface
     init: true
     cap_drop:
@@ -94,7 +94,7 @@ services:
     working_dir: /app/rag_orchestrator
     command: ["python", "main.py", "--host", "0.0.0.0", "--port", "8010"]
     environment:
-      RAG_CORS_ORIGINS: "${RAG_CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:8501,http://127.0.0.1:8501}"
+      RAG_CORS_ORIGINS: "${RAG_CORS_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8501,http://127.0.0.1:8501}"
       HF_HOME: /cache/huggingface
       RAG_PRINCIPAL_URL: "http://rag-principal:8000"
       RAG_AGENTIC_URL: "http://rag-agentic:8001"
@@ -116,28 +116,28 @@ services:
       - rag-raptor
       - rag-selfrag
 
-  # Frontend Streamlit. Só fala HTTP; alcança os backends por nome de serviço.
+  # Frontend React/Vite. As chamadas partem do navegador para as portas locais
+  # das APIs; nenhum segredo de backend é incorporado ao bundle.
   frontend:
-    <<: *rag-base
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: rag-ccdep-frontend
-    working_dir: /app
-    command: ["streamlit", "run", "meta_rag_ui/app.py", "--server.address", "0.0.0.0", "--server.port", "8501", "--browser.gatherUsageStats", "false"]
-    env_file: []
-    environment:
-      META_URL: "http://rag-orchestrator:8010"
-      PRINCIPAL_URL: "http://rag-principal:8000"
-      AGENTIC_URL: "http://rag-agentic:8001"
-      RAPTOR_URL: "http://rag-raptor:8002"
-      SELFRAG_URL: "http://rag-selfrag:8003"
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    restart: unless-stopped
     ports:
       - "127.0.0.1:${RAG_FRONTEND_PORT:-8501}:8501"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://127.0.0.1:8501/_stcore/health',timeout=3).raise_for_status()"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8501/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    volumes: []
+      start_period: 10s
     depends_on:
       - rag-orchestrator
 

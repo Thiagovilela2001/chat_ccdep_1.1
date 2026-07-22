@@ -8,13 +8,14 @@ bge-m3) e não passam por aqui.
 
 Configuração por ambiente
 --------------------------
-    RAG_LLM_PROVIDER   "maritaca" (padrão) | "openai"
+    RAG_LLM_PROVIDER   "maritaca" (padrão) | "openai" | "ollama"
     RAG_LLM_MODEL      sobrescreve o modelo de síntese
     RAG_INTERP_MODEL   sobrescreve o modelo de interpretação/crítica
     RAG_LLM_BASE_URL   sobrescreve a base URL do provedor
     RAG_LLM_API_KEY    sobrescreve a chave (senão usa a chave padrão do provedor)
 
 Maritaca usa a chave `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.
+Ollama roda localmente e não exige chave.
 
 Dois consumidores
 -----------------
@@ -46,6 +47,15 @@ _PROVIDERS: dict[str, dict] = {
         "interp_model": "gpt-5-mini",
         "context_window": 128000,
     },
+    "ollama": {
+        "base_url": "http://127.0.0.1:11434/v1",
+        "key_env": "OLLAMA_API_KEY",
+        # O cliente OpenAI exige um valor, embora o Ollama o ignore.
+        "default_api_key": "ollama",
+        "main_model": "qwen3:4b-instruct",
+        "interp_model": "qwen3:4b-instruct",
+        "context_window": 32768,
+    },
 }
 
 
@@ -57,7 +67,11 @@ def _cfg() -> dict:
     cfg = dict(_PROVIDERS.get(provider_name(), _PROVIDERS["openai"]))
     if os.getenv("RAG_LLM_BASE_URL"):
         cfg["base_url"] = os.getenv("RAG_LLM_BASE_URL")
-    cfg["api_key"] = os.getenv("RAG_LLM_API_KEY") or os.getenv(cfg["key_env"])
+    cfg["api_key"] = (
+        os.getenv("RAG_LLM_API_KEY")
+        or os.getenv(cfg["key_env"])
+        or cfg.get("default_api_key")
+    )
     cfg["main_model"] = os.getenv("RAG_LLM_MODEL", cfg["main_model"])
     cfg["interp_model"] = os.getenv("RAG_INTERP_MODEL", cfg["interp_model"])
     return cfg
@@ -69,6 +83,17 @@ def main_model() -> str:
 
 def interp_model() -> str:
     return _cfg()["interp_model"]
+
+
+def llm_concurrency(default: int = 4) -> int:
+    """Limite de chamadas paralelas; Ollama local usa uma por vez por padrão."""
+    raw = os.getenv("RAG_LLM_CONCURRENCY")
+    if raw:
+        try:
+            return max(1, min(int(raw), 16))
+        except ValueError:
+            pass
+    return 1 if provider_name() == "ollama" else default
 
 
 def require_api_key() -> None:

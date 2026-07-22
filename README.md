@@ -6,7 +6,7 @@ Meta RAG analisa a pergunta, escolhe uma estratégia e aplica failover quando o
 backend preferido não está saudável.
 
 ```text
-Streamlit / SPA
+React SPA :8501
       │
       ▼
 Orquestrador :8010 ── health + circuit breaker + failover
@@ -33,6 +33,24 @@ RAG_API_KEY=chave-da-interface
 RAG_BACKEND_API_KEY=chave-interna-entre-servicos
 ```
 
+Para executar também o LLM localmente com Ollama, use:
+
+```dotenv
+RAG_LLM_PROVIDER=ollama
+RAG_LLM_MODEL=qwen3:4b-instruct
+RAG_INTERP_MODEL=qwen3:4b-instruct
+```
+
+O endpoint padrão é `http://127.0.0.1:11434/v1` e não exige chave.
+Para preservar memória, chamadas ao Ollama são serializadas por padrão;
+`RAG_LLM_CONCURRENCY` permite ajustar esse limite explicitamente.
+Na indexação, o Ollama usa metadados determinísticos por padrão para evitar
+milhares de chamadas locais e timeouts. Para optar pelo enriquecimento por LLM,
+defina `RAG_INGEST_LLM_ENRICHMENT=1` (a primeira indexação será bem mais lenta).
+O reranking das consultas também preserva diretamente o score híbrido Vector+BM25
+por padrão. `RAG_LLM_RERANK=1` reativa o reranker por LLM, caso o Ollama esteja
+configurado com janela de contexto e timeout suficientes.
+
 2. Coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`.
 3. Suba o ambiente:
 
@@ -40,7 +58,20 @@ RAG_BACKEND_API_KEY=chave-interna-entre-servicos
 docker compose up --build
 ```
 
-Interfaces locais: Streamlit em `http://127.0.0.1:8501`, API principal em
+O frontend React fica disponível em `http://127.0.0.1:8501`. Para desenvolver
+somente a interface com hot reload:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Por padrão, a interface usa o Meta RAG em `:8010` e permite alternar para as
+engines diretas nas portas `8000`–`8003`. Endpoints e API key podem ser ajustados
+na própria tela de configurações.
+
+Interfaces locais: React em `http://127.0.0.1:8501`, API principal em
 `:8000` e orquestrador em `:8010`. As portas ficam vinculadas ao loopback por
 padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
 
@@ -88,7 +119,7 @@ Os containers executam como usuário não-root. Em hosts Linux, ajuste
 python -m pytest -p no:cacheprovider rag_principal/tests rag_orchestrator/tests -q
 python rag_orchestrator/tests/test_router.py
 python rag_orchestrator/tests/test_pipeline.py
-python meta_rag_ui/tests/test_apptest.py
+cd frontend && npm ci && npm run lint && npm test && npm run build
 docker compose config --quiet
 python benchmarks/benchmark_core.py --iterations 10000
 ```

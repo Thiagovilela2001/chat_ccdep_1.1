@@ -17,5 +17,5 @@ warn_unused_ignores = true
 exclude = "(data|documents|chroma_db|chroma_backups_.*)/"
 
 [tool.pytest.ini_options]
-testpaths = ["rag_principal/tests", "rag_orchestrator/tests", "meta_rag_ui/tests"]
+testpaths = ["rag_principal/tests", "rag_orchestrator/tests"]
 addopts = "-p no:cacheprovider"

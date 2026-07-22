@@ -22,7 +22,12 @@ from rag_core.index_manifest import (
     save_manifest,
 )
 from rag_core.indexing import create_or_load_index, load_nodes_cache, reset_nodes_cache
-from rag_core.text_retriever import build_hybrid_retriever, TextRetriever
+from rag_core.text_retriever import (
+    build_hybrid_retriever,
+    llm_reranking_enabled,
+    ScoreReranker,
+    TextRetriever,
+)
 from rag_core.tables_retriever import TablesRetriever
 from rag_core.timeseries_retriever import TimeSeriesRetriever
 from .graph_indexing import build_or_load_graph
@@ -125,9 +130,15 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     log.info("[4] Inicializando retrievers")
     bm25_nodes = load_nodes_cache(db_path)
     retriever  = build_hybrid_retriever(index, bm25_nodes)
-    # choice_batch_size=30 iguala o top_k do retriever → todos os candidatos
-    # são comparados num único LLM call (sem viés de batch)
-    reranker   = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
+    if llm_reranking_enabled():
+        # Em provedores com janela/latência adequadas, todos os candidatos são
+        # comparados numa única chamada para evitar viés entre lotes.
+        reranker = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
+    else:
+        # Ollama local: preserva o score híbrido e evita prompts maiores que a
+        # janela ativa do modelo, além de eliminar uma chamada lenta por busca.
+        reranker = ScoreReranker(top_n=5)
+        log.info("Reranking por LLM desativado; usando ranking hibrido Vector+BM25")
 
     # 6. Três retrievers especializados
     text_ret   = TextRetriever(retriever, reranker)

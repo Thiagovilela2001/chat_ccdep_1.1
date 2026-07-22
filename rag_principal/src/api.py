@@ -48,7 +48,7 @@ _interp_llm = None
 
 def _frontend_dir() -> str:
     return os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
+        os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
     )
 
 
@@ -98,7 +98,9 @@ app.add_middleware(MetricsMiddleware, service_name=RAG_TYPE)
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return RedirectResponse(url="/app/")
+    if os.path.isdir(_frontend_dir()):
+        return RedirectResponse(url="/app/")
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
