@@ -33,7 +33,7 @@ from rag_core.indexing import (
     setup_embeddings,
 )
 from rag_core.ingestion import load_documents
-from rag_core.labor_market_skill import LaborMarketSkill
+from rag_core.domain_skills import DomainSkillRegistry
 from rag_core.llm import interp_model, make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.processing import process_documents
@@ -160,14 +160,14 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     tables_ret = TablesRetriever(table_retriever, reranker, llm)
     ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
 
-    # ── Fase 6: skill de mercado de trabalho ─────────────────────────────────
-    labor_skill = LaborMarketSkill(base_dir)
-    if labor_skill.is_loaded():
-        log.info("[7] Skill de mercado de trabalho carregada")
+    # ── Fase 6: skills de domínio ─────────────────────────────────────────────
+    domain_skills = DomainSkillRegistry(base_dir)
+    if domain_skills.is_loaded():
+        log.info("[7] Skills de domínio carregadas: %s", domain_skills.available_domains())
     else:
-        log.info("[7] Skill de mercado de trabalho não encontrada (opcional)")
+        log.info("[7] Skills de domínio não encontradas (opcional)")
 
-    engine = RaptorEngine(text_ret, tables_ret, ts_ret, llm, labor_market_skill=labor_skill)
+    engine = RaptorEngine(text_ret, tables_ret, ts_ret, llm, domain_skills=domain_skills)
 
     log.info("RAPTOR RAG pronto")
     return engine, interp_llm

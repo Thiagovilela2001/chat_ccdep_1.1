@@ -29,7 +29,7 @@ from rag_core.timeseries_retriever import TimeSeriesRetriever
 from .graph_indexing import build_or_load_graph
 from .graph_retriever import GraphRetriever
 from .analysis_engine import AnalysisEngine
-from rag_core.labor_market_skill import LaborMarketSkill
+from rag_core.domain_skills import DomainSkillRegistry
 
 log = get_logger(__name__)
 
@@ -107,12 +107,12 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     tables_ret = TablesRetriever(table_retriever, reranker, llm)
     ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
 
-    # 7. Labor Market Skill (opcional — carrega se o arquivo existir)
-    labor_skill = LaborMarketSkill(base_dir)
-    if labor_skill.is_loaded():
-        log.info("[5] Skill de mercado de trabalho carregada")
+    # 7. Skills de domínio (opcionais — descobertas em .agents/skills)
+    domain_skills = DomainSkillRegistry(base_dir)
+    if domain_skills.is_loaded():
+        log.info("[5] Skills de domínio carregadas: %s", domain_skills.available_domains())
     else:
-        log.info("[5] Skill de mercado de trabalho nao encontrada (opcional)")
+        log.info("[5] Skills de domínio não encontradas (opcional)")
 
     # 8. Grafo de conhecimento (opcional — apenas se use_graph=True)
     graph_ret = None
@@ -131,7 +131,7 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     # 9. Analysis Engine
     engine = AnalysisEngine(
         text_ret, tables_ret, ts_ret, llm,
-        labor_market_skill=labor_skill,
+        domain_skills=domain_skills,
         graph_retriever=graph_ret,
     )
 

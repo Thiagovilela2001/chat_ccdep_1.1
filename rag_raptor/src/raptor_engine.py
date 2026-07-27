@@ -20,6 +20,7 @@ import os
 from openai import AsyncOpenAI
 
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
+from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.llm import openai_client_kwargs
 from rag_core.runtime import limit_context
 from rag_core.provenance import format_source_context, source_labels
@@ -62,14 +63,6 @@ FIDELIDADE ÀS FONTES (inegociável)
 {skill_block}
 """ + ANALYST_WRITING_GUIDE
 
-_SKILL_BLOCK = """\
-
-[Conhecimento Especializado — Mercado de Trabalho]
-{skill_context}
-[Fim do Conhecimento Especializado]
-"""
-
-
 class RaptorEngine:
     """
     Engine RAPTOR: recupera de índice hierárquico e sintetiza em chamada única.
@@ -82,12 +75,14 @@ class RaptorEngine:
         tables_retriever,
         timeseries_retriever,
         llm,
+        domain_skills=None,
         labor_market_skill=None,
     ):
         self._text   = text_retriever
         self._tables = tables_retriever
         self._ts     = timeseries_retriever
         self._model  = getattr(llm, "model", "gpt-5-chat-latest")
+        self._domain_skills = domain_skills
         self._labor_skill = labor_market_skill
         self._client = AsyncOpenAI(**openai_client_kwargs())
 
@@ -152,11 +147,12 @@ class RaptorEngine:
         is_labor_market: bool = False,
     ) -> tuple[str, list]:
 
-        skill_block = ""
-        if is_labor_market and self._labor_skill and self._labor_skill.is_loaded():
-            skill_block = _SKILL_BLOCK.format(
-                skill_context=self._labor_skill.get_context()
-            )
+        skill_block = build_domain_prompt_block(
+            self._domain_skills,
+            question,
+            is_labor_market=is_labor_market,
+            legacy_labor_skill=self._labor_skill,
+        )
 
         system_prompt = _SYSTEM_PROMPT.format(skill_block=skill_block)
         source_nodes: list = []

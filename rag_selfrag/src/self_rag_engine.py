@@ -24,6 +24,7 @@ import re
 from openai import AsyncOpenAI
 
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
+from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.llm import interp_model, openai_client_kwargs
 from rag_core.runtime import bounded_int, limit_context
 from rag_core.provenance import format_source_context, source_labels
@@ -109,14 +110,6 @@ Responda APENAS com JSON: {{"query": "..."}}
 Pergunta original: {question}
 Resposta parcial (primeiros 300 chars): {answer}"""
 
-_SKILL_BLOCK = """\
-
-[Conhecimento Especializado — Mercado de Trabalho]
-{skill_context}
-[Fim do Conhecimento Especializado]
-"""
-
-
 # ── Engine ────────────────────────────────────────────────────────────────────
 
 class SelfRAGEngine:
@@ -131,6 +124,7 @@ class SelfRAGEngine:
         tables_retriever,
         timeseries_retriever,
         llm,
+        domain_skills=None,
         labor_market_skill=None,
     ):
         self._text         = text_retriever
@@ -138,6 +132,7 @@ class SelfRAGEngine:
         self._ts           = timeseries_retriever
         self._model        = getattr(llm, "model", "gpt-5-chat-latest")
         self._critic_model = interp_model()
+        self._domain_skills = domain_skills
         self._labor_skill  = labor_market_skill
         self._client       = AsyncOpenAI(**openai_client_kwargs())
 
@@ -273,11 +268,12 @@ class SelfRAGEngine:
         is_labor_market: bool = False,
     ) -> tuple[str, list]:
 
-        skill_block = ""
-        if is_labor_market and self._labor_skill and self._labor_skill.is_loaded():
-            skill_block = _SKILL_BLOCK.format(
-                skill_context=self._labor_skill.get_context()
-            )
+        skill_block = build_domain_prompt_block(
+            self._domain_skills,
+            question,
+            is_labor_market=is_labor_market,
+            legacy_labor_skill=self._labor_skill,
+        )
 
         source_nodes: list = []
         log.info("SelfRAGEngine: iniciando | question: %s", question[:80])

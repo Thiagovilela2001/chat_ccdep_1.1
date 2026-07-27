@@ -85,6 +85,7 @@ padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
 | `rag_core/ingestion.py`, `processing.py`, `indexing.py` | ingestão, normalização, ChromaDB e BM25 |
 | `rag_core/index_manifest.py` | detecção recursiva de mudanças e exclusões |
 | `rag_core/*_retriever.py` | recuperação narrativa, tabular e temporal |
+| `rag_core/domain_skills.py` | descoberta e roteamento das skills econômicas locais |
 | `rag_core/api_models.py`, `query_service.py` | contrato e fluxo HTTP comum das engines |
 | `rag_core/api_security.py` | autenticação, CORS, CSP, headers e rate limit |
 | `rag_core/runtime.py` | deadline, limites e orçamento de contexto |
@@ -119,6 +120,7 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_TEXT_TOP_N` | `20` | trechos narrativos enviados à síntese |
 | `RAG_STRUCTURED_TOP_N` | `10` | trechos tabulares/temporais por retriever |
 | `RAG_MAX_CHUNKS_PER_DOCUMENT` | `3` | prioridade inicial por documento antes do preenchimento |
+| `RAG_MAX_DOMAIN_SKILLS` | `2` | skills especializadas combinadas por consulta |
 | `RAG_INPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 | `RAG_OUTPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 

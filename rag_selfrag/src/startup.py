@@ -21,7 +21,7 @@ from rag_core.text_retriever import build_hybrid_retriever, rerank_top_n, TextRe
 from rag_core.tables_retriever import TablesRetriever
 from rag_core.timeseries_retriever import TimeSeriesRetriever
 from .self_rag_engine import SelfRAGEngine
-from rag_core.labor_market_skill import LaborMarketSkill
+from rag_core.domain_skills import DomainSkillRegistry
 
 log = get_logger(__name__)
 
@@ -66,13 +66,13 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[SelfRAGEngin
     tables_ret = TablesRetriever(table_retriever, reranker, llm)
     ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
 
-    labor_skill = LaborMarketSkill(base_dir)
-    if labor_skill.is_loaded():
-        log.info("[5] Skill de mercado de trabalho carregada")
+    domain_skills = DomainSkillRegistry(base_dir)
+    if domain_skills.is_loaded():
+        log.info("[5] Skills de domínio carregadas: %s", domain_skills.available_domains())
     else:
-        log.info("[5] Skill de mercado de trabalho não encontrada (opcional)")
+        log.info("[5] Skills de domínio não encontradas (opcional)")
 
-    engine = SelfRAGEngine(text_ret, tables_ret, ts_ret, llm, labor_market_skill=labor_skill)
+    engine = SelfRAGEngine(text_ret, tables_ret, ts_ret, llm, domain_skills=domain_skills)
 
     log.info("Self-RAG pronto")
     return engine, interp_llm

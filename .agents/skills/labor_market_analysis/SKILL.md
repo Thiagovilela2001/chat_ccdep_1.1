@@ -367,6 +367,7 @@ plot_serie_temporal(df_pnadc, 'data', 'taxa_desocupacao',
   adicionado aqui vira instrução de produção — editar com cuidado e manter
   os títulos exatos das seções (o regex depende deles).
 -->
+<!-- rag-context:start -->
 ### Checklist de Interpretação
 
 Ao redigir a análise, o agente **deve** responder:
@@ -395,6 +396,7 @@ A análise **não** deve conter, salvo pedido explícito do usuário:
 | **Índice de Gini salarial** | Lorenz curve sobre distribuição de rendimentos | PNADC anual / RAIS |
 
 *Legenda: D=desocupados; S=subocupados por insuf. horas; FTP=força de trabalho potencial; FTA=força de trabalho ampliada.*
+<!-- rag-context:end -->
 
 ---
 

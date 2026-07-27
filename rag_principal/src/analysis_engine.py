@@ -9,6 +9,7 @@ Fluxo:
 import asyncio
 
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
+from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.logger import get_logger
 from rag_core.runtime import limit_context, request_timeout_seconds
 from rag_core.provenance import format_source_context, source_labels
@@ -68,15 +69,6 @@ Pergunta: {question}
 
 Resposta:"""
 
-_SKILL_HEADER = """\
-
-[Conhecimento Especializado — Mercado de Trabalho]
-Use as definições e o checklist abaixo para interpretar corretamente os dados recuperados.
-{skill_context}
-[Fim do Conhecimento Especializado]
-"""
-
-
 def _build_context_block(
     text_nodes: list,
     tables_data: str | None,
@@ -120,12 +112,21 @@ class AnalysisEngine:
     único LLM call, combinando contexto narrativo + dados estruturados.
     """
 
-    def __init__(self, text_retriever, tables_retriever, timeseries_retriever, llm,
-                 labor_market_skill=None, graph_retriever=None):
+    def __init__(
+        self,
+        text_retriever,
+        tables_retriever,
+        timeseries_retriever,
+        llm,
+        domain_skills=None,
+        labor_market_skill=None,
+        graph_retriever=None,
+    ):
         self._text = text_retriever
         self._tables = tables_retriever
         self._ts = timeseries_retriever
         self._llm = llm
+        self._domain_skills = domain_skills
         self._labor_skill = labor_market_skill
         self._graph = graph_retriever
 
@@ -206,11 +207,12 @@ class AnalysisEngine:
         if not context_block.strip():
             return "A informação não consta nos documentos fornecidos.", []
 
-        skill_block = ""
-        if is_labor_market and self._labor_skill and self._labor_skill.is_loaded():
-            skill_block = _SKILL_HEADER.format(
-                skill_context=self._labor_skill.get_context()
-            )
+        skill_block = build_domain_prompt_block(
+            self._domain_skills,
+            question,
+            is_labor_market=is_labor_market,
+            legacy_labor_skill=self._labor_skill,
+        )
 
         response = self._llm.complete(
             _SYNTHESIS_PROMPT.format(
