@@ -23,6 +23,7 @@ from rag_core.index_manifest import (
     detect_changes,
     load_manifest,
     resolve_data_dir,
+    resolve_db_dir,
     save_manifest,
 )
 from rag_core.indexing import (
@@ -39,7 +40,7 @@ from rag_core.processing import process_documents
 from .raptor_engine import RaptorEngine
 from .raptor_indexing import build_raptor_tree
 from rag_core.tables_retriever import TablesRetriever
-from rag_core.text_retriever import TextRetriever, build_hybrid_retriever
+from rag_core.text_retriever import TextRetriever, build_hybrid_retriever, rerank_top_n
 from rag_core.timeseries_retriever import TimeSeriesRetriever
 
 log = get_logger(__name__)
@@ -62,7 +63,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
 
     setup_logging()
     data_dir = resolve_data_dir(base_dir, data_dir)
-    db_path  = os.path.join(base_dir, "chroma_db")
+    db_path  = resolve_db_dir(base_dir)
 
     log.info("Inicializando RAPTOR RAG")
 
@@ -147,12 +148,17 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     log.info("[6] Inicializando retrievers sobre índice RAPTOR")
     # BM25 usa todos os nós do índice RAPTOR (folhas + resumos)
     all_nodes = load_nodes_cache(db_path)
-    retriever = build_hybrid_retriever(index, all_nodes)
-    reranker  = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
+    text_retriever = build_hybrid_retriever(
+        index, all_nodes, node_type="text", llm=interp_llm
+    )
+    table_retriever = build_hybrid_retriever(
+        index, all_nodes, node_type="table", llm=interp_llm
+    )
+    reranker = LLMRerank(top_n=rerank_top_n(), choice_batch_size=30, llm=interp_llm)
 
-    text_ret   = TextRetriever(retriever, reranker)
-    tables_ret = TablesRetriever(retriever, reranker, llm)
-    ts_ret     = TimeSeriesRetriever(retriever, reranker, llm)
+    text_ret   = TextRetriever(text_retriever, reranker)
+    tables_ret = TablesRetriever(table_retriever, reranker, llm)
+    ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
 
     # ── Fase 6: skill de mercado de trabalho ─────────────────────────────────
     labor_skill = LaborMarketSkill(base_dir)

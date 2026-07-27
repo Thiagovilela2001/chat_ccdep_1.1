@@ -10,6 +10,7 @@ import pandas as pd
 
 from .logger import get_logger
 from .runtime import limit_context
+from .text_retriever import rerank_candidate_limit, structured_top_n
 from .structured_output import (
     StructuredOutputError,
     parse_json_object,
@@ -124,7 +125,7 @@ class TimeSeriesRetriever:
     """
     Recupera chunks de séries temporais e extrai dados estruturados via pandas.
 
-    Fluxo: retrieve (top-20) → filtra séries temporais → rerank → extração + análise pandas
+    Fluxo: pool tabular top-K → filtra séries temporais → rerank → extração + análise
     Retorna (structured_data: str, nodes: list) ou None se sem dados temporais relevantes.
     """
 
@@ -145,13 +146,17 @@ class TimeSeriesRetriever:
             n.node.text = _sanitize(n.node.text)
 
         try:
-            reranked = self._reranker.postprocess_nodes(ts_nodes, query_str=question)
+            reranked = self._reranker.postprocess_nodes(
+                ts_nodes[:rerank_candidate_limit()],
+                query_str=question,
+            )
         except Exception:
             log.warning("Reranker falhou em timeseries — usando fallback", extra={"fallback": True})
             reranked = []
 
         if not reranked:
             reranked = ts_nodes[:_FALLBACK_TOP_N]
+        reranked = list(reranked[:structured_top_n()])
 
         context = limit_context("\n\n---\n\n".join(n.get_content() for n in reranked))
 

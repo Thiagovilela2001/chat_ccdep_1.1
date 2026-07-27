@@ -39,6 +39,30 @@ def reset_nodes_cache(db_path="./chroma_db"):
     if os.path.exists(path):
         os.remove(path)
 
+
+def merge_nodes_cache(cached_nodes, changed_sources, new_nodes):
+    """Substitui no cache somente nós pertencentes às fontes alteradas."""
+    changed = set(changed_sources)
+    retained = [
+        node for node in cached_nodes
+        if node.metadata.get("source_file") not in changed
+    ]
+    return retained + list(new_nodes)
+
+
+def _node_ids_for_sources(collection, source_files):
+    """Captura IDs atuais antes da inserção dos nós substitutos."""
+    ids: list[str] = []
+    for source_file in source_files:
+        result = collection.get(where={"source_file": source_file})
+        ids.extend(result.get("ids") or [])
+    return ids
+
+
+def _delete_ids(collection, ids, batch_size=1000):
+    for start in range(0, len(ids), batch_size):
+        collection.delete(ids=ids[start:start + batch_size])
+
 def setup_embeddings():
     """
     Configura Embeddings Locais (HuggingFace) para não enviar dados sensíveis p/ nuvem na vetorização.
@@ -74,4 +98,44 @@ def create_or_load_index(nodes, db_path="./chroma_db", collection_name="estatist
             storage_context=storage_context
         )
 
+    return index
+
+
+def update_index_incrementally(
+    nodes,
+    changed_sources,
+    db_path="./chroma_db",
+    collection_name="estatisticas",
+):
+    """Insere substitutos e só depois remove IDs antigos das fontes alteradas.
+
+    A ordem preserva o índice anterior quando embedding/inserção falha. O
+    manifesto só deve ser salvo pelo chamador após esta função concluir.
+    """
+    setup_embeddings()
+
+    db = chromadb.PersistentClient(path=db_path)
+    collection = db.get_or_create_collection(collection_name)
+    stale_ids = _node_ids_for_sources(collection, changed_sources)
+
+    vector_store = ChromaVectorStore(chroma_collection=collection)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_vector_store(
+        vector_store,
+        storage_context=storage_context,
+    )
+
+    if nodes:
+        print(f"Indexando incrementalmente {len(nodes)} bloco(s) novo(s)/alterado(s)...")
+        index.insert_nodes(list(nodes))
+
+    _delete_ids(collection, stale_ids)
+
+    cached_nodes = load_nodes_cache(db_path)
+    merged_nodes = merge_nodes_cache(cached_nodes, changed_sources, nodes)
+    save_nodes_cache(merged_nodes, db_path)
+    print(
+        f"Atualização incremental concluída: {len(stale_ids)} bloco(s) antigo(s) "
+        f"removido(s), {len(nodes)} inserido(s)."
+    )
     return index

@@ -1,15 +1,23 @@
 from pathlib import Path
 
 import pandas as pd
+from llama_index.core import Document
+from llama_index.core.schema import TextNode
 
 from rag_core.index_manifest import (
     data_snapshot,
     detect_changes,
     load_manifest,
     resolve_data_dir,
+    resolve_db_dir,
     save_manifest,
 )
-from rag_core.indexing import load_nodes_cache, reset_nodes_cache, save_nodes_cache
+from rag_core.indexing import (
+    load_nodes_cache,
+    merge_nodes_cache,
+    reset_nodes_cache,
+    save_nodes_cache,
+)
 from rag_core.ingestion import load_documents
 from rag_core.provenance import relevance_score, source_file, source_page
 from rag_core.tables_retriever import _is_static_table
@@ -61,6 +69,21 @@ def test_diretorio_da_engine_tem_precedencia_quando_contem_documentos(tmp_path):
     assert resolve_data_dir(str(engine_dir)) == str(engine_data.resolve())
 
 
+def test_diretorio_do_banco_pode_ser_isolado_por_ambiente(tmp_path, monkeypatch):
+    engine_dir = tmp_path / "rag_principal"
+    isolated_db = tmp_path / "chroma_db_boletins_economia"
+    monkeypatch.setenv("RAG_DB_DIR", str(isolated_db))
+
+    assert resolve_db_dir(str(engine_dir)) == str(isolated_db.resolve())
+
+
+def test_diretorio_do_banco_mantem_padrao_sem_configuracao(tmp_path, monkeypatch):
+    engine_dir = tmp_path / "rag_principal"
+    monkeypatch.delenv("RAG_DB_DIR", raising=False)
+
+    assert resolve_db_dir(str(engine_dir)) == str((engine_dir / "chroma_db").resolve())
+
+
 def test_manifest_corrompido_forca_reconstrucao(tmp_path):
     db = tmp_path / "db"
     db.mkdir()
@@ -86,6 +109,159 @@ def test_ingestao_preserva_caminho_relativo_da_fonte(tmp_path):
     (nested / "boletim.txt").write_text("Informação econômica relevante.", encoding="utf-8")
     docs = load_documents(str(data_dir))
     assert docs[0].metadata["source_file"] == "regional/boletim.txt"
+
+
+def test_ingestao_seletiva_processa_somente_fontes_pedidas(tmp_path):
+    data_dir = tmp_path / "data"
+    (data_dir / "antigos").mkdir(parents=True)
+    (data_dir / "novos").mkdir()
+    (data_dir / "antigos" / "a.txt").write_text("antigo", encoding="utf-8")
+    (data_dir / "novos" / "b.txt").write_text("novo", encoding="utf-8")
+
+    docs = load_documents(
+        str(data_dir),
+        source_files=["novos/b.txt"],
+        save_output=False,
+    )
+
+    assert [doc.metadata["source_file"] for doc in docs] == ["novos/b.txt"]
+    assert not (tmp_path / "documents").exists()
+
+
+def test_cache_incremental_substitui_alterados_e_remove_excluidos():
+    cached = [
+        TextNode(text="A", metadata={"source_file": "a.txt"}),
+        TextNode(text="B antigo", metadata={"source_file": "b.txt"}),
+        TextNode(text="C", metadata={"source_file": "c.txt"}),
+    ]
+    replacement = TextNode(text="B novo", metadata={"source_file": "b.txt"})
+
+    merged = merge_nodes_cache(cached, ["b.txt", "c.txt"], [replacement])
+
+    assert [(node.metadata["source_file"], node.text) for node in merged] == [
+        ("a.txt", "A"),
+        ("b.txt", "B novo"),
+    ]
+
+
+def test_sincronizacao_incremental_carrega_apenas_arquivo_novo(tmp_path, monkeypatch):
+    import rag_core.index_sync as sync
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    old_file = data_dir / "antigo.txt"
+    new_file = data_dir / "novo.txt"
+    old_file.write_text("antigo", encoding="utf-8")
+    old_snapshot = data_snapshot(str(data_dir))
+    new_file.write_text("novo", encoding="utf-8")
+
+    db_path = tmp_path / "db"
+    save_manifest(str(db_path), old_snapshot)
+    save_nodes_cache(
+        [TextNode(text="antigo", metadata={"source_file": "antigo.txt"})],
+        str(db_path),
+    )
+
+    class FakeCollection:
+        def count(self):
+            return 1
+
+    class FakeClient:
+        def get_or_create_collection(self, _name):
+            return FakeCollection()
+
+    calls = {}
+
+    def fake_load(data_dir, source_files=None, save_output=True):
+        calls["loaded"] = (data_dir, source_files, save_output)
+        return [Document(text="novo", metadata={"source_file": "novo.txt", "type": "text"})]
+
+    def fake_process(_docs):
+        return [TextNode(text="novo", metadata={"source_file": "novo.txt"})]
+
+    def fake_update(nodes, changed_sources, **_kwargs):
+        calls["updated"] = (nodes, changed_sources)
+        return "indice"
+
+    monkeypatch.setattr(sync.chromadb, "PersistentClient", lambda path: FakeClient())
+    monkeypatch.setattr(sync, "load_documents", fake_load)
+    monkeypatch.setattr(sync, "process_documents", fake_process)
+    monkeypatch.setattr(sync, "update_index_incrementally", fake_update)
+
+    class Log:
+        def info(self, *_args):
+            pass
+
+        def warning(self, *_args):
+            pass
+
+    index, changed = sync.sync_standard_index(str(data_dir), str(db_path), Log())
+
+    assert index == "indice"
+    assert changed == ["novo.txt"]
+    assert calls["loaded"] == (str(data_dir), ["novo.txt"], False)
+    assert calls["updated"][1] == ["novo.txt"]
+    assert load_manifest(str(db_path)) == data_snapshot(str(data_dir))
+
+
+def test_sincronizacao_incremental_remove_fonte_sem_reler_corpus(tmp_path, monkeypatch):
+    import rag_core.index_sync as sync
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    current = data_dir / "mantido.txt"
+    current.write_text("mantido", encoding="utf-8")
+    snapshot = data_snapshot(str(data_dir))
+    old_manifest = {
+        **snapshot,
+        "removido.txt": {"mtime_ns": 1, "size": 8},
+    }
+
+    db_path = tmp_path / "db"
+    save_manifest(str(db_path), old_manifest)
+    save_nodes_cache(
+        [
+            TextNode(text="mantido", metadata={"source_file": "mantido.txt"}),
+            TextNode(text="removido", metadata={"source_file": "removido.txt"}),
+        ],
+        str(db_path),
+    )
+
+    class FakeCollection:
+        def count(self):
+            return 2
+
+    class FakeClient:
+        def get_or_create_collection(self, _name):
+            return FakeCollection()
+
+    calls = {}
+
+    def fake_update(nodes, changed_sources, **_kwargs):
+        calls["updated"] = (nodes, changed_sources)
+        return "indice"
+
+    monkeypatch.setattr(sync.chromadb, "PersistentClient", lambda path: FakeClient())
+    monkeypatch.setattr(
+        sync,
+        "load_documents",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("não deve reler")),
+    )
+    monkeypatch.setattr(sync, "update_index_incrementally", fake_update)
+
+    class Log:
+        def info(self, *_args):
+            pass
+
+        def warning(self, *_args):
+            pass
+
+    index, changed = sync.sync_standard_index(str(data_dir), str(db_path), Log())
+
+    assert index == "indice"
+    assert changed == ["removido.txt"]
+    assert calls["updated"] == ([], ["removido.txt"])
+    assert load_manifest(str(db_path)) == snapshot
 
 
 def test_serie_anual_numerica_e_valida():

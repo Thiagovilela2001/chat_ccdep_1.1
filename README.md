@@ -51,7 +51,10 @@ O reranking das consultas também preserva diretamente o score híbrido Vector+B
 por padrão. `RAG_LLM_RERANK=1` reativa o reranker por LLM, caso o Ollama esteja
 configurado com janela de contexto e timeout suficientes.
 
-2. Coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`.
+2. Coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`. Após a primeira carga,
+   Principal, Agentic e Self-RAG processam somente arquivos novos, modificados
+   ou removidos. RAPTOR e o grafo opcional da Principal reconstroem suas
+   estruturas globais quando o corpus muda.
 3. Suba o ambiente:
 
 ```bash
@@ -107,6 +110,15 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_CORS_ORIGINS` | interfaces locais | allowlist CORS separada por vírgula |
 | `RAG_RATE_LIMIT` / `RAG_RATE_WINDOW` | `30` / `60` s | limite em memória por IP |
 | `RAG_USE_GRAPH` | `0` | habilita grafo na engine principal |
+| `RAG_DATA_DIR` | `<engine>/data` ou `../data` | seleciona o corpus documental |
+| `RAG_DB_DIR` | `<engine>/chroma_db` | usa um índice ChromaDB separado |
+| `RAG_RETRIEVAL_TOP_K` | `80` | candidatos por pool textual ou tabular |
+| `RAG_QUERY_FUSION_QUERIES` | `2` | consulta original mais expansões semânticas |
+| `RAG_RERANK_CANDIDATE_LIMIT` | `40` | candidatos enviados ao reranker |
+| `RAG_RERANK_TOP_N` | `24` | resultados preservados pelo reranker |
+| `RAG_TEXT_TOP_N` | `20` | trechos narrativos enviados à síntese |
+| `RAG_STRUCTURED_TOP_N` | `10` | trechos tabulares/temporais por retriever |
+| `RAG_MAX_CHUNKS_PER_DOCUMENT` | `3` | prioridade inicial por documento antes do preenchimento |
 | `RAG_INPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 | `RAG_OUTPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 

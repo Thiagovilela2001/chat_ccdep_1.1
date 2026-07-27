@@ -5,15 +5,55 @@ Expõe também build_hybrid_retriever(), usado pelos outros retrievers.
 """
 import os
 import re
+from collections import defaultdict
 
 from llama_index.core.retrievers import VectorIndexRetriever, QueryFusionRetriever
+from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from llama_index.retrievers.bm25 import BM25Retriever
+import Stemmer
 
 from .logger import get_logger
 from .llm import provider_name
+from .runtime import bounded_int
 
 log = get_logger(__name__)
 _FALLBACK_TOP_N = 5
+
+_QUERY_GEN_PROMPT = """\
+Gere {num_queries} versões alternativas da consulta abaixo para ampliar a busca em
+documentos econômicos em português. Preserve setor, local, período e indicador.
+Retorne somente uma consulta por linha, sem numeração ou explicações.
+
+Consulta: {query}
+"""
+
+
+def retrieval_top_k() -> int:
+    return bounded_int("RAG_RETRIEVAL_TOP_K", 80, 20, 200)
+
+
+def query_fusion_queries() -> int:
+    return bounded_int("RAG_QUERY_FUSION_QUERIES", 2, 1, 4)
+
+
+def rerank_candidate_limit() -> int:
+    return bounded_int("RAG_RERANK_CANDIDATE_LIMIT", 40, 10, 100)
+
+
+def rerank_top_n() -> int:
+    return bounded_int("RAG_RERANK_TOP_N", 24, 5, 50)
+
+
+def text_top_n() -> int:
+    return bounded_int("RAG_TEXT_TOP_N", 20, 5, 40)
+
+
+def structured_top_n() -> int:
+    return bounded_int("RAG_STRUCTURED_TOP_N", 10, 3, 20)
+
+
+def max_chunks_per_document() -> int:
+    return bounded_int("RAG_MAX_CHUNKS_PER_DOCUMENT", 3, 1, 10)
 
 
 def llm_reranking_enabled() -> bool:
@@ -45,22 +85,68 @@ def _sanitize(text: str) -> str:
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
 
 
-def build_hybrid_retriever(index, bm25_nodes):
+def _nodes_by_type(nodes, node_type: str | None) -> list:
+    if node_type is None:
+        return list(nodes or [])
+    return [
+        node for node in (nodes or [])
+        if (getattr(node, "metadata", {}) or {}).get("type") == node_type
+    ]
+
+
+def _diversify_by_document(nodes, limit: int | None = None) -> list:
+    """Prioriza variedade documental sem descartar resultados relevantes."""
+    limit = limit or text_top_n()
+    per_document = max_chunks_per_document()
+    selected, overflow = [], []
+    counts: dict[str, int] = defaultdict(int)
+
+    for node in nodes:
+        metadata = getattr(node, "metadata", {}) or {}
+        source = str(
+            metadata.get("source_files")
+            or metadata.get("source_file")
+            or metadata.get("file_name")
+            or "?"
+        ).lower()
+        if counts[source] < per_document:
+            selected.append(node)
+            counts[source] += 1
+        else:
+            overflow.append(node)
+
+    return (selected + overflow)[:limit]
+
+
+def build_hybrid_retriever(index, bm25_nodes, *, node_type: str | None = None, llm=None):
     """
     Cria retriever híbrido (Vector + BM25 com fusão Reciprocal Rank).
     Se não houver nós BM25, retorna apenas o retriever vetorial.
     """
-    vector_retriever = VectorIndexRetriever(index=index, similarity_top_k=30)
+    top_k = retrieval_top_k()
+    filters = None
+    if node_type is not None:
+        filters = MetadataFilters(filters=[MetadataFilter(key="type", value=node_type)])
+    vector_retriever = VectorIndexRetriever(
+        index=index,
+        similarity_top_k=top_k,
+        filters=filters,
+    )
 
-    if bm25_nodes:
+    typed_bm25_nodes = _nodes_by_type(bm25_nodes, node_type)
+    if typed_bm25_nodes:
         bm25_retriever = BM25Retriever.from_defaults(
-            nodes=bm25_nodes,
-            similarity_top_k=30,
+            nodes=typed_bm25_nodes,
+            similarity_top_k=top_k,
+            language="portuguese",
+            stemmer=Stemmer.Stemmer("portuguese"),
         )
         return QueryFusionRetriever(
             retrievers=[vector_retriever, bm25_retriever],
-            similarity_top_k=30,
-            num_queries=1,
+            llm=llm,
+            query_gen_prompt=_QUERY_GEN_PROMPT,
+            similarity_top_k=top_k,
+            num_queries=query_fusion_queries(),
             mode="reciprocal_rerank",
             use_async=False,
         )
@@ -72,8 +158,8 @@ class TextRetriever:
     """
     Recupera chunks de texto narrativo relevantes para a query.
 
-    Fluxo: retrieve (top-30) → filtra texto → rerank → top-N texto
-    Fallback: se o reranker falhar ou retornar vazio, retorna os top-5 por score.
+    Fluxo: retrieve (top-K configurável) → filtra texto → rerank → diversidade.
+    Fallback: se o reranker falhar ou retornar vazio, preserva o ranking híbrido.
     """
 
     def __init__(self, retriever, reranker):
@@ -94,7 +180,10 @@ class TextRetriever:
             n.node.text = _sanitize(n.node.text)
 
         try:
-            reranked = self._reranker.postprocess_nodes(text_nodes, query_str=question)
+            reranked = self._reranker.postprocess_nodes(
+                text_nodes[:rerank_candidate_limit()],
+                query_str=question,
+            )
         except Exception as exc:
             log.warning(
                 "Reranker falhou (%s: %s) — usando fallback por score",
@@ -107,9 +196,9 @@ class TextRetriever:
         # Fallback: reranker vazio → top-N por score de recuperação
         if not reranked:
             log.warning(
-                "Reranker retornou vazio — usando fallback top-%d", _FALLBACK_TOP_N,
+                "Reranker retornou vazio — usando fallback top-%d", text_top_n(),
                 extra={"fallback": True},
             )
-            return text_nodes[:_FALLBACK_TOP_N]
+            return _diversify_by_document(text_nodes, text_top_n())
 
-        return reranked
+        return _diversify_by_document(reranked, text_top_n())

@@ -9,6 +9,7 @@ import re
 
 from .logger import get_logger
 from .runtime import limit_context
+from .text_retriever import rerank_candidate_limit, structured_top_n
 from .structured_output import (
     StructuredOutputError,
     parse_json_object,
@@ -82,7 +83,7 @@ class TablesRetriever:
     """
     Recupera chunks de tabelas estáticas e extrai dados estruturados via pandas.
 
-    Fluxo: retrieve (top-20) → filtra tabelas estáticas → rerank → extração pandas
+    Fluxo: pool tabular top-K → filtra tabelas estáticas → rerank → extração estruturada
     Retorna (structured_data: str, nodes: list) ou None se sem tabelas relevantes.
     """
 
@@ -103,13 +104,17 @@ class TablesRetriever:
             n.node.text = _sanitize(n.node.text)
 
         try:
-            reranked = self._reranker.postprocess_nodes(table_nodes, query_str=question)
+            reranked = self._reranker.postprocess_nodes(
+                table_nodes[:rerank_candidate_limit()],
+                query_str=question,
+            )
         except Exception:
             log.warning("Reranker falhou em tables — usando fallback", extra={"fallback": True})
             reranked = []
 
         if not reranked:
             reranked = table_nodes[:_FALLBACK_TOP_N]
+        reranked = list(reranked[:structured_top_n()])
 
         context = limit_context("\n\n---\n\n".join(n.get_content() for n in reranked))
         structured = self._extract_and_calculate(question, context)

@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 
 _CITATION_RE = re.compile(
-    r"\(Fonte:\s*([^,\)\n]+?)"
+    r"\((?:\*\*)?Fonte:(?:\*\*)?\s*([^,\)\n]+?)"
     r"(?:,\s*(?:p(?:ágina)?\.?|p\./aba|aba)\s*:?[ ]*([^\)\n]+?))?\)",
     re.IGNORECASE,
 )
@@ -19,7 +19,22 @@ class CitationCheck:
 
 
 def _normal_file(value: str) -> str:
-    return value.strip().replace("\\", "/").lower()
+    return value.strip(" `*_\"'").replace("\\", "/").lower()
+
+
+def _page_values(value: str) -> set[str]:
+    """Normaliza página única, lista ou intervalo curto."""
+    raw = value.strip().lower()
+    pages: set[str] = set()
+    for start_raw, end_raw in re.findall(r"(\d+)\s*[-–—]\s*(\d+)", raw):
+        start, end = int(start_raw), int(end_raw)
+        if start <= end and end - start <= 100:
+            pages.update(str(page) for page in range(start, end + 1))
+    pages.update(re.findall(r"\d+", raw))
+    if pages:
+        return pages
+    cleaned = re.sub(r"^(?:p(?:ágina)?\.?|p\./aba|aba)\s*:?[ ]*", "", raw)
+    return {cleaned.strip(" .")} if cleaned.strip(" .") else set()
 
 
 def _node_files(node) -> set[str]:
@@ -42,7 +57,7 @@ def validate_citations(answer: str, source_nodes) -> list[CitationCheck]:
         page = (getattr(node, "metadata", {}) or {}).get("page")
         if page is not None:
             for file in files:
-                pages_by_file.setdefault(file, set()).add(str(page).strip().lower())
+                pages_by_file.setdefault(file, set()).update(_page_values(str(page)))
 
     checks = []
     for match in _CITATION_RE.finditer(answer or ""):
@@ -54,6 +69,7 @@ def validate_citations(answer: str, source_nodes) -> list[CitationCheck]:
         if verified and cited_page:
             known_pages = set().union(*(pages_by_file.get(file, set()) for file in matching_files))
             if known_pages:
-                verified = cited_page in known_pages
+                cited_pages = _page_values(cited_page)
+                verified = bool(cited_pages) and cited_pages.issubset(known_pages)
         checks.append(CitationCheck(citation=match.group(0), verified=verified))
     return checks

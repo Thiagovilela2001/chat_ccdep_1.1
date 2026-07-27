@@ -154,7 +154,12 @@ def to_llama_documents(text_chunks: list, tables: list) -> list:
     return docs
 
 
-def load_documents(data_dir: str) -> list:
+def load_documents(
+    data_dir: str,
+    source_files: list[str] | None = None,
+    *,
+    save_output: bool = True,
+) -> list:
     """
     Pipeline de ingestão:
       1. Extrai texto (PyMuPDF) e tabelas (Camelot) de PDFs
@@ -168,7 +173,17 @@ def load_documents(data_dir: str) -> list:
         print(f"Aviso: Diretório '{data_dir}' criado. Adicione documentos e rode novamente.")
         return []
 
-    arquivos = [f for f in path.rglob("*") if f.suffix.lower() in SUPPORTED_EXTS]
+    requested = set(source_files) if source_files is not None else None
+    arquivos = [
+        file_path
+        for file_path in sorted(path.rglob("*"))
+        if file_path.is_file()
+        and file_path.suffix.lower() in SUPPORTED_EXTS
+        and (
+            requested is None
+            or file_path.relative_to(path).as_posix() in requested
+        )
+    ]
     if not arquivos:
         print("Aviso: Nenhum arquivo suportado encontrado em 'data/'.")
         return []
@@ -209,12 +224,13 @@ def load_documents(data_dir: str) -> list:
         })
         print(f"    → {len(text_chunks)} chunk(s) de texto, {len(tables)} tabela(s)")
 
-    documents_dir = path.parent / "documents"
-    save_intermediate(documents_dir, all_text_chunks, all_tables, file_metadata)
+    if save_output:
+        documents_dir = path.parent / "documents"
+        save_intermediate(documents_dir, all_text_chunks, all_tables, file_metadata)
 
-    print(f"\nFormato intermediário salvo em: {documents_dir}")
-    print(f"  text_chunks.json : {len(all_text_chunks)} chunks")
-    print(f"  tables.parquet   : {len(all_tables)} tabelas")
+        print(f"\nFormato intermediário salvo em: {documents_dir}")
+        print(f"  text_chunks.json : {len(all_text_chunks)} chunks")
+        print(f"  tables.parquet   : {len(all_tables)} tabelas")
 
     docs = to_llama_documents(all_text_chunks, all_tables)
     print(f"  Total de documentos para indexação: {len(docs)}")

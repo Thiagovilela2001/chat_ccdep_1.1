@@ -5,6 +5,7 @@
 
 # ── Banco vetorial (gerado localmente) ───────────────────────────────────────
 chroma_db/
+chroma_db*/
 
 # ── Cache e artefatos de indexação ───────────────────────────────────────────
 nodes_cache.pkl

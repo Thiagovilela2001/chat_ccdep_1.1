@@ -6,23 +6,18 @@ AgenticEngine em vez de AnalysisEngine.
 """
 import os
 
-import chromadb
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
 
 from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
-from rag_core.ingestion import load_documents
-from rag_core.processing import process_documents
 from rag_core.index_manifest import (
-    data_snapshot,
-    detect_changes,
-    load_manifest,
     resolve_data_dir,
-    save_manifest,
+    resolve_db_dir,
 )
-from rag_core.indexing import create_or_load_index, load_nodes_cache, reset_nodes_cache
-from rag_core.text_retriever import build_hybrid_retriever, TextRetriever
+from rag_core.index_sync import sync_standard_index
+from rag_core.indexing import load_nodes_cache
+from rag_core.text_retriever import build_hybrid_retriever, rerank_top_n, TextRetriever
 from rag_core.tables_retriever import TablesRetriever
 from rag_core.timeseries_retriever import TimeSeriesRetriever
 from .agent_engine import AgenticEngine
@@ -46,48 +41,11 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
 
     setup_logging()
     data_dir = resolve_data_dir(base_dir, data_dir)
-    db_path  = os.path.join(base_dir, "chroma_db")
+    db_path  = resolve_db_dir(base_dir)
 
     log.info("Inicializando Agentic RAG")
 
-    snapshot = data_snapshot(data_dir)
-    manifest = load_manifest(db_path)
-    changed  = detect_changes(snapshot, manifest)
-
-    db = chromadb.PersistentClient(path=db_path)
-    col = db.get_or_create_collection("estatisticas")
-    already_indexed = col.count() > 0
-
-    nodes = []
-    if changed:
-        log.info("[1] Documentos novos/modificados: %s — reindexando", changed)
-        docs = load_documents(data_dir)
-        if not docs:
-            raise RuntimeError(
-                f"Nenhum documento encontrado em '{data_dir}'; índice anterior preservado."
-            )
-        nodes = process_documents(docs)
-        if not nodes:
-            raise RuntimeError("Processamento não produziu nós; índice anterior preservado.")
-        reset_nodes_cache(db_path)
-        db.delete_collection("estatisticas")
-        col = db.get_or_create_collection("estatisticas")
-    elif not already_indexed:
-        log.info("[1] Banco vazio — carregando documentos")
-        reset_nodes_cache(db_path)
-        docs = load_documents(data_dir)
-        if docs:
-            nodes = process_documents(docs)
-        else:
-            raise RuntimeError(f"Nenhum documento encontrado em '{data_dir}'.")
-    else:
-        log.info("[1] Banco atualizado (%d vetores) — sem mudanças", col.count())
-
-    log.info("[2] Indexando vetores no ChromaDB")
-    index = create_or_load_index(nodes, db_path=db_path)
-
-    if changed or not already_indexed:
-        save_manifest(db_path, snapshot)
+    index, _changed = sync_standard_index(data_dir, db_path, log)
 
     log.info("[3] Carregando modelos de linguagem")
     llm        = make_llm(temperature=0.0, timeout=60.0)
@@ -96,12 +54,17 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
 
     log.info("[4] Inicializando retrievers")
     bm25_nodes = load_nodes_cache(db_path)
-    retriever  = build_hybrid_retriever(index, bm25_nodes)
-    reranker   = LLMRerank(top_n=10, choice_batch_size=30, llm=interp_llm)
+    text_retriever = build_hybrid_retriever(
+        index, bm25_nodes, node_type="text", llm=interp_llm
+    )
+    table_retriever = build_hybrid_retriever(
+        index, bm25_nodes, node_type="table", llm=interp_llm
+    )
+    reranker = LLMRerank(top_n=rerank_top_n(), choice_batch_size=30, llm=interp_llm)
 
-    text_ret   = TextRetriever(retriever, reranker)
-    tables_ret = TablesRetriever(retriever, reranker, llm)
-    ts_ret     = TimeSeriesRetriever(retriever, reranker, llm)
+    text_ret   = TextRetriever(text_retriever, reranker)
+    tables_ret = TablesRetriever(table_retriever, reranker, llm)
+    ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
 
     labor_skill = LaborMarketSkill(base_dir)
     if labor_skill.is_loaded():

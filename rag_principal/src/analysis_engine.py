@@ -32,8 +32,13 @@ diferentes em uma mesma narrativa é permitido e esperado; criar fato novo, não
 nenhuma afirmação causal, estimativa ou conclusão que nenhum trecho sustente, \
 direta ou numericamente.
 
-3. CITAÇÃO REAL — Toda informação factual deve ter origem identificável no texto, \
-no formato (Fonte: nome_do_arquivo.pdf, p. X).
+3. CITAÇÃO REAL — Toda frase com informação factual ou numérica deve terminar \
+com sua origem no formato (Fonte: nome_do_arquivo.pdf, p. X).
+   Copie nome do arquivo e página exatamente do rótulo presente no contexto.
+   Repita a citação em frases consecutivas quando ambas contiverem fatos.
+   Para duas fontes, use duas citações separadas: \
+(Fonte: arquivo_a.pdf, p. 1) (Fonte: arquivo_b.pdf, p. 2).
+   Nunca agrupe dois arquivos dentro dos mesmos parênteses e nunca invente página.
    Nunca cite "[Dados de Séries Temporais]" ou "[Dados Estruturados de Tabelas]" como fonte.
    Se um valor numérico extraído de tabela/série não tiver arquivo PDF identificável no \
 contexto narrativo adjacente, não o utilize na resposta.

@@ -37,6 +37,18 @@ def resolve_data_dir(base_dir: str, data_dir: str | None = None) -> str:
     return str(engine_dir)
 
 
+def resolve_db_dir(base_dir: str, db_dir: str | None = None) -> str:
+    """Resolve o ChromaDB, permitindo isolar corpus por variável de ambiente.
+
+    Um caminho explícito tem precedência sobre ``RAG_DB_DIR``. Sem ambos,
+    preserva o comportamento anterior em ``<engine>/chroma_db``.
+    """
+    configured = db_dir or os.getenv("RAG_DB_DIR")
+    if configured:
+        return str(Path(configured).expanduser().resolve())
+    return str(Path(base_dir).resolve() / "chroma_db")
+
+
 def data_snapshot(data_dir: str) -> dict[str, dict[str, int]]:
     root = Path(data_dir)
     if not root.is_dir():

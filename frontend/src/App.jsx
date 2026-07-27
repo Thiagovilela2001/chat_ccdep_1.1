@@ -119,11 +119,15 @@ function AnswerMetrics({ meta }) {
   const route = meta?.route || {};
   const elapsed = meta?.timings?.total_ms ?? meta?._client_roundtrip_ms;
   const engine = route.engine_label || route.engine || meta?.rag_label;
+  const sources = meta?.sources || [];
+  const documentCount = new Set(sources.map((source) => source.file).filter(Boolean)).size;
   return (
     <div className="answer-metrics">
       {engine && <MetricChip icon={Layers3}>{engine}</MetricChip>}
-      {meta?.sources?.length > 0 && (
-        <MetricChip icon={Database}>{meta.sources.length} fontes</MetricChip>
+      {sources.length > 0 && (
+        <MetricChip icon={Database}>
+          {documentCount} {documentCount === 1 ? "documento" : "documentos"} · {sources.length} trechos
+        </MetricChip>
       )}
       <ValidationBadge validation={meta?.validation} />
       <ValidationBadge validation={meta?.citation_validation} label="citações" />
@@ -136,7 +140,6 @@ function BrandMark() {
   return (
     <div className="brand-mark" aria-hidden="true">
       <span>N</span>
-      <i />
     </div>
   );
 }
@@ -165,12 +168,16 @@ function Sidebar({
         aria-label="Fechar menu"
       />
       <aside className={`sidebar ${open ? "is-open" : ""}`}>
+        <div className="sidebar-government">
+          <span>SP</span>
+          <strong>Governo do Estado de São Paulo</strong>
+        </div>
         <div className="sidebar-head">
           <a className="brand" href="#top" aria-label="Nadia — início">
-            <BrandMark />
+            <span className="seade-wordmark">SEADE</span>
             <span>
               <strong>Nadia</strong>
-              <small>Fundação Seade</small>
+              <small>Assistente de dados</small>
             </span>
           </a>
           <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu">
@@ -246,16 +253,16 @@ function Sidebar({
 function EmptyState({ onPick, input, setInput, onSubmit, ragType }) {
   return (
     <section className="empty-state">
-      <div className="hero-orbit" aria-hidden="true">
-        <span className="orbit orbit-one" />
-        <span className="orbit orbit-two" />
-        <span className="orbit-core"><Sparkles size={30} /></span>
+      <div className="theme-ribbon" aria-label="Áreas de conhecimento">
+        <span><Activity size={17} /> Mercado de trabalho</span>
+        <span><Gauge size={17} /> Economia</span>
+        <span><Layers3 size={17} /> Indicadores sociais</span>
       </div>
-      <div className="hero-kicker"><span /> Inteligência para dados públicos</div>
-      <h1>Transforme dados de São Paulo<br />em decisões mais claras.</h1>
+      <div className="hero-kicker">Inteligência para dados públicos</div>
+      <h1>Informação confiável<br />para entender São Paulo.</h1>
       <p>
-        Converse com os Boletins de Conjuntura Paulista. A Nadia encontra evidências,
-        cruza metodologias e mostra de onde veio cada número.
+        Consulte os Boletins de Conjuntura Paulista em linguagem natural. A Nadia
+        encontra evidências, compara períodos e mostra a origem de cada informação.
       </p>
       <Composer
         value={input}
@@ -265,7 +272,10 @@ function EmptyState({ onPick, input, setInput, onSubmit, ragType }) {
         onCancel={() => {}}
         ragType={ragType}
       />
-      <div className="suggestion-label">Ou comece com uma pergunta</div>
+      <div className="suggestion-label">
+        <strong>Perguntas em destaque</strong>
+        <span>Escolha um tema para começar</span>
+      </div>
       <div className="suggestion-grid">
         {SUGGESTIONS.map(({ icon: Icon, eyebrow, title }) => (
           <button key={title} onClick={() => onPick(title)}>
@@ -443,7 +453,7 @@ function Inspector({ open, onClose, meta, tab, setTab, developerMode }) {
                     <span><small>Consulta reescrita</small>{meta.rewritten_query}</span>
                   </div>
                 )}
-                <div className="section-title"><span>Documentos utilizados</span><b>{sources.length}</b></div>
+                <div className="section-title"><span>Trechos recuperados</span><b>{sources.length}</b></div>
                 <div className="source-cards">
                   {sources.length === 0 ? <p className="muted">Nenhuma fonte detalhada retornada.</p> : sources.map((source, index) => (
                     <article key={`${source.file || "source"}-${index}`}>
@@ -693,10 +703,17 @@ export default function App() {
       />
 
       <main className="main-area">
+        <div className="government-bar">
+          <div className="government-brand">
+            <span>SP</span>
+            <strong>Governo do Estado de São Paulo</strong>
+          </div>
+          <small>Fundação Sistema Estadual de Análise de Dados</small>
+        </div>
         <header className="topbar">
           <div className="topbar-left">
             <button className="icon-button menu-button" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu"><Menu size={20} /></button>
-            <div><small>Assistente em uso</small><strong>{RAG_OPTIONS[ragType].label}</strong></div>
+            <div><small>Nadia · Assistente Seade</small><strong>{RAG_OPTIONS[ragType].label}</strong></div>
             <span className={`top-status top-status--${healthState}`}>{healthState === "ready" ? "Online" : healthState === "initializing" ? "Inicializando" : healthState === "checking" ? "Verificando" : "Offline"}</span>
           </div>
           <div className="topbar-actions">

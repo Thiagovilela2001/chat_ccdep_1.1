@@ -29,6 +29,27 @@ def test_citacao_com_pagina_incorreta_e_rejeitada():
     assert not checks[0].verified
 
 
+def test_citacao_normaliza_markdown_e_intervalo_de_paginas():
+    nodes = [
+        _node("Primeiro trecho.", file="regional/boletim.pdf", page=3),
+        _node("Segundo trecho.", file="regional/boletim.pdf", page=4),
+    ]
+    checks = validate_citations(
+        "Síntese (**Fonte:** `boletim.pdf`, p. 3–4).",
+        nodes,
+    )
+    assert len(checks) == 1
+    assert checks[0].verified
+
+
+def test_citacao_rejeita_intervalo_com_pagina_nao_recuperada():
+    checks = validate_citations(
+        "Síntese (Fonte: boletim.pdf, p. 3–5).",
+        [_node("Trecho.", page=3), _node("Trecho.", page=5)],
+    )
+    assert not checks[0].verified
+
+
 def test_contexto_enviado_ao_llm_inclui_proveniencia():
     context = format_source_context(_node("Trecho documental."))
     assert "Fonte: regional/boletim.pdf" in context

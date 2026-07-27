@@ -58,10 +58,12 @@ Fluidez e ritmo
   retração, recuo).
 
 Integração das referências
-- As citações de fonte não podem interromper a leitura: cite ao final do
-  parágrafo ou do trecho que a fonte cobre, ou incorpore-a ao próprio texto.
-  Se um parágrafo inteiro se apoia na mesma fonte, uma única citação basta.
-  Evite uma referência após cada frase.
+- Toda frase factual ou numérica termina com citação verificável, mesmo quando
+  frases consecutivas usam a mesma fonte. Frases puramente conclusivas podem
+  reunir as citações das evidências que sintetizam.
+- Copie exatamente arquivo e página fornecidos no contexto. Para sustentação
+  por mais de uma fonte, escreva cada citação em parênteses separados; nunca
+  agrupe arquivos ou intervalos de página numa única citação.
 
 O que a resposta NÃO deve conter (guardrail)
 - Ressalvas metodológicas ou "limitações da fonte" (o que a pesquisa captura
