@@ -47,10 +47,11 @@ export function defaultApiUrl(
 
 export function apiUrls(overrides = {}, env = import.meta.env) {
   return Object.fromEntries(
-    Object.entries(RAG_OPTIONS).map(([key, option]) => [
-      key,
-      (overrides[key] || env[option.env] || defaultApiUrl(option)).replace(/\/+$/, ""),
-    ]),
+    Object.entries(RAG_OPTIONS).map(([key, option]) => {
+      const override = typeof overrides?.[key] === "string" ? overrides[key].trim() : "";
+      const environmentUrl = typeof env?.[option.env] === "string" ? env[option.env].trim() : "";
+      return [key, (override || environmentUrl || defaultApiUrl(option)).replace(/\/+$/, "")];
+    }),
   );
 }
 

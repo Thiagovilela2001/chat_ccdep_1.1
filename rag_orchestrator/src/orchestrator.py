@@ -10,14 +10,13 @@ from __future__ import annotations
 import asyncio
 import time
 
+from rag_core.answer_policy import REFUSAL_TEXT
+
 from .fusion import run_engines, select_best
 from .query_analyzer import QueryAnalyzer
 from .quality_gate import summarize
 from .registry import get_client, get_profiles, health_is_ready, profile_dict
 from .router import RouteDecision, route
-
-REFUSAL_TEXT = "A informação não consta nos documentos fornecidos."
-
 
 class Orchestrator:
     def __init__(self, analyzer: QueryAnalyzer | None = None,

@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
+from .answer_policy import sanitize_answer
 from .api_models import CitationValidationInfo, QueryResponse, SourceInfo, ValidationInfo
 from .citation_validator import validate_citations
 from .numerical_validator import validate_numbers
@@ -44,6 +45,7 @@ async def execute_engine_query(
         ),
         timeout=request_timeout_seconds(),
     )
+    answer = sanitize_answer(answer, question=question)
     checks = await asyncio.to_thread(validate_numbers, answer, source_nodes)
     unverified = [check.value for check in checks if not check.verified]
     verified = len(checks) - len(unverified)

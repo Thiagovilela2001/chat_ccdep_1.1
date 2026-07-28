@@ -10,8 +10,7 @@ Restrições respeitadas pelo guia (não relaxar sem revisar os consumidores):
 - números devem ser transcritos verbatim: rag_core/numerical_validator.py
   confere cada número da resposta contra os chunks de origem, e um valor
   arredondado ("cerca de 650 mil" para "649 mil") reprova na verificação;
-- a frase exata de recusa ('A informação não consta nos documentos
-  fornecidos.') é detectada por quality_gate.py e evaluate.py.
+- a frase de recusa compartilhada fica em rag_core/answer_policy.py.
 """
 
 ANALYST_WRITING_GUIDE = """\
@@ -57,13 +56,20 @@ Fluidez e ritmo
   "queda") quando existir alternativa igualmente precisa (avanço, expansão,
   retração, recuo).
 
-Integração das referências
-- Toda frase factual ou numérica termina com citação verificável, mesmo quando
-  frases consecutivas usam a mesma fonte. Frases puramente conclusivas podem
-  reunir as citações das evidências que sintetizam.
-- Copie exatamente arquivo e página fornecidos no contexto. Para sustentação
-  por mais de uma fonte, escreva cada citação em parênteses separados; nunca
-  agrupe arquivos ou intervalos de página numa única citação.
+Separação entre resposta e evidências
+- A resposta principal contém somente a síntese técnica. A interface exibe
+  separadamente evidências e rastreabilidade.
+- Nunca escreva nomes de arquivos, PDFs, documentos, páginas, abas, rótulos de
+  origem, citações inline ou listas de referências, salvo quando a pergunta
+  pedir explicitamente a identificação das fontes.
+- Nunca diga como a informação foi obtida nem exponha mecanismos internos:
+  documentos ou trechos recuperados, chunks, embeddings, similaridade,
+  reranking, recuperação ou contexto enviado ao modelo.
+- Integre afirmações coincidentes em uma única síntese. Não conte documentos,
+  não organize a resposta por documento e não repita a mesma conclusão.
+- Se o suporte for parcial, responda somente aos pontos sustentados. Para o
+  restante, use apenas a mensagem de evidência insuficiente definida no prompt,
+  sem descrever buscas, ausências ou limitações do processo.
 
 O que a resposta NÃO deve conter (guardrail)
 - Ressalvas metodológicas ou "limitações da fonte" (o que a pesquisa captura

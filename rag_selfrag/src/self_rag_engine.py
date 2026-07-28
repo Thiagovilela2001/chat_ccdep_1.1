@@ -23,6 +23,7 @@ import re
 
 from openai import AsyncOpenAI
 
+from rag_core.answer_policy import REFUSAL_TEXT, sanitize_answer
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
 from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.llm import interp_model, openai_client_kwargs
@@ -72,12 +73,13 @@ Sua tarefa é redigir uma análise que responda à pergunta do usuário com base
 exclusivamente no contexto fornecido.
 
 Use SOMENTE o contexto abaixo para responder. Se a informação não constar no contexto,
-responda exatamente: 'A informação não consta nos documentos fornecidos.'
+responda exatamente: '""" + REFUSAL_TEXT + """'
 
 FIDELIDADE ÀS FONTES (inegociável)
 1. Conhecimento externo é proibido.
-2. Todo fato e todo número deve ser rastreável ao contexto, com a fonte
-   correspondente citada no texto. Organizar, comparar e encadear fatos de
+2. Todo fato e todo número deve ser rastreável ao contexto. Use rótulos de
+   origem apenas para verificação interna; nunca os copie para a resposta.
+   Organizar, comparar e encadear fatos de
    trechos diferentes em uma mesma narrativa é permitido e esperado; criar
    fato novo, não: nenhuma afirmação causal, estimativa ou conclusão que
    nenhum trecho sustente, direta ou numericamente.
@@ -237,10 +239,10 @@ class SelfRAGEngine:
             )
             record_reported_usage("selfrag", resp)
             content = (resp.choices[0].message.content or "").strip()
-            return content or "A informação não consta nos documentos fornecidos."
+            return content or REFUSAL_TEXT
         except Exception as exc:
             log.warning("SelfRAG: generate falhou: %s", exc)
-            return "A informação não consta nos documentos fornecidos."
+            return REFUSAL_TEXT
 
     async def _check_support(self, answer: str, context: str) -> str:
         """ISSUP — retorna 'full', 'partial' ou 'none'."""
@@ -284,7 +286,7 @@ class SelfRAGEngine:
 
         if not needs_retrieve:
             log.info("SelfRAG: retrieval desnecessário — recusando")
-            return "A informação não consta nos documentos fornecidos.", []
+            return REFUSAL_TEXT, []
 
         # ── 2. RETRIEVE ───────────────────────────────────────────────────────
         passages = await asyncio.to_thread(
@@ -293,7 +295,7 @@ class SelfRAGEngine:
         log.info("SelfRAG RETRIEVE: %d passages", len(passages))
 
         if not passages:
-            return "A informação não consta nos documentos fornecidos.", []
+            return REFUSAL_TEXT, []
 
         # ── 3. ISREL — filtra relevantes ──────────────────────────────────────
         relevant = await self._filter_relevant(question, passages)
@@ -343,4 +345,4 @@ class SelfRAGEngine:
         ]
 
         log.info("SelfRAGEngine: concluído | %d source nodes", len(unique_nodes))
-        return answer_text.strip(), unique_nodes
+        return sanitize_answer(answer_text, question=question), unique_nodes

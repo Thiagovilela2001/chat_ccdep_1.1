@@ -21,6 +21,15 @@ describe("configuração da API", () => {
     expect(urls.principal).toBe("https://rag.example/principal");
   });
 
+  it("ignora endpoints salvos com formato inválido", () => {
+    const urls = apiUrls(
+      { meta: 8010, principal: null },
+      {},
+    );
+    expect(urls.meta).toBe("http://127.0.0.1:8010");
+    expect(urls.principal).toBe("http://127.0.0.1:8000");
+  });
+
   it("normaliza readiness de orquestrador e engines", () => {
     expect(isBackendReady({ orchestrator_ready: true })).toBe(true);
     expect(isBackendReady({ engine_ready: true })).toBe(true);

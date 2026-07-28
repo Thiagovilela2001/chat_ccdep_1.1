@@ -19,6 +19,7 @@ import os
 
 from openai import AsyncOpenAI
 
+from rag_core.answer_policy import REFUSAL_TEXT, sanitize_answer
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
 from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.llm import openai_client_kwargs
@@ -52,9 +53,10 @@ geral; os trechos originais fornecem os números e as evidências pontuais.
 FIDELIDADE ÀS FONTES (inegociável)
 1. Use SOMENTE o que está no contexto. Conhecimento externo é proibido.
 2. Se a informação não estiver no contexto, responda exatamente:
-   'A informação não consta nos documentos fornecidos.'
-3. Todo fato e todo número deve ser rastreável ao contexto, com a fonte
-   presente nos metadados citada no texto. Organizar, comparar e encadear
+   '""" + REFUSAL_TEXT + """'
+3. Todo fato e todo número deve ser rastreável ao contexto. Use metadados
+   somente para verificação interna e nunca os copie para a resposta.
+   Organizar, comparar e encadear
    fatos de trechos diferentes em uma mesma narrativa é permitido e esperado;
    criar fato novo, não: nenhuma afirmação causal, estimativa ou conclusão
    que nenhum trecho sustente, direta ou numericamente.
@@ -165,7 +167,7 @@ class RaptorEngine:
         context = limit_context(context)
 
         if not context:
-            return "A informação não consta nos documentos fornecidos.", []
+            return REFUSAL_TEXT, []
 
         user_message = (
             f"CONTEXTO RECUPERADO (índice RAPTOR — múltiplos níveis de abstração):\n"
@@ -186,11 +188,11 @@ class RaptorEngine:
             record_reported_usage("raptor", response)
             answer_text = (
                 response.choices[0].message.content
-                or "A informação não consta nos documentos fornecidos."
+                or REFUSAL_TEXT
             )
         except Exception as exc:
             log.warning("RaptorEngine: erro LLM: %s", exc)
-            answer_text = "A informação não consta nos documentos fornecidos."
+            answer_text = REFUSAL_TEXT
 
         # Deduplica source_nodes
         seen: set[int] = set()
@@ -200,4 +202,4 @@ class RaptorEngine:
         ]
 
         log.info("RaptorEngine: concluído | %d source nodes", len(unique_nodes))
-        return answer_text.strip(), unique_nodes
+        return sanitize_answer(answer_text, question=question), unique_nodes

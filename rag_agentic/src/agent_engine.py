@@ -17,6 +17,8 @@ import os
 
 from openai import AsyncOpenAI
 
+from rag_core.answer_policy import REFUSAL_TEXT, sanitize_answer
+from rag_core.answer_style import ANALYST_WRITING_GUIDE
 from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.llm import openai_client_kwargs
 from rag_core.runtime import bounded_int, limit_chat_messages, limit_context
@@ -108,22 +110,20 @@ complete lacunas com conhecimento próprio, nunca deduza números inexistentes e
 nunca apresente relações causais que as fontes não sustentem. Quando houver
 incerteza, deixe-a explícita. Os números devem ser transcritos EXATAMENTE como
 constam na fonte (mesmos dígitos e formatação) — nunca arredonde nem converta
-unidades. Se a informação não foi encontrada em nenhuma ferramenta, responda
-exatamente: 'A informação não consta nos documentos fornecidos.'
+unidades. Se a informação não tem suporte suficiente, responda
+exatamente: '""" + REFUSAL_TEXT + """'
 
 Etapa 8. Estrutura da resposta
-Organize sempre nesta ordem:
-1. Resposta direta à pergunta.
-2. Explicação dos principais mecanismos encontrados.
-3. Evidências documentais organizadas por tema (não por documento).
-4. Relação entre os diferentes documentos.
-5. Limitações encontradas nas fontes.
+Redija texto contínuo, técnico e natural. Abra com resposta direta, desenvolva
+os mecanismos sustentados e feche com síntese. Não crie seções por documento,
+listas de evidências, referências ou limitações não solicitadas.
 
 Critério de parada
 Só finalize a investigação quando: todos os aspectos relevantes tiverem sido
 investigados; não surgirem novos conceitos relevantes das buscas; houver
 evidência suficiente para uma síntese consistente. Não pare apenas porque
 encontrou uma resposta parcial.
+""" + ANALYST_WRITING_GUIDE + """
 {skill_block}
 """
 
@@ -301,7 +301,7 @@ class AgenticEngine:
 
         system_prompt = _SYSTEM_PROMPT.format(skill_block=skill_block)
         source_nodes: list = []
-        answer_text = "A informação não consta nos documentos fornecidos."
+        answer_text = REFUSAL_TEXT
 
         log.info("AgenticEngine: iniciando | question: %s", question[:80])
 
@@ -378,7 +378,7 @@ class AgenticEngine:
             "AgenticEngine: concluído | %d source nodes coletados",
             len(unique_nodes),
         )
-        return answer_text.strip(), unique_nodes
+        return sanitize_answer(answer_text, question=question), unique_nodes
 
     # ── Geração agentic (loop de refinamento com tools) ───────────────────────
     async def _agentic_generate(

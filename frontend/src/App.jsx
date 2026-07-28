@@ -36,16 +36,33 @@ import {
   checkHealth,
   isBackendReady,
   queryBackend,
-  RAG_OPTIONS,
 } from "./lib/api";
+import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
 
 const STORAGE = {
   messages: "nadia.messages.v1",
-  rag: "nadia.rag.v1",
   theme: "nadia.theme.v1",
   endpoints: "nadia.endpoints.v1",
   apiKey: "nadia.apiKey.v1",
 };
+
+const ACTIVE_RAG_TYPE = "principal";
+const ASSISTANT_MODE_LABEL = "Análise documental";
+
+const CLIENT_DIAGNOSTIC_URL = "http://127.0.0.1:8501/client-error";
+
+function reportClientDiagnostic(detail) {
+  fetch(CLIENT_DIAGNOSTIC_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      ...detail,
+      href: window.location.href,
+      occurredAt: new Date().toISOString(),
+    }),
+  }).catch(() => {});
+}
 
 const SUGGESTIONS = [
   {
@@ -68,13 +85,22 @@ const SUGGESTIONS = [
 const uid = () =>
   globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-function readJson(key, fallback) {
-  try {
-    const value = JSON.parse(localStorage.getItem(key));
-    return value ?? fallback;
-  } catch {
-    return fallback;
-  }
+function storedMessages() {
+  return readStoredJson(globalThis.localStorage, STORAGE.messages, [], Array.isArray);
+}
+
+function storedTheme() {
+  const value = readStorage(globalThis.localStorage, STORAGE.theme, "light");
+  return value === "dark" ? "dark" : "light";
+}
+
+function storedEndpoints() {
+  return readStoredJson(
+    globalThis.localStorage,
+    STORAGE.endpoints,
+    {},
+    (value) => value !== null && typeof value === "object" && !Array.isArray(value),
+  );
 }
 
 function formatMs(value) {
@@ -116,21 +142,10 @@ function ValidationBadge({ validation, label = "números" }) {
 }
 
 function AnswerMetrics({ meta }) {
-  const route = meta?.route || {};
   const elapsed = meta?.timings?.total_ms ?? meta?._client_roundtrip_ms;
-  const engine = route.engine_label || route.engine || meta?.rag_label;
-  const sources = meta?.sources || [];
-  const documentCount = new Set(sources.map((source) => source.file).filter(Boolean)).size;
   return (
     <div className="answer-metrics">
-      {engine && <MetricChip icon={Layers3}>{engine}</MetricChip>}
-      {sources.length > 0 && (
-        <MetricChip icon={Database}>
-          {documentCount} {documentCount === 1 ? "documento" : "documentos"} · {sources.length} trechos
-        </MetricChip>
-      )}
       <ValidationBadge validation={meta?.validation} />
-      <ValidationBadge validation={meta?.citation_validation} label="citações" />
       {elapsed != null && <MetricChip icon={Clock3}>{formatMs(elapsed)}</MetricChip>}
     </div>
   );
@@ -147,10 +162,9 @@ function BrandMark() {
 function Sidebar({
   open,
   onClose,
-  ragType,
-  onRagChange,
   health,
   healthState,
+  healthError,
   onRefresh,
   messages,
   onNewChat,
@@ -191,27 +205,6 @@ function Sidebar({
           <span>⌘ K</span>
         </button>
 
-        <section className="sidebar-section">
-          <div className="sidebar-label">Metodologia</div>
-          <div className="method-list">
-            {Object.entries(RAG_OPTIONS).map(([key, option]) => (
-              <button
-                key={key}
-                className={ragType === key ? "is-active" : ""}
-                onClick={() => onRagChange(key)}
-                title={option.description}
-              >
-                <span className="method-symbol">{key === "meta" ? <Sparkles /> : <Layers3 />}</span>
-                <span>
-                  <strong>{option.shortLabel}</strong>
-                  <small>{key === "meta" ? "Roteamento inteligente" : option.description}</small>
-                </span>
-                {ragType === key && <Check size={15} />}
-              </button>
-            ))}
-          </div>
-        </section>
-
         <section className="sidebar-section history-section">
           <div className="sidebar-label">
             <span>Histórico</span>
@@ -236,7 +229,9 @@ function Sidebar({
             <span className={`status-orb status-orb--${ready ? "ready" : healthState}`} />
             <span>
               <strong>{ready ? "Sistema operacional" : healthState === "checking" ? "Verificando" : "Indisponível"}</strong>
-              <small>{health?.rag_label || RAG_OPTIONS[ragType].label}</small>
+              <small title={healthError || undefined}>
+                {healthError || "Base documental"}
+              </small>
             </span>
             <RefreshCw size={15} className={healthState === "checking" ? "is-spinning" : ""} />
           </button>
@@ -250,7 +245,7 @@ function Sidebar({
   );
 }
 
-function EmptyState({ onPick, input, setInput, onSubmit, ragType }) {
+function EmptyState({ onPick, input, setInput, onSubmit }) {
   return (
     <section className="empty-state">
       <div className="theme-ribbon" aria-label="Áreas de conhecimento">
@@ -270,7 +265,6 @@ function EmptyState({ onPick, input, setInput, onSubmit, ragType }) {
         onSubmit={onSubmit}
         loading={false}
         onCancel={() => {}}
-        ragType={ragType}
       />
       <div className="suggestion-label">
         <strong>Perguntas em destaque</strong>
@@ -289,7 +283,7 @@ function EmptyState({ onPick, input, setInput, onSubmit, ragType }) {
       <div className="trust-row">
         <span><ShieldCheck size={15} /> Fontes rastreáveis</span>
         <span><CheckCircle2 size={15} /> Validação numérica</span>
-        <span><Route size={15} /> Roteamento inteligente</span>
+        <span><Sparkles size={15} /> Síntese técnica</span>
       </div>
     </section>
   );
@@ -358,7 +352,7 @@ function LoadingMessage() {
   );
 }
 
-function Composer({ value, setValue, onSubmit, loading, onCancel, ragType }) {
+function Composer({ value, setValue, onSubmit, loading, onCancel }) {
   const textarea = useRef(null);
 
   useEffect(() => {
@@ -395,7 +389,7 @@ function Composer({ value, setValue, onSubmit, loading, onCancel, ragType }) {
           aria-label="Digite sua pergunta"
         />
         <div className="composer-bottom">
-          <span><Sparkles size={14} /> {RAG_OPTIONS[ragType].label}</span>
+          <span><Sparkles size={14} /> {ASSISTANT_MODE_LABEL}</span>
           {loading ? (
             <button className="send-button is-stop" type="button" onClick={onCancel} aria-label="Cancelar consulta">
               <CircleStop size={18} />
@@ -415,7 +409,6 @@ function Composer({ value, setValue, onSubmit, loading, onCancel, ragType }) {
 function Inspector({ open, onClose, meta, tab, setTab, developerMode }) {
   const sources = meta?.sources || [];
   const validation = meta?.validation || {};
-  const citations = meta?.citation_validation || {};
   const route = meta?.route || {};
   const timings = meta?.timings || {};
 
@@ -472,7 +465,6 @@ function Inspector({ open, onClose, meta, tab, setTab, developerMode }) {
             {tab === "validation" && (
               <section className="validation-panel">
                 <ValidationCard title="Validação numérica" icon={CheckCircle2} data={validation} />
-                <ValidationCard title="Validação de citações" icon={ShieldCheck} data={citations} />
               </section>
             )}
 
@@ -522,8 +514,8 @@ function InfoBlock({ icon: Icon, label, value }) {
   return <div className="info-block"><span><Icon size={16} /></span><div><small>{label}</small><strong>{value}</strong></div></div>;
 }
 
-function SettingsDialog({ open, onClose, ragType, endpoints, setEndpoints, apiKey, setApiKey, developerMode, setDeveloperMode }) {
-  const [draft, setDraft] = useState(endpoints[ragType] || "");
+function SettingsDialog({ open, onClose, endpoints, setEndpoints, apiKey, setApiKey, developerMode, setDeveloperMode }) {
+  const [draft, setDraft] = useState(endpoints[ACTIVE_RAG_TYPE] || "");
   if (!open) return null;
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -534,7 +526,7 @@ function SettingsDialog({ open, onClose, ragType, endpoints, setEndpoints, apiKe
         </header>
         <div className="dialog-body">
           <label>
-            <span>Endpoint de {RAG_OPTIONS[ragType].label}</span>
+            <span>Endpoint do assistente</span>
             <input value={draft} onChange={(event) => setDraft(event.target.value)} spellCheck="false" />
             <small>O endereço é salvo somente neste navegador.</small>
           </label>
@@ -551,7 +543,7 @@ function SettingsDialog({ open, onClose, ragType, endpoints, setEndpoints, apiKe
         </div>
         <footer>
           <button className="secondary-button" onClick={onClose}>Cancelar</button>
-          <button className="primary-button" onClick={() => { setEndpoints({ ...endpoints, [ragType]: draft.trim().replace(/\/+$/, "") }); onClose(); }}>Salvar alterações</button>
+          <button className="primary-button" onClick={() => { setEndpoints({ ...endpoints, [ACTIVE_RAG_TYPE]: draft.trim().replace(/\/+$/, "") }); onClose(); }}>Salvar alterações</button>
         </footer>
       </section>
     </div>
@@ -559,38 +551,37 @@ function SettingsDialog({ open, onClose, ragType, endpoints, setEndpoints, apiKe
 }
 
 export default function App() {
-  const [messages, setMessages] = useState(() => readJson(STORAGE.messages, []));
-  const [ragType, setRagType] = useState(() => localStorage.getItem(STORAGE.rag) || "meta");
-  const [theme, setTheme] = useState(() => localStorage.getItem(STORAGE.theme) || "light");
-  const [endpointOverrides, setEndpointOverrides] = useState(() => readJson(STORAGE.endpoints, {}));
-  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem(STORAGE.apiKey) || "");
+  const [messages, setMessages] = useState(storedMessages);
+  const [theme, setTheme] = useState(storedTheme);
+  const [endpointOverrides, setEndpointOverrides] = useState(storedEndpoints);
+  const [apiKey, setApiKey] = useState(() => readStorage(globalThis.sessionStorage, STORAGE.apiKey));
   const [developerMode, setDeveloperMode] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [health, setHealth] = useState(null);
   const [healthState, setHealthState] = useState("checking");
+  const [healthError, setHealthError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState("sources");
   const [selectedMeta, setSelectedMeta] = useState(() => {
-    const last = [...readJson(STORAGE.messages, [])].reverse().find((item) => item.meta);
+    const last = [...storedMessages()].reverse().find((item) => item?.meta);
     return last?.meta || null;
   });
   const activeController = useRef(null);
   const messageScroll = useRef(null);
   const endpoints = useMemo(() => apiUrls(endpointOverrides), [endpointOverrides]);
-  const activeUrl = endpoints[ragType];
+  const activeUrl = endpoints[ACTIVE_RAG_TYPE];
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem(STORAGE.theme, theme);
+    writeStorage(globalThis.localStorage, STORAGE.theme, theme);
   }, [theme]);
 
-  useEffect(() => localStorage.setItem(STORAGE.rag, ragType), [ragType]);
-  useEffect(() => localStorage.setItem(STORAGE.endpoints, JSON.stringify(endpointOverrides)), [endpointOverrides]);
-  useEffect(() => sessionStorage.setItem(STORAGE.apiKey, apiKey), [apiKey]);
-  useEffect(() => localStorage.setItem(STORAGE.messages, JSON.stringify(messages.slice(-40))), [messages]);
+  useEffect(() => writeStorage(globalThis.localStorage, STORAGE.endpoints, JSON.stringify(endpointOverrides)), [endpointOverrides]);
+  useEffect(() => writeStorage(globalThis.sessionStorage, STORAGE.apiKey, apiKey), [apiKey]);
+  useEffect(() => writeStorage(globalThis.localStorage, STORAGE.messages, JSON.stringify(messages.slice(-40))), [messages]);
   useEffect(() => {
     const container = messageScroll.current;
     if (!container) return undefined;
@@ -604,13 +595,32 @@ export default function App() {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 6000);
     setHealthState("checking");
+    setHealthError("");
     try {
       const payload = await checkHealth(activeUrl, { signal: controller.signal });
+      const nextState = isBackendReady(payload) ? "ready" : "initializing";
       setHealth(payload);
-      setHealthState(isBackendReady(payload) ? "ready" : "initializing");
-    } catch {
+      setHealthState(nextState);
+      reportClientDiagnostic({
+        kind: "health-check",
+        activeUrl,
+        result: nextState,
+        payload,
+      });
+    } catch (error) {
+      const detail = error?.name === "AbortError"
+        ? `Tempo esgotado ao consultar ${activeUrl}/health`
+        : `Falha de rede ou CORS em ${activeUrl}/health: ${error?.message || "sem detalhes"}`;
       setHealth(null);
       setHealthState("offline");
+      setHealthError(detail);
+      reportClientDiagnostic({
+        kind: "health-check",
+        activeUrl,
+        result: "offline",
+        errorName: error?.name,
+        errorMessage: error?.message,
+      });
     } finally {
       window.clearTimeout(timer);
     }
@@ -691,10 +701,9 @@ export default function App() {
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        ragType={ragType}
-        onRagChange={(value) => { setRagType(value); setSidebarOpen(false); }}
         health={health}
         healthState={healthState}
+        healthError={healthError}
         onRefresh={refreshHealth}
         messages={messages}
         onNewChat={newConversation}
@@ -713,8 +722,13 @@ export default function App() {
         <header className="topbar">
           <div className="topbar-left">
             <button className="icon-button menu-button" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu"><Menu size={20} /></button>
-            <div><small>Nadia · Assistente Seade</small><strong>{RAG_OPTIONS[ragType].label}</strong></div>
-            <span className={`top-status top-status--${healthState}`}>{healthState === "ready" ? "Online" : healthState === "initializing" ? "Inicializando" : healthState === "checking" ? "Verificando" : "Offline"}</span>
+            <div><small>Nadia · Assistente Seade</small><strong>{ASSISTANT_MODE_LABEL}</strong></div>
+            <span
+              className={`top-status top-status--${healthState}`}
+              title={healthError || `${activeUrl}/health`}
+            >
+              {healthState === "ready" ? "Online" : healthState === "initializing" ? "Inicializando" : healthState === "checking" ? "Verificando" : "Offline"}
+            </span>
           </div>
           <div className="topbar-actions">
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="Alternar tema">
@@ -735,7 +749,6 @@ export default function App() {
                   input={input}
                   setInput={setInput}
                   onSubmit={submitQuestion}
-                  ragType={ragType}
                 />
               ) : (
                 messages.map((message) => <Message key={message.id} message={message} onInspect={inspect} />)
@@ -744,7 +757,7 @@ export default function App() {
             </div>
           </div>
           {(messages.length > 0 || loading) && (
-            <Composer value={input} setValue={setInput} onSubmit={submitQuestion} loading={loading} onCancel={() => activeController.current?.abort()} ragType={ragType} />
+            <Composer value={input} setValue={setInput} onSubmit={submitQuestion} loading={loading} onCancel={() => activeController.current?.abort()} />
           )}
         </div>
       </main>
@@ -752,10 +765,9 @@ export default function App() {
       <Inspector open={inspectorOpen} onClose={() => setInspectorOpen(false)} meta={selectedMeta} tab={inspectorTab} setTab={setInspectorTab} developerMode={developerMode} />
 
       <SettingsDialog
-        key={`${ragType}-${endpoints[ragType]}-${settingsOpen}`}
+        key={`${ACTIVE_RAG_TYPE}-${endpoints[ACTIVE_RAG_TYPE]}-${settingsOpen}`}
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        ragType={ragType}
         endpoints={endpoints}
         setEndpoints={setEndpointOverrides}
         apiKey={apiKey}

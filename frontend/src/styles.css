@@ -173,32 +173,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .new-chat span { margin-left: auto; padding: 2px 6px; color: rgba(255, 255, 255, .65); font-size: 10px; border: 1px solid rgba(255, 255, 255, .22); border-radius: 2px; }
 .sidebar-section { margin-top: 22px; }
 .sidebar-label { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 8px; color: rgba(232, 240, 235, .46); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
-.method-list { display: grid; gap: 3px; }
-.method-list button {
-  display: grid;
-  grid-template-columns: 30px 1fr 15px;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-  padding: 8px 9px;
-  color: rgba(235, 243, 238, .68);
-  text-align: left;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  transition: 130ms ease;
-}
-.method-list button:hover { color: white; background: rgba(255,255,255,.05); }
-.method-list button.is-active { color: white; background: rgba(255,255,255,.1); border-color: transparent; border-left-color: var(--brand); }
-.method-symbol { display: grid; width: 28px; height: 28px; place-items: center; color: rgba(235,243,238,.65); background: rgba(255,255,255,.065); border-radius: 2px; }
-.method-symbol svg { width: 14px; height: 14px; }
-.method-list button.is-active .method-symbol { color: #8fb1ff; background: rgba(40,104,240,.2); }
-.method-list button > span:nth-child(2) { display: grid; min-width: 0; gap: 1px; }
-.method-list strong { font-size: 12px; }
-.method-list small { overflow: hidden; color: rgba(235,243,238,.38); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-.method-list button > svg { color: #8fb1ff; }
 .history-section { min-height: 0; flex: 1; }
 .history-list { display: grid; gap: 3px; max-height: 100%; overflow: auto; scrollbar-width: thin; }
 .history-list button { display: grid; gap: 3px; width: 100%; padding: 8px; color: rgba(235,243,238,.67); text-align: left; cursor: pointer; background: transparent; border: 0; border-radius: 9px; }

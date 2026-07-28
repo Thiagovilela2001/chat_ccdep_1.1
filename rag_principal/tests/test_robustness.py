@@ -60,7 +60,7 @@ def test_servico_compartilhado_preserva_contrato_http():
 
     class Engine:
         async def answer(self, **_kwargs):
-            return "A taxa foi 7,9%.", [node]
+            return "A taxa foi 7,9% (Fonte: boletim.pdf, p. 2).", [node]
 
     def interpreter(question, _llm):
         return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
@@ -75,5 +75,6 @@ def test_servico_compartilhado_preserva_contrato_http():
     ))
     assert response.sources[0].file == "boletim.pdf"
     assert response.sources[0].page == 2
+    assert response.answer == "A taxa foi 7,9%."
     assert response.validation.verified == 1
     assert diagnostics.chunks == 1

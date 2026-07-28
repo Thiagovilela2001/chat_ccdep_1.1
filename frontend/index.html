@@ -11,7 +11,76 @@
     <title>Nadia · Inteligência para dados públicos</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main
+        id="nadia-bootstrap-status"
+        style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#f5f5f6;color:#282828;font-family:Arial,'Segoe UI',sans-serif"
+      >
+        <section style="width:min(520px,100%);padding:28px;background:#fff;border:1px solid #dedfe2">
+          <small style="color:#2868f0;font-weight:800">NADIA · SEADE</small>
+          <h1 style="margin:12px 0 8px;font-size:24px">Carregando a interface…</h1>
+          <p style="margin:0;color:#5e6268;line-height:1.6">
+            Preparando os componentes e verificando os serviços locais.
+          </p>
+        </section>
+      </main>
+    </div>
+    <script>
+      (() => {
+        const reportUrl = "http://127.0.0.1:8501/client-error";
+
+        function errorText(value) {
+          if (value instanceof Error) return value.stack || value.message;
+          if (typeof value === "string") return value;
+          try {
+            return JSON.stringify(value);
+          } catch {
+            return String(value);
+          }
+        }
+
+        window.__showNadiaBootstrapError = (value) => {
+          const message = errorText(value) || "Falha desconhecida durante a inicialização.";
+          const root = document.getElementById("root");
+          if (root && root.dataset.nadiaMounted !== "true") {
+            const status = document.getElementById("nadia-bootstrap-status");
+            const title = status?.querySelector("h1");
+            const detail = status?.querySelector("p");
+            if (title) title.textContent = "A interface não conseguiu iniciar";
+            if (detail) detail.textContent = message;
+          }
+          fetch(reportUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+              message,
+              href: window.location.href,
+              userAgent: navigator.userAgent,
+              occurredAt: new Date().toISOString(),
+            }),
+          }).catch(() => {});
+        };
+
+        window.addEventListener("error", (event) => {
+          const resource = event.target?.src || event.target?.href;
+          window.__showNadiaBootstrapError(
+            event.error || event.message || (resource ? `Falha ao carregar ${resource}` : "Erro de carregamento."),
+          );
+        }, true);
+        window.addEventListener("unhandledrejection", (event) => {
+          window.__showNadiaBootstrapError(event.reason || "Promise rejeitada sem detalhes.");
+        });
+        window.setTimeout(() => {
+          const root = document.getElementById("root");
+          if (root?.dataset.nadiaMounted !== "true") {
+            window.__showNadiaBootstrapError(
+              "O JavaScript da aplicação não iniciou em até 8 segundos.",
+            );
+          }
+        }, 8000);
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

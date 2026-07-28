@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("./dist/", import.meta.url));
 const port = Number(process.env.PORT || 8501);
+let lastClientError = null;
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -18,6 +19,38 @@ const mimeTypes = {
 };
 
 createServer((request, response) => {
+  if (request.url === "/client-error" && request.method === "POST") {
+    let body = "";
+    request.setEncoding("utf8");
+    request.on("data", (chunk) => {
+      if (body.length < 32_768) body += chunk;
+    });
+    request.on("end", () => {
+      try {
+        lastClientError = JSON.parse(body);
+      } catch {
+        lastClientError = { message: body || "Erro do cliente sem detalhes." };
+      }
+      lastClientError.receivedAt = new Date().toISOString();
+      console.error("Erro reportado pelo frontend:", lastClientError);
+      response.writeHead(204, {
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-store",
+      });
+      response.end();
+    });
+    return;
+  }
+
+  if (request.url === "/client-error" && request.method === "GET") {
+    response.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    });
+    response.end(JSON.stringify(lastClientError));
+    return;
+  }
+
   if (request.url === "/healthz") {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end('{"status":"ok"}');

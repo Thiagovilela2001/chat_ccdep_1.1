@@ -90,7 +90,7 @@ def main():
     cls_out = {"query_type": "pontual", "confidence": 0.95, "in_scope": False}
     res = asyncio.run(Orchestrator(analyzer=FakeAnalyzer(cls_out)).answer("qual a Selic?"))
     check("fora de escopo → refuse", res["route"]["mode"] == "refuse")
-    check("texto de recusa", "não consta" in res["answer"].lower())
+    check("texto de recusa", "evidência suficiente" in res["answer"].lower())
 
     # 3. Multi-engine (opcional): escolhe a melhor resposta por qualidade.
     cls_amb = {"query_type": "ampla", "confidence": 0.3, "in_scope": True,

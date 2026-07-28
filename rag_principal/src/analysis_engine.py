@@ -8,6 +8,7 @@ Fluxo:
 """
 import asyncio
 
+from rag_core.answer_policy import REFUSAL_TEXT, sanitize_answer
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
 from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.logger import get_logger
@@ -33,15 +34,10 @@ diferentes em uma mesma narrativa é permitido e esperado; criar fato novo, não
 nenhuma afirmação causal, estimativa ou conclusão que nenhum trecho sustente, \
 direta ou numericamente.
 
-3. CITAÇÃO REAL — Toda frase com informação factual ou numérica deve terminar \
-com sua origem no formato (Fonte: nome_do_arquivo.pdf, p. X).
-   Copie nome do arquivo e página exatamente do rótulo presente no contexto.
-   Repita a citação em frases consecutivas quando ambas contiverem fatos.
-   Para duas fontes, use duas citações separadas: \
-(Fonte: arquivo_a.pdf, p. 1) (Fonte: arquivo_b.pdf, p. 2).
-   Nunca agrupe dois arquivos dentro dos mesmos parênteses e nunca invente página.
-   Nunca cite "[Dados de Séries Temporais]" ou "[Dados Estruturados de Tabelas]" como fonte.
-   Se um valor numérico extraído de tabela/série não tiver arquivo PDF identificável no \
+3. SEPARAÇÃO DA EVIDÊNCIA — Use os rótulos de origem apenas internamente para \
+verificar o suporte. Não os copie para a resposta. Não escreva citações, nomes \
+de arquivos, páginas, abas ou listas de referências, salvo pedido explícito do usuário.
+   Se um valor numérico extraído de tabela/série não tiver suporte identificável no \
 contexto narrativo adjacente, não o utilize na resposta.
 
 4. DADOS ESTRUTURADOS SEM RÓTULOS — Se a seção de séries temporais ou tabelas contiver \
@@ -52,13 +48,13 @@ e baseie a resposta somente no contexto narrativo.
 narrativo, prevaleça o contexto narrativo.
 
 6. AUSÊNCIA DE DADOS — Se a informação não está no contexto, responda exatamente:
-   'A informação não consta nos documentos fornecidos.'
+   '""" + REFUSAL_TEXT + """'
 
-7. EVIDÊNCIA PARCIAL — Responda apenas o que está documentado e declare explicitamente \
-o que está faltando.
+7. EVIDÊNCIA PARCIAL — Responda apenas o que está sustentado. Para cada ponto sem \
+suporte suficiente, use somente a mensagem definida no item 6.
 
 8. CÁLCULOS — Se a pergunta pede diferença, variação ou comparação e os dois valores \
-estão no contexto com fontes identificáveis, calcule e mostre a conta \
+estão sustentados no contexto, calcule e mostre a conta \
 (ex: 3,4% − 2,8% = 0,6 p.p.).
 
 """ + ANALYST_WRITING_GUIDE + """
@@ -205,7 +201,7 @@ class AnalysisEngine:
         )
 
         if not context_block.strip():
-            return "A informação não consta nos documentos fornecidos.", []
+            return REFUSAL_TEXT, []
 
         skill_block = build_domain_prompt_block(
             self._domain_skills,
@@ -222,4 +218,4 @@ class AnalysisEngine:
             )
         )
 
-        return response.text.strip(), all_source_nodes
+        return sanitize_answer(response.text, question=question), all_source_nodes

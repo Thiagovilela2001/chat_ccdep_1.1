@@ -35,7 +35,7 @@ from ragas import evaluate
 from ragas.metrics.collections import Faithfulness, ContextPrecision, ContextRecall
 from openai import OpenAI as OpenAIClient
 from ragas.llms import llm_factory
-from rag_core.citation_validator import validate_citations
+from rag_core.answer_policy import sanitize_answer
 from rag_core.numerical_validator import validate_numbers
 
 DATASET_PATHS = {
@@ -55,6 +55,7 @@ REFUSAL_KEYWORDS = [
     "não tenho informação",
     "não está nos documentos",
     "informação não consta",
+    "não fornecem evidência suficiente",
 ]
 
 _RUN_METADATA: dict = {}
@@ -122,6 +123,7 @@ def run_question(question: str, engine, interp_llm, interpret_query) -> tuple[st
             is_labor_market=interp.get("is_labor_market", False),
         )
     )
+    answer = sanitize_answer(answer, question=question)
     return answer, source_nodes, interp
 
 
@@ -145,7 +147,6 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
             answer, source_nodes, interp = run_question(question, engine, interp_llm, interpret_query)
             contexts = [n.get_content() for n in source_nodes]
             number_checks = validate_numbers(answer, source_nodes)
-            citation_checks = validate_citations(answer, source_nodes)
             records.append({
                 "question":     question,
                 "answer":       answer,
@@ -158,11 +159,6 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
                     sum(check.verified for check in number_checks) / len(number_checks)
                     if number_checks else None
                 ),
-                "citation_precision": (
-                    sum(check.verified for check in citation_checks) / len(citation_checks)
-                    if citation_checks else None
-                ),
-                "citation_count": len(citation_checks),
             })
             print(f"         ✅ OK | fontes: {interp['sources']} | chunks: {len(contexts)}")
         except Exception as exc:
@@ -176,8 +172,6 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
             diagnostics.append({
                 "latency_ms": round((time.perf_counter() - started) * 1000, 1),
                 "numeric_precision": None,
-                "citation_precision": None,
-                "citation_count": 0,
             })
 
     ragas_model = os.getenv("RAGAS_JUDGE_MODEL", "gpt-5-chat-latest")
@@ -196,11 +190,8 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
 
     latencies = [item["latency_ms"] for item in diagnostics]
     numeric = [item["numeric_precision"] for item in diagnostics if item["numeric_precision"] is not None]
-    citations = [item["citation_precision"] for item in diagnostics if item["citation_precision"] is not None]
     scores_dict.update({
         "numeric_precision": sum(numeric) / len(numeric) if numeric else math.nan,
-        "citation_precision": sum(citations) / len(citations) if citations else math.nan,
-        "citation_coverage": sum(item["citation_count"] > 0 for item in diagnostics) / len(diagnostics),
         "latency_p50_ms": _percentile(latencies, 0.50),
         "latency_p95_ms": _percentile(latencies, 0.95),
     })
