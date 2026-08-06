@@ -51,7 +51,7 @@ def test_limites_de_iteracao_sao_saturados(monkeypatch):
     assert _max_retries() == 2
 
 
-def test_servico_compartilhado_preserva_contrato_http():
+def test_servico_compartilhado_preserva_contrato_http(monkeypatch):
     node = SimpleNamespace(
         metadata={"source_file": "boletim.pdf", "page": 2},
         score=0.9,
@@ -65,6 +65,13 @@ def test_servico_compartilhado_preserva_contrato_http():
     def interpreter(question, _llm):
         return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
 
+    async def popup_explanations(_citations):
+        return {0: "A taxa informada foi de 7,9%."}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        popup_explanations,
+    )
     response, diagnostics = asyncio.run(execute_engine_query(
         question="Qual foi a taxa?",
         engine=Engine(),
@@ -75,6 +82,13 @@ def test_servico_compartilhado_preserva_contrato_http():
     ))
     assert response.sources[0].file == "boletim.pdf"
     assert response.sources[0].page == 2
+    assert response.sources[0].excerpt == "A taxa foi 7,9%."
+    assert response.numeric_citations[0].value == "7,9%"
+    assert response.numeric_citations[0].file == "boletim.pdf"
+    assert response.numeric_citations[0].page == 2
+    assert response.numeric_citations[0].snippet
+    assert "A taxa foi 7,9%" in response.numeric_citations[0].claim
+    assert response.numeric_citations[0].explanation == "A taxa informada foi de 7,9%."
     assert response.answer == "A taxa foi 7,9%."
     assert response.validation.verified == 1
     assert diagnostics.chunks == 1

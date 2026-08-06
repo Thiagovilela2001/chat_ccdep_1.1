@@ -74,3 +74,37 @@ def test_resultado_aritmetico_incorreto_e_rejeitado():
     )
     by_value = {check.value: check for check in checks}
     assert not by_value["0,9"].verified
+
+
+def test_numero_verificado_preserva_posicao_e_fonte_exatas():
+    response = "O primeiro indicador foi 12,5%, mas o principal chegou a 18,7%."
+    checks = validate_numbers(
+        response,
+        [
+            _node("Série secundária com resultado de 12,5%.", page=2),
+            _node("O indicador principal chegou a 18,7%.", page=8),
+        ],
+    )
+    by_value = {check.value: check for check in checks}
+
+    assert by_value["12,5%"].source_index == 0
+    assert response[
+        by_value["12,5%"].response_start:by_value["12,5%"].response_end
+    ] == "12,5%"
+    assert by_value["18,7%"].source_index == 1
+
+
+def test_citacao_tabular_preserva_linha_estruturada_completa():
+    table_node = _node(
+        "Setor: Indústria\nEmpregos: 125.400\nVariação: 3,2%\nFonte: tabela.pdf",
+        page=4,
+    )
+    table_node.metadata["type"] = "table"
+    checks = validate_numbers(
+        "A indústria registrou 125.400 empregos.",
+        [table_node],
+    )
+
+    assert checks[0].source_snippet == (
+        "Setor: Indústria\nEmpregos: 125.400\nVariação: 3,2%"
+    )

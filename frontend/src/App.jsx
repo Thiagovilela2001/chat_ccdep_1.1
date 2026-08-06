@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -8,6 +9,7 @@ import {
   Check,
   CheckCircle2,
   CircleStop,
+  ChevronDown,
   Clock3,
   Code2,
   Copy,
@@ -37,7 +39,13 @@ import {
   isBackendReady,
   queryBackend,
 } from "./lib/api";
+import {
+  annotateNumericCitations,
+  conceptualizeTabularSnippet,
+  parseTabularSnippet,
+} from "./lib/numericCitations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
+import { rotateFeaturedQuestions } from "./lib/suggestions";
 
 const STORAGE = {
   messages: "nadia.messages.v1",
@@ -64,23 +72,11 @@ function reportClientDiagnostic(detail) {
   }).catch(() => {});
 }
 
-const SUGGESTIONS = [
-  {
-    icon: Activity,
-    eyebrow: "Mercado de trabalho",
-    title: "Como evoluiu o emprego formal paulista nos boletins mais recentes?",
-  },
-  {
-    icon: Gauge,
-    eyebrow: "Atividade econômica",
-    title: "Quais setores mais contribuíram para o crescimento de São Paulo?",
-  },
-  {
-    icon: Layers3,
-    eyebrow: "Análise comparada",
-    title: "Compare indústria, serviços e comércio no período analisado.",
-  },
-];
+const SUGGESTION_ICONS = {
+  labor: Activity,
+  activity: Gauge,
+  comparison: Layers3,
+};
 
 const uid = () =>
   globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -245,7 +241,7 @@ function Sidebar({
   );
 }
 
-function EmptyState({ onPick, input, setInput, onSubmit }) {
+function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
   return (
     <section className="empty-state">
       <div className="theme-ribbon" aria-label="Áreas de conhecimento">
@@ -271,14 +267,17 @@ function EmptyState({ onPick, input, setInput, onSubmit }) {
         <span>Escolha um tema para começar</span>
       </div>
       <div className="suggestion-grid">
-        {SUGGESTIONS.map(({ icon: Icon, eyebrow, title }) => (
-          <button key={title} onClick={() => onPick(title)}>
-            <span className="suggestion-icon"><Icon size={18} /></span>
-            <small>{eyebrow}</small>
-            <strong>{title}</strong>
-            <ArrowUp size={16} />
-          </button>
-        ))}
+        {suggestions.map(({ id, eyebrow, title }) => {
+          const Icon = SUGGESTION_ICONS[id] || Sparkles;
+          return (
+            <button key={id} onClick={() => onPick(title)}>
+              <span className="suggestion-icon"><Icon size={18} /></span>
+              <small>{eyebrow}</small>
+              <strong>{title}</strong>
+              <ArrowUp size={16} />
+            </button>
+          );
+        })}
       </div>
       <div className="trust-row">
         <span><ShieldCheck size={15} /> Fontes rastreáveis</span>
@@ -289,8 +288,296 @@ function EmptyState({ onPick, input, setInput, onSubmit }) {
   );
 }
 
+function NumericCitation({ citation, children, onOpenSource }) {
+  const tooltipId = `numeric-source-${useId().replaceAll(":", "")}`;
+  const buttonRef = useRef(null);
+  const popoverRef = useRef(null);
+  const hideTimer = useRef(null);
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [position, setPosition] = useState(null);
+  const visible = hovered || pinned;
+  const sourceName = String(citation.file || "Documento")
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .at(-1);
+  const tableEvidence = citation.content_type === "table"
+    ? parseTabularSnippet(citation.snippet)
+    : null;
+  const tableConcept = tableEvidence
+    ? conceptualizeTabularSnippet(tableEvidence, citation.value)
+    : null;
+  const cleanClaim = String(citation.claim || "")
+    .replace(/^…|…$/g, "")
+    .replace(/[*_`#]/g, "")
+    .trim();
+  const generatedExplanation = String(citation.explanation || "").trim();
+  const fallbackConceptText = cleanClaim && !cleanClaim.includes("|")
+    ? cleanClaim
+    : tableConcept
+      ? `${citation.value} é o valor registrado para ${tableConcept.subject}.`
+      : `O valor confirmado nesta fonte é ${citation.value}.`;
+  const conceptText = generatedExplanation || fallbackConceptText;
+  const conceptQualifiers = (tableConcept?.qualifiers || [])
+    .filter(({ label, value }) => label && value && !/^coluna \d+$/i.test(label))
+    .slice(0, 4);
+
+  function highlightValue(text) {
+    const value = String(text || "");
+    const index = value.indexOf(citation.value);
+    if (index < 0) return value;
+    return (
+      <>
+        {value.slice(0, index)}
+        <mark>{citation.value}</mark>
+        {value.slice(index + citation.value.length)}
+      </>
+    );
+  }
+
+  function highlightTableNumbers(text) {
+    const value = String(text || "");
+    const pattern = /[-−]?(?:\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?)(?:\s*%|\s*p\.p\.)?/gi;
+    const parts = [];
+    let cursor = 0;
+    let match;
+    while ((match = pattern.exec(value)) !== null) {
+      if (match.index > cursor) parts.push(value.slice(cursor, match.index));
+      const number = match[0];
+      parts.push(
+        number.trim() === citation.value.trim()
+          ? <mark key={`${match.index}-${number}`}>{number}</mark>
+          : <span className="numeric-table-value" key={`${match.index}-${number}`}>{number}</span>,
+      );
+      cursor = match.index + number.length;
+    }
+    if (cursor === 0) return value;
+    if (cursor < value.length) parts.push(value.slice(cursor));
+    return parts;
+  }
+
+  const updatePosition = useCallback(() => {
+    const button = buttonRef.current;
+    if (!button) return;
+    const rect = button.getBoundingClientRect();
+    const mobile = window.innerWidth <= 680;
+    if (mobile) {
+      setPosition({
+        mobile: true,
+        left: 8,
+        bottom: Math.max(8, Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-bottom"), 10) || 8),
+        width: window.innerWidth - 16,
+      });
+      return;
+    }
+    const width = Math.min(410, Math.max(300, window.innerWidth - 32));
+    const left = Math.min(
+      window.innerWidth - width - 16,
+      Math.max(16, rect.left + rect.width / 2 - width / 2),
+    );
+    const below = rect.top < 250;
+    setPosition({
+      mobile: false,
+      below,
+      left,
+      top: below ? rect.bottom + 12 : rect.top - 12,
+      width,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return undefined;
+    const reposition = () => updatePosition();
+    window.addEventListener("resize", reposition);
+    document.addEventListener("scroll", reposition, true);
+    return () => {
+      window.removeEventListener("resize", reposition);
+      document.removeEventListener("scroll", reposition, true);
+    };
+  }, [updatePosition, visible]);
+
+  useEffect(() => {
+    if (!pinned) return undefined;
+    const close = (event) => {
+      if (
+        !buttonRef.current?.contains(event.target)
+        && !popoverRef.current?.contains(event.target)
+      ) {
+        setPinned(false);
+      }
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [pinned]);
+
+  useEffect(() => () => window.clearTimeout(hideTimer.current), []);
+
+  const cancelHide = () => {
+    window.clearTimeout(hideTimer.current);
+    hideTimer.current = null;
+  };
+
+  const scheduleHide = () => {
+    cancelHide();
+    hideTimer.current = window.setTimeout(() => setHovered(false), 180);
+  };
+
+  const show = () => {
+    cancelHide();
+    updatePosition();
+    setHovered(true);
+  };
+
+  return (
+    <span className="numeric-citation-wrap">
+      <button
+        ref={buttonRef}
+        type="button"
+        className={`numeric-citation ${pinned ? "is-pinned" : ""}`}
+        aria-describedby={visible ? tooltipId : undefined}
+        aria-expanded={pinned}
+        aria-label={`Ver fonte do valor ${citation.value}`}
+        onMouseEnter={show}
+        onMouseLeave={scheduleHide}
+        onFocus={show}
+        onBlur={scheduleHide}
+        onClick={() => {
+          updatePosition();
+          setPinned((current) => !current);
+        }}
+      >
+        <span>{children}</span>
+        <sup>{Number(citation.source_index) + 1}</sup>
+      </button>
+      {visible && position && createPortal(
+        <div
+          ref={popoverRef}
+          id={tooltipId}
+          role={pinned ? "dialog" : "tooltip"}
+          aria-label={`Fonte do valor ${citation.value}`}
+          className={`numeric-source-tooltip ${position.below ? "is-below" : ""} ${position.mobile ? "is-mobile" : ""}`}
+          style={{
+            left: position.left,
+            top: position.top ?? "auto",
+            bottom: position.bottom ?? "auto",
+            width: position.width,
+          }}
+          onMouseEnter={show}
+          onMouseLeave={scheduleHide}
+          onFocus={show}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) scheduleHide();
+          }}
+        >
+          <header>
+            <span className="numeric-source-heading">
+              <span><FileText size={16} /></span>
+              <span><small>De onde veio este número</small><strong>{citation.value}</strong></span>
+            </span>
+            <button
+              type="button"
+              className="numeric-source-close"
+              aria-label="Fechar fonte"
+              onClick={() => {
+                setPinned(false);
+                setHovered(false);
+              }}
+            >
+              <X size={15} />
+            </button>
+          </header>
+          <div className="numeric-source-origin">
+            <small>Documento</small>
+            <strong title={citation.file}>{sourceName}</strong>
+            <div className="numeric-source-meta">
+              <span>{citation.page != null ? `Página ${citation.page}` : "Página não informada"}</span>
+              {Number.isFinite(Number(citation.score)) && <span>Correspondência: {Math.round(Number(citation.score) * 100)}%</span>}
+            </div>
+          </div>
+          {(citation.snippet || generatedExplanation) && (
+            <div className={`numeric-source-excerpt ${tableEvidence ? "is-table" : ""}`}>
+              {tableEvidence ? (
+                <>
+                  <div className="numeric-source-concept">
+                    <small>O que esse dado mostra</small>
+                    <p>{highlightValue(conceptText)}</p>
+                    {conceptQualifiers.length > 0 && (
+                      <div className="numeric-source-context">
+                        {conceptQualifiers.map(({ label, value }, index) => (
+                          <span key={`${label}-${index}`}>
+                            <small>{label}</small>
+                            <strong>{highlightTableNumbers(value)}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <details className="numeric-source-raw">
+                    <summary>Ver dados de origem <ChevronDown size={14} /></summary>
+                    <div className={`numeric-source-table ${tableEvidence.kind === "key-value" ? "is-key-value" : ""}`}>
+                      <table>
+                        <thead>
+                          <tr>{tableEvidence.headers.map((header, index) => <th key={`${header}-${index}`}>{header}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                          {tableEvidence.rows.map((row, rowIndex) => (
+                            <tr key={`row-${rowIndex}`}>
+                              {row.map((cell, cellIndex) => (
+                                <td
+                                  className={/\d/.test(cell) ? "has-number" : ""}
+                                  key={`cell-${rowIndex}-${cellIndex}`}
+                                >
+                                  {highlightTableNumbers(cell)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </details>
+                </>
+              ) : (
+                <>
+                  {generatedExplanation && (
+                    <div className="numeric-source-concept">
+                      <small>O que esse dado mostra</small>
+                      <p>{highlightValue(generatedExplanation)}</p>
+                    </div>
+                  )}
+                  {citation.snippet && (
+                    <>
+                      <small>Trecho que sustenta o dado</small>
+                      <p>{highlightValue(citation.snippet)}</p>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          <footer>
+            <button
+              type="button"
+              onClick={() => {
+                setPinned(false);
+                setHovered(false);
+                onOpenSource?.();
+              }}
+            >
+              <PanelRightOpen size={15} /> Ver fonte completa
+            </button>
+          </footer>
+        </div>,
+        document.body,
+      )}
+    </span>
+  );
+}
+
 function Message({ message, onInspect }) {
   const isUser = message.role === "user";
+  const numericCitations = message.meta?.numeric_citations || [];
+  const annotatedContent = annotateNumericCitations(message.content, numericCitations);
   return (
     <article className={`message message--${message.role}`}>
       <div className="message-avatar">{isUser ? "Você" : <BrandMark />}</div>
@@ -308,10 +595,24 @@ function Message({ message, onInspect }) {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                a: (props) => <a {...props} target="_blank" rel="noreferrer" />,
+                a: ({ href, children, ...props }) => {
+                  const match = href?.match(/^#numeric-citation-(\d+)$/);
+                  const citation = match ? numericCitations[Number(match[1])] : null;
+                  if (citation) {
+                    return (
+                      <NumericCitation
+                        citation={citation}
+                        onOpenSource={() => onInspect(message.meta, citation.source_index)}
+                      >
+                        {children}
+                      </NumericCitation>
+                    );
+                  }
+                  return <a href={href} {...props} target="_blank" rel="noreferrer">{children}</a>;
+                },
               }}
             >
-              {message.content}
+              {annotatedContent}
             </ReactMarkdown>
           </div>
         )}
@@ -406,11 +707,17 @@ function Composer({ value, setValue, onSubmit, loading, onCancel }) {
   );
 }
 
-function Inspector({ open, onClose, meta, tab, setTab, developerMode }) {
+function Inspector({ open, onClose, meta, tab, setTab, developerMode, sourceRequest }) {
   const sources = meta?.sources || [];
   const validation = meta?.validation || {};
   const route = meta?.route || {};
   const timings = meta?.timings || {};
+  const [expandedSource, setExpandedSource] = useState(null);
+  const requestedIndex = sourceRequest?.meta === meta ? sourceRequest.index : null;
+  const expandedIndex = (
+    expandedSource?.meta === meta
+    && expandedSource?.requestId === sourceRequest?.id
+  ) ? expandedSource.index : requestedIndex;
 
   return (
     <aside className={`inspector ${open ? "is-open" : ""}`}>
@@ -449,13 +756,32 @@ function Inspector({ open, onClose, meta, tab, setTab, developerMode }) {
                 <div className="section-title"><span>Trechos recuperados</span><b>{sources.length}</b></div>
                 <div className="source-cards">
                   {sources.length === 0 ? <p className="muted">Nenhuma fonte detalhada retornada.</p> : sources.map((source, index) => (
-                    <article key={`${source.file || "source"}-${index}`}>
-                      <span className="file-icon"><FileText size={17} /></span>
-                      <div>
-                        <strong>{source.file || `Fonte ${index + 1}`}</strong>
-                        <small>{source.page != null ? `Página/aba ${source.page}` : "Localização não informada"}</small>
-                        <div className="score-line"><i style={{ width: `${Math.round((source.score || 0) * 100)}%` }} /><span>{Math.round((source.score || 0) * 100)}%</span></div>
-                      </div>
+                    <article className={expandedIndex === index ? "is-expanded" : ""} key={`${source.file || "source"}-${index}`}>
+                      <button
+                        type="button"
+                        className="source-card-trigger"
+                        aria-expanded={expandedIndex === index}
+                        aria-controls={`source-excerpt-${index}`}
+                        onClick={() => setExpandedSource({
+                          meta,
+                          requestId: sourceRequest?.id,
+                          index: expandedIndex === index ? null : index,
+                        })}
+                      >
+                        <span className="file-icon"><FileText size={17} /></span>
+                        <span className="source-card-summary">
+                          <strong>{source.file || `Fonte ${index + 1}`}</strong>
+                          <small>{source.page != null ? `Página/aba ${source.page}` : "Localização não informada"}</small>
+                          <span className="score-line"><i style={{ width: `${Math.round((source.score || 0) * 100)}%` }} /><span>{Math.round((source.score || 0) * 100)}%</span></span>
+                        </span>
+                        <ChevronDown className="source-card-chevron" size={15} aria-hidden="true" />
+                      </button>
+                      {expandedIndex === index && (
+                        <div className="source-excerpt" id={`source-excerpt-${index}`}>
+                          <small>Trecho utilizado</small>
+                          <p>{source.excerpt || "O texto deste trecho não está disponível em respostas salvas anteriormente. Faça uma nova consulta para visualizá-lo."}</p>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -552,6 +878,9 @@ function SettingsDialog({ open, onClose, endpoints, setEndpoints, apiKey, setApi
 
 export default function App() {
   const [messages, setMessages] = useState(storedMessages);
+  const [featuredQuestions] = useState(
+    () => rotateFeaturedQuestions(globalThis.localStorage),
+  );
   const [theme, setTheme] = useState(storedTheme);
   const [endpointOverrides, setEndpointOverrides] = useState(storedEndpoints);
   const [apiKey, setApiKey] = useState(() => readStorage(globalThis.sessionStorage, STORAGE.apiKey));
@@ -569,6 +898,7 @@ export default function App() {
     const last = [...storedMessages()].reverse().find((item) => item?.meta);
     return last?.meta || null;
   });
+  const [sourceRequest, setSourceRequest] = useState(null);
   const activeController = useRef(null);
   const messageScroll = useRef(null);
   const endpoints = useMemo(() => apiUrls(endpointOverrides), [endpointOverrides]);
@@ -651,6 +981,7 @@ export default function App() {
     activeController.current?.abort();
     setMessages([]);
     setSelectedMeta(null);
+    setSourceRequest(null);
     setInput("");
     setLoading(false);
   }
@@ -676,6 +1007,7 @@ export default function App() {
       };
       setMessages((current) => [...current, assistantMessage]);
       setSelectedMeta(payload);
+      setSourceRequest({ id: uid(), meta: payload, index: null });
       setInspectorTab("sources");
     } catch (error) {
       if (error.name !== "AbortError") {
@@ -690,8 +1022,9 @@ export default function App() {
     }
   }
 
-  function inspect(meta) {
+  function inspect(meta, sourceIndex = null) {
     setSelectedMeta(meta);
+    setSourceRequest({ id: uid(), meta, index: sourceIndex });
     setInspectorOpen(true);
     setInspectorTab("sources");
   }
@@ -749,6 +1082,7 @@ export default function App() {
                   input={input}
                   setInput={setInput}
                   onSubmit={submitQuestion}
+                  suggestions={featuredQuestions}
                 />
               ) : (
                 messages.map((message) => <Message key={message.id} message={message} onInspect={inspect} />)
@@ -762,7 +1096,7 @@ export default function App() {
         </div>
       </main>
 
-      <Inspector open={inspectorOpen} onClose={() => setInspectorOpen(false)} meta={selectedMeta} tab={inspectorTab} setTab={setInspectorTab} developerMode={developerMode} />
+      <Inspector open={inspectorOpen} onClose={() => setInspectorOpen(false)} meta={selectedMeta} tab={inspectorTab} setTab={setInspectorTab} developerMode={developerMode} sourceRequest={sourceRequest} />
 
       <SettingsDialog
         key={`${ACTIVE_RAG_TYPE}-${endpoints[ACTIVE_RAG_TYPE]}-${settingsOpen}`}

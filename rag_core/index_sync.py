@@ -1,6 +1,8 @@
 """Sincronização incremental dos índices vetorial e lexical padrão."""
 from __future__ import annotations
 
+import os
+
 import chromadb
 
 from rag_core.index_manifest import (
@@ -19,20 +21,57 @@ from rag_core.ingestion import load_documents
 from rag_core.processing import process_documents
 
 
+def index_read_only_enabled() -> bool:
+    """Indica que banco portátil deve ser carregado sem consultar ou alterar corpus."""
+    return os.getenv("RAG_INDEX_READ_ONLY", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def sync_standard_index(data_dir: str, db_path: str, log, collection_name="estatisticas"):
     """Atualiza somente fontes alteradas; reconstrói quando cache base falta."""
     snapshot = data_snapshot(data_dir)
     manifest = load_manifest(db_path)
     changed = detect_changes(snapshot, manifest)
 
+    db = chromadb.PersistentClient(path=db_path)
+    collection = db.get_or_create_collection(collection_name)
+    already_indexed = collection.count() > 0
+
+    if index_read_only_enabled():
+        if not already_indexed:
+            raise RuntimeError(
+                f"Índice portátil vazio em '{db_path}'; instalação incompleta."
+            )
+        if not load_nodes_cache(db_path):
+            raise RuntimeError(
+                f"Cache BM25 ausente em '{db_path}'; instalação incompleta."
+            )
+        if changed:
+            log.warning(
+                "[1] Índice somente leitura: %d diferença(s) no corpus ignorada(s)",
+                len(changed),
+            )
+        log.info(
+            "[1] Índice portátil carregado (%d vetores); sincronização desativada",
+            collection.count(),
+        )
+        return (
+            create_or_load_index(
+                [],
+                db_path=db_path,
+                collection_name=collection_name,
+            ),
+            [],
+        )
+
     if not snapshot:
         raise RuntimeError(
             f"Nenhum documento encontrado em '{data_dir}'; índice anterior preservado."
         )
-
-    db = chromadb.PersistentClient(path=db_path)
-    collection = db.get_or_create_collection(collection_name)
-    already_indexed = collection.count() > 0
 
     if changed and already_indexed and load_nodes_cache(db_path):
         upserts = [source for source in changed if source in snapshot]

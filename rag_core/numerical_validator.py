@@ -40,6 +40,9 @@ class NumberCheck:
     source_snippet: Optional[str] = None  # trecho onde foi encontrado
     response_snippet: Optional[str] = None  # contexto na resposta do LLM
     derived: bool = False
+    response_start: Optional[int] = None
+    response_end: Optional[int] = None
+    source_index: Optional[int] = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -100,6 +103,23 @@ def _find_snippet(needle: str, haystack: str, ctx: int = 60) -> str:
     return "…" + haystack[start:end].strip() + "…"
 
 
+def _source_snippet(needle: str, source_text: str, source_node) -> str:
+    """Preserva uma linha tabular completa; usa contexto narrativo nos demais casos."""
+    metadata = getattr(source_node, "metadata", {}) or {}
+    if metadata.get("type") == "table":
+        blocks = re.split(r"\n\s*---\s*\n", source_text)
+        for block in blocks:
+            if needle not in block:
+                continue
+            lines = [
+                line.strip()
+                for line in block.splitlines()
+                if line.strip() and not line.strip().lower().startswith("fonte:")
+            ]
+            return "\n".join(lines)[:1_000]
+    return _find_snippet(needle, source_text, ctx=140)
+
+
 # ── Validação principal ───────────────────────────────────────────────────────
 
 def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
@@ -108,7 +128,6 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
     Tenta primeiro match verbatim, depois match normalizado (diferenças de formatação).
     """
     source_texts = [n.get_content() for n in source_nodes]
-    combined = " ".join(source_texts)
     derived_results = _derived_results(response_text, source_texts)
 
     seen: set[str] = set()
@@ -120,29 +139,50 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
             continue
         seen.add(raw)
 
-        resp_snippet = _find_snippet(raw, response_text)
+        resp_snippet = _find_snippet(raw, response_text, ctx=140)
+        response_position = {
+            "response_start": m.start(1),
+            "response_end": m.end(1),
+        }
 
         # 1. Match verbatim
-        if raw in combined:
+        verbatim_source = next(
+            (
+                (source_index, node_text)
+                for source_index, node_text in enumerate(source_texts)
+                if raw in node_text
+            ),
+            None,
+        )
+        if verbatim_source is not None:
+            source_index, node_text = verbatim_source
             results.append(NumberCheck(
                 value=raw,
                 verified=True,
-                source_snippet=_find_snippet(raw, combined),
+                source_snippet=_source_snippet(
+                    raw, node_text, source_nodes[source_index]
+                ),
                 response_snippet=resp_snippet,
+                source_index=source_index,
+                **response_position,
             ))
             continue
 
         # 2. Match normalizado (trata diferenças de formatação PT-BR vs EN)
         norm = _normalize(raw)
         found = False
-        for node_text in source_texts:
+        for source_index, node_text in enumerate(source_texts):
             for cm in _NUM_RE.finditer(node_text):
                 if _normalize(cm.group(1).strip()) == norm:
                     results.append(NumberCheck(
                         value=raw,
                         verified=True,
-                        source_snippet=_find_snippet(cm.group(1), node_text),
+                        source_snippet=_source_snippet(
+                            cm.group(1), node_text, source_nodes[source_index]
+                        ),
                         response_snippet=resp_snippet,
+                        source_index=source_index,
+                        **response_position,
                     ))
                     found = True
                     break
@@ -155,9 +195,15 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
                 verified=True,
                 response_snippet=resp_snippet,
                 derived=True,
+                **response_position,
             ))
         elif not found:
-            results.append(NumberCheck(value=raw, verified=False, response_snippet=resp_snippet))
+            results.append(NumberCheck(
+                value=raw,
+                verified=False,
+                response_snippet=resp_snippet,
+                **response_position,
+            ))
 
     return results
 

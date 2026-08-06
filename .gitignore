@@ -50,6 +50,7 @@ Thumbs.db
 data.zip
 *.md.resolved
 chroma_backups_*/
+index_artifacts/
 # Resultados de avaliação: mudam a cada rodada de evaluate.py — o dataset de
 # referência (golden_dataset.json) continua versionado.
 evaluation/results*.json

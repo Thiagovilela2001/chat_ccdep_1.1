@@ -27,11 +27,18 @@ Orquestrador :8010 ── health + circuit breaker + failover
 ```dotenv
 RAG_LLM_PROVIDER=maritaca
 MARITACA_API_KEY=...
+RAG_POPUP_MODEL=sabiazinho-4
 
 # Recomendado em ambientes compartilhados
 RAG_API_KEY=chave-da-interface
 RAG_BACKEND_API_KEY=chave-interna-entre-servicos
 ```
+
+As explicações curtas dos popups numéricos usam `sabiazinho-4` por padrão,
+em uma chamada estruturada e única por resposta. `RAG_POPUP_EXPLANATIONS=0`
+desativa o recurso; `RAG_POPUP_TIMEOUT` controla seu timeout independente
+(20 segundos por padrão). Saída ausente, inválida ou com números novos mantém
+automaticamente a explicação determinística da interface.
 
 Para executar também o LLM localmente com Ollama, use:
 
@@ -74,6 +81,66 @@ Por padrão, a interface usa o Meta RAG em `:8010` e permite alternar para as
 engines diretas nas portas `8000`–`8003`. Endpoints e API key podem ser ajustados
 na própria tela de configurações.
 
+## Índice portátil via GitHub Releases
+
+O ChromaDB Principal pode ser publicado como artefato versionado sem entrar no
+histórico Git. O pacote inclui banco vetorial, segmentos HNSW, cache BM25,
+manifesto, checksums por arquivo, versões das dependências e contagem de vetores.
+Pare todos os serviços antes de exportar:
+
+```powershell
+docker compose down
+python scripts/index_artifact.py export `
+  --output index_artifacts/rag-principal-index-v1.tar.gz `
+  --confirm-stopped
+```
+
+Valide e publique usando [GitHub CLI](https://cli.github.com/):
+
+```powershell
+python scripts/index_artifact.py verify `
+  --archive index_artifacts/rag-principal-index-v1.tar.gz
+
+python scripts/index_artifact.py publish `
+  --archive index_artifacts/rag-principal-index-v1.tar.gz `
+  --repo Thiagovilela2001/chat_ccdep_1.1 `
+  --tag vector-index-v1
+```
+
+Em outra máquina, basta clonar e iniciar a engine Principal. No primeiro start,
+se `rag_principal/chroma_db` estiver ausente ou vazio, o sistema baixa
+automaticamente a Release `vector-index-v1`, confere o SHA-256, valida as versões
+e a contagem de 16.237 vetores e instala o banco. Nos starts seguintes, o banco
+local válido é reutilizado sem download e sem reindexação.
+
+O comando manual equivalente é:
+
+```powershell
+python scripts/index_artifact.py download `
+  --repo Thiagovilela2001/chat_ccdep_1.1 `
+  --tag vector-index-v1 `
+  --asset rag-principal-index-v1.tar.gz
+```
+
+O instalador valida SHA-256, versões e contagem vetorial antes da troca. Banco
+anterior é movido para `chroma_backups_<data>/`; nenhuma exclusão definitiva é
+feita. Banco parcial ou corrompido nunca é sobrescrito automaticamente: o start
+para com erro claro. O bootstrap usa HTTPS e não exige GitHub CLI. Para
+repositório privado, defina `GITHUB_TOKEN`.
+
+Download e modo somente leitura ficam ativos por padrão na engine Principal.
+Para desativar a automação e permitir a sincronização local do corpus:
+
+```dotenv
+RAG_INDEX_AUTO_DOWNLOAD=0
+RAG_INDEX_READ_ONLY=0
+```
+
+O banco contém textos e metadados dos documentos, não apenas embeddings. Use
+repositório privado quando o corpus não puder ser redistribuído. Para atualizar
+o índice, desative o modo somente leitura, faça sincronização local, exporte novo
+artefato e publique nova tag.
+
 Interfaces locais: React em `http://127.0.0.1:8501`, API principal em
 `:8000` e orquestrador em `:8010`. As portas ficam vinculadas ao loopback por
 padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
@@ -84,6 +151,7 @@ padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
 |---|---|
 | `rag_core/ingestion.py`, `processing.py`, `indexing.py` | ingestão, normalização, ChromaDB e BM25 |
 | `rag_core/index_manifest.py` | detecção recursiva de mudanças e exclusões |
+| `scripts/index_artifact.py` | exportação/instalação verificável via GitHub Releases |
 | `rag_core/*_retriever.py` | recuperação narrativa, tabular e temporal |
 | `rag_core/domain_skills.py` | descoberta e roteamento das skills econômicas locais |
 | `rag_core/api_models.py`, `query_service.py` | contrato e fluxo HTTP comum das engines |
@@ -113,6 +181,12 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_USE_GRAPH` | `0` | habilita grafo na engine principal |
 | `RAG_DATA_DIR` | `<engine>/data` ou `../data` | seleciona o corpus documental |
 | `RAG_DB_DIR` | `<engine>/chroma_db` | usa um índice ChromaDB separado |
+| `RAG_INDEX_AUTO_DOWNLOAD` | `1` na Principal | baixa Release somente quando banco está ausente ou vazio |
+| `RAG_INDEX_REPO` | `Thiagovilela2001/chat_ccdep_1.1` | repositório da Release do índice |
+| `RAG_INDEX_TAG` | `vector-index-v1` | tag imutável da Release |
+| `RAG_INDEX_ASSET` | `rag-principal-index-v1.tar.gz` | asset do banco pré-indexado |
+| `RAG_INDEX_DOWNLOAD_TIMEOUT` | `600` | timeout HTTPS em segundos |
+| `RAG_INDEX_READ_ONLY` | `1` com bootstrap | impede alteração ou reindexação do banco portátil |
 | `RAG_RETRIEVAL_TOP_K` | `80` | candidatos por pool textual ou tabular |
 | `RAG_QUERY_FUSION_QUERIES` | `2` | consulta original mais expansões semânticas |
 | `RAG_RERANK_CANDIDATE_LIMIT` | `40` | candidatos enviados ao reranker |
