@@ -5,6 +5,7 @@ Usado tanto pela API (FastAPI lifespan) quanto pelo CLI interativo.
 Centraliza: detecção de mudanças, indexação, criação de LLMs e retrievers.
 """
 import os
+from pathlib import Path
 
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
@@ -17,6 +18,12 @@ from rag_core.index_manifest import (
 )
 from rag_core.index_sync import sync_standard_index
 from rag_core.indexing import load_nodes_cache
+from scripts.index_artifact import (
+    DEFAULT_RELEASE_ASSET,
+    DEFAULT_RELEASE_REPO,
+    DEFAULT_RELEASE_TAG,
+    ensure_release_index,
+)
 from rag_core.text_retriever import (
     build_hybrid_retriever,
     llm_reranking_enabled,
@@ -37,6 +44,40 @@ log = get_logger(__name__)
 def graph_enabled_by_env() -> bool:
     """True se RAG_USE_GRAPH estiver ligada (1/true/yes/on)."""
     return os.getenv("RAG_USE_GRAPH", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_enabled(name: str, default: str = "1") -> bool:
+    return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def ensure_principal_index(db_path: str) -> None:
+    """Baixa índice portátil quando banco local ainda não existe."""
+    if not _env_enabled("RAG_INDEX_AUTO_DOWNLOAD"):
+        return
+
+    os.environ.setdefault("RAG_INDEX_READ_ONLY", "1")
+    repo = os.getenv("RAG_INDEX_REPO", DEFAULT_RELEASE_REPO)
+    tag = os.getenv("RAG_INDEX_TAG", DEFAULT_RELEASE_TAG)
+    asset = os.getenv("RAG_INDEX_ASSET", DEFAULT_RELEASE_ASSET)
+    token = os.getenv("GITHUB_TOKEN") or None
+    try:
+        timeout = float(os.getenv("RAG_INDEX_DOWNLOAD_TIMEOUT", "600"))
+    except ValueError as exc:
+        raise RuntimeError("RAG_INDEX_DOWNLOAD_TIMEOUT deve ser numérico.") from exc
+
+    log.info("[0] Verificando índice vetorial portátil")
+    count, downloaded = ensure_release_index(
+        target=Path(db_path),
+        repo=repo,
+        tag=tag,
+        asset=asset,
+        token=token,
+        timeout=timeout,
+    )
+    if downloaded:
+        log.info("[0] Índice baixado e validado (%d vetores)", count)
+    else:
+        log.info("[0] Índice local válido (%d vetores); download dispensado", count)
 
 
 # ── Detecção de mudanças ──────────────────────────────────────────────────────
@@ -73,6 +114,9 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     db_path = resolve_db_dir(base_dir)
 
     log.info("Inicializando RAG Estatistico SP")
+
+    # 0. Bootstrap portátil: baixa uma vez, valida e impede reindexação implícita.
+    ensure_principal_index(db_path)
 
     # 1–3. Detecção, ingestão seletiva e sincronização vetorial/BM25
     index, changed = sync_standard_index(data_dir, db_path, log)

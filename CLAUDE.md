@@ -37,6 +37,7 @@ engine adiciona o diretório-pai ao `sys.path` para tornar `rag_core` importáve
 | `rag_core/runtime.py` | Deadline, limites de iteração e orçamento de contexto |
 | `<engine>/src/startup.py` | Inicialização da engine: indexação, LLMs, retrievers |
 | `rag_core/llm.py` | Fábrica única de LLM: escolhe o provedor (Maritaca/OpenAI) por env |
+| `scripts/index_artifact.py` | Publica e instala índice portátil via GitHub Releases |
 | `<engine>/src/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |
 | `<engine>/src/api.py` | FastAPI: endpoint POST /query |
 | `<engine>/main.py` | Entrypoint: servidor HTTP ou CLI interativo |
@@ -53,6 +54,7 @@ cru), então trocar de LLM é só configuração:
 | `RAG_LLM_PROVIDER` | `maritaca` | `maritaca` \| `openai` |
 | `RAG_LLM_MODEL` | `sabia-4` (maritaca) | Modelo de síntese |
 | `RAG_INTERP_MODEL` | `sabia-4` (maritaca) | Interpretação/crítica/enriquecimento |
+| `RAG_POPUP_MODEL` | `sabiazinho-4` (maritaca) | Explicações curtas dos popups numéricos |
 | `RAG_LLM_BASE_URL` / `RAG_LLM_API_KEY` | — | Sobrescrevem base/chave (provedor custom) |
 
 Chaves: Maritaca usa `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.

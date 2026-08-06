@@ -11,6 +11,7 @@ Configuração por ambiente
     RAG_LLM_PROVIDER   "maritaca" (padrão) | "openai" | "ollama"
     RAG_LLM_MODEL      sobrescreve o modelo de síntese
     RAG_INTERP_MODEL   sobrescreve o modelo de interpretação/crítica
+    RAG_POPUP_MODEL    sobrescreve o modelo das explicações de citações
     RAG_LLM_BASE_URL   sobrescreve a base URL do provedor
     RAG_LLM_API_KEY    sobrescreve a chave (senão usa a chave padrão do provedor)
 
@@ -38,6 +39,7 @@ _PROVIDERS: dict[str, dict] = {
         "key_env": "MARITACA_API_KEY",
         "main_model": "sabia-4",
         "interp_model": "sabia-4",
+        "popup_model": "sabiazinho-4",
         "context_window": 128000,
     },
     "openai": {
@@ -45,6 +47,7 @@ _PROVIDERS: dict[str, dict] = {
         "key_env": "OPENAI_API_KEY",
         "main_model": "gpt-5-chat-latest",
         "interp_model": "gpt-5-mini",
+        "popup_model": "gpt-5-mini",
         "context_window": 128000,
     },
     "ollama": {
@@ -54,6 +57,7 @@ _PROVIDERS: dict[str, dict] = {
         "default_api_key": "ollama",
         "main_model": "qwen3:4b-instruct",
         "interp_model": "qwen3:4b-instruct",
+        "popup_model": "qwen3:4b-instruct",
         "context_window": 32768,
     },
 }
@@ -74,6 +78,7 @@ def _cfg() -> dict:
     )
     cfg["main_model"] = os.getenv("RAG_LLM_MODEL", cfg["main_model"])
     cfg["interp_model"] = os.getenv("RAG_INTERP_MODEL", cfg["interp_model"])
+    cfg["popup_model"] = os.getenv("RAG_POPUP_MODEL", cfg["popup_model"])
     return cfg
 
 
@@ -83,6 +88,11 @@ def main_model() -> str:
 
 def interp_model() -> str:
     return _cfg()["interp_model"]
+
+
+def popup_model() -> str:
+    """Modelo leve dedicado à redação das explicações de citações numéricas."""
+    return _cfg()["popup_model"]
 
 
 def llm_concurrency(default: int = 4) -> int:

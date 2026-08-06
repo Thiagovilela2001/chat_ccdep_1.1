@@ -264,6 +264,53 @@ def test_sincronizacao_incremental_remove_fonte_sem_reler_corpus(tmp_path, monke
     assert load_manifest(str(db_path)) == snapshot
 
 
+def test_indice_portatil_inicia_sem_corpus_e_sem_reindexar(tmp_path, monkeypatch):
+    import rag_core.index_sync as sync
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    db_path = tmp_path / "db"
+    save_nodes_cache(
+        [TextNode(text="conteúdo portátil", metadata={"source_file": "fonte.pdf"})],
+        str(db_path),
+    )
+
+    class FakeCollection:
+        def count(self):
+            return 42
+
+    class FakeClient:
+        def get_or_create_collection(self, _name):
+            return FakeCollection()
+
+    class Log:
+        def info(self, *_args):
+            pass
+
+        def warning(self, *_args):
+            pass
+
+    monkeypatch.setenv("RAG_INDEX_READ_ONLY", "1")
+    monkeypatch.setattr(sync.chromadb, "PersistentClient", lambda path: FakeClient())
+    monkeypatch.setattr(
+        sync,
+        "create_or_load_index",
+        lambda nodes, **_kwargs: "índice carregado" if nodes == [] else "inválido",
+    )
+    monkeypatch.setattr(
+        sync,
+        "load_documents",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("não deve ingerir corpus")
+        ),
+    )
+
+    index, changed = sync.sync_standard_index(str(data_dir), str(db_path), Log())
+
+    assert index == "índice carregado"
+    assert changed == []
+
+
 def test_serie_anual_numerica_e_valida():
     df = pd.DataFrame({"Ano": [2022, 2023, 2024], "Valor": [1.0, 2.0, 3.0]})
     assert _df_is_valid_timeseries(df)

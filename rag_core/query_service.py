@@ -5,12 +5,32 @@ import asyncio
 from dataclasses import dataclass
 
 from .answer_policy import sanitize_answer
-from .api_models import CitationValidationInfo, QueryResponse, SourceInfo, ValidationInfo
+from .api_models import (
+    CitationValidationInfo,
+    NumericCitationInfo,
+    QueryResponse,
+    SourceInfo,
+    ValidationInfo,
+)
 from .citation_validator import validate_citations
+from .logger import get_logger
 from .numerical_validator import validate_numbers
 from .metrics import record_estimated_usage
+from .popup_explanations import generate_popup_explanations
 from .provenance import relevance_score, source_file, source_page
 from .runtime import request_timeout_seconds
+
+_SOURCE_EXCERPT_MAX_CHARS = 4_000
+log = get_logger(__name__)
+
+
+def _source_excerpt(node) -> str:
+    """Serializa o trecho recuperado sem deixar a resposta HTTP crescer sem limite."""
+    content = str(node.get_content() or "").strip()
+    if len(content) <= _SOURCE_EXCERPT_MAX_CHARS:
+        return content
+    marker = "\n\n[Trecho truncado]"
+    return content[: _SOURCE_EXCERPT_MAX_CHARS - len(marker)].rstrip() + marker
 
 
 @dataclass(frozen=True)
@@ -58,6 +78,42 @@ async def execute_engine_query(
         question + "\n" + "\n".join(node.get_content() for node in source_nodes),
         answer,
     )
+    numeric_citations = [
+        NumericCitationInfo(
+            value=check.value,
+            start=check.response_start,
+            end=check.response_end,
+            source_index=check.source_index,
+            file=source_file(source_nodes[check.source_index]),
+            score=relevance_score(source_nodes[check.source_index]),
+            page=source_page(source_nodes[check.source_index]),
+            snippet=check.source_snippet or "",
+            content_type=str(
+                (
+                    getattr(source_nodes[check.source_index], "metadata", {})
+                    or {}
+                ).get("type")
+                or "text"
+            ),
+            claim=check.response_snippet or "",
+        )
+        for check in checks
+        if (
+            check.verified
+            and not check.derived
+            and check.response_start is not None
+            and check.response_end is not None
+            and check.source_index is not None
+        )
+    ]
+    try:
+        explanations = await generate_popup_explanations(numeric_citations)
+    except Exception as exc:
+        log.warning("Falha inesperada nas explicações de popup; usando fallback: %s", exc)
+        explanations = {}
+    for index, explanation in explanations.items():
+        if 0 <= index < len(numeric_citations):
+            numeric_citations[index].explanation = explanation
 
     response = QueryResponse(
         answer=answer,
@@ -68,6 +124,7 @@ async def execute_engine_query(
                 file=source_file(node),
                 score=relevance_score(node),
                 page=source_page(node),
+                excerpt=_source_excerpt(node),
             )
             for node in source_nodes
         ],
@@ -81,6 +138,7 @@ async def execute_engine_query(
             total=len(citation_checks),
             unverified=unverified_citations,
         ),
+        numeric_citations=numeric_citations,
         rag_type=rag_type,
         rag_label=rag_label,
     )

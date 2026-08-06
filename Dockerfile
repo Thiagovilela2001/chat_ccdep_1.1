@@ -29,6 +29,7 @@ RUN groupadd --gid "${APP_GID}" appuser \
     && chown -R appuser:appuser /app /cache/huggingface
 
 COPY --chown=appuser:appuser rag_core/ ./rag_core/
+COPY --chown=appuser:appuser scripts/ ./scripts/
 COPY --chown=appuser:appuser rag_principal/ ./rag_principal/
 COPY --chown=appuser:appuser rag_agentic/ ./rag_agentic/
 COPY --chown=appuser:appuser rag_raptor/ ./rag_raptor/
