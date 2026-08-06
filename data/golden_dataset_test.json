@@ -1,0 +1,52 @@
+[
+  {
+    "question": "Qual foi a variação interanual do emprego com carteira assinada em São Paulo no 3º trimestre de 2024?",
+    "ground_truth": "No 3º trimestre de 2024, a variação interanual do emprego com carteira assinada foi de 624 mil postos de trabalho no Estado de São Paulo, com taxa de crescimento anual de 5,6%.",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual tipo de vínculo empregatício liderou a geração de postos de trabalho em São Paulo no 1º trimestre de 2024?",
+    "ground_truth": "O emprego com carteira assinada liderou, com alta interanual de 3,3%, adicionando 370 mil vagas ao mercado de trabalho paulista no 1º trimestre de 2024 — mais que o dobro das ocupações sem carteira assinada, que somaram apenas 32 mil novas vagas.",
+    "type": "comparacao"
+  },
+  {
+    "question": "Qual foi o rendimento médio real dos trabalhadores paulistas no 3º trimestre de 2024?",
+    "ground_truth": "No 3º trimestre de 2024, o rendimento médio real efetivo dos trabalhadores paulistas atingiu R$ 4.038, com alta de 5,7% em relação ao mesmo período de 2023.",
+    "type": "lookup"
+  },
+  {
+    "question": "Como se comportou o emprego formal em São Paulo na passagem do 3º para o 4º trimestre de 2024?",
+    "ground_truth": "O emprego com carteira assinada desacelerou na passagem do 3º para o 4º trimestre de 2024: a variação interanual caiu de 624 mil postos (taxa de 5,6%) no 3T para 241 mil postos (taxa de 2,1%) no 4T, indicando perda de intensidade na formalização do mercado de trabalho paulista.",
+    "type": "tendencia"
+  },
+  {
+    "question": "Qual foi o rendimento médio real dos trabalhadores paulistas no 4º trimestre de 2024?",
+    "ground_truth": "No 4º trimestre de 2024, o rendimento médio real efetivo dos trabalhadores paulistas alcançou R$ 4.032, com alta de 6,0% em relação ao mesmo período de 2023.",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi a queda em pontos percentuais da taxa de desemprego em São Paulo entre o 1º e o 3º trimestre de 2024?",
+    "ground_truth": "A taxa de desemprego em São Paulo recuou 1,3 ponto percentual entre o 1º trimestre de 2024 (7,4%) e o 3º trimestre de 2024 (6,1%).",
+    "type": "calculo"
+  },
+  {
+    "question": "Qual foi a diferença em pontos percentuais entre a taxa de crescimento anual do PIB paulista no 4T2024 e no 3T2024?",
+    "ground_truth": "A taxa de crescimento anual do PIB paulista acelerou 0,6 ponto percentual do 3T2024 (2,8%) para o 4T2024 (3,4%).",
+    "type": "calculo"
+  },
+  {
+    "question": "Como evoluiu o mercado de trabalho no Estado de São Paulo no 1º trimestre de 2025?",
+    "ground_truth": "No 1º trimestre de 2025, a ocupação total no Estado de São Paulo cresceu 3,1% em relação ao mesmo trimestre de 2024, com acréscimo de 754 mil postos de trabalho. O emprego com carteira assinada avançou 4,0% (+453 mil), enquanto as ocupações sem carteira assinada recuaram 9,6% (-252 mil).",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi a variação do volume de serviços no Estado de São Paulo em 2024 e qual segmento apresentou retração?",
+    "ground_truth": "Em 2024, o volume de serviços no Estado de São Paulo expandiu 4,5%. O segmento de transportes, serviços auxiliares aos transportes e correio registrou queda anual de 1,7%, puxada pela forte base comparativa e pelas elevadas taxas de juros.",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi a variação interanual da força de trabalho em São Paulo no 1º trimestre de 2025?",
+    "ground_truth": "No 1º trimestre de 2025, a força de trabalho no Estado de São Paulo cresceu 1,9% em relação ao mesmo trimestre de 2024, com acréscimo de 488 mil pessoas.",
+    "type": "lookup"
+  }
+]

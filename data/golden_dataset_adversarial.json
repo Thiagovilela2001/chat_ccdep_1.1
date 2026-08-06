@@ -1,0 +1,27 @@
+[
+  {
+    "question": "Qual foi a variação do PIB do estado do Rio de Janeiro no 1º trimestre de 2024?",
+    "ground_truth": "A informação não consta nos documentos fornecidos. Os documentos disponíveis cobrem exclusivamente a conjuntura econômica do Estado de São Paulo.",
+    "type": "adversarial"
+  },
+  {
+    "question": "Qual foi a taxa Selic definida pelo Banco Central na reunião do COPOM de junho de 2024?",
+    "ground_truth": "A informação não consta nos documentos fornecidos. Os relatórios mencionam o contexto de política monetária restritiva e juros elevados, mas não registram o valor exato da taxa Selic definida em cada reunião do COPOM.",
+    "type": "adversarial"
+  },
+  {
+    "question": "Qual foi o superávit ou déficit primário do governo do Estado de São Paulo em 2024?",
+    "ground_truth": "A informação não consta nos documentos fornecidos. Os relatórios de conjuntura analisam o desempenho da economia paulista, mas não apresentam dados sobre o resultado fiscal do governo estadual.",
+    "type": "adversarial"
+  },
+  {
+    "question": "Qual foi o crescimento do PIB do Estado de Minas Gerais no 4º trimestre de 2024?",
+    "ground_truth": "A informação não consta nos documentos fornecidos. Os documentos cobrem exclusivamente a conjuntura econômica do Estado de São Paulo.",
+    "type": "adversarial"
+  },
+  {
+    "question": "Quantas falências foram decretadas no Estado de São Paulo no 3º trimestre de 2024?",
+    "ground_truth": "A informação não consta nos documentos fornecidos. Os relatórios de conjuntura paulista não apresentam dados sobre falências ou recuperações judiciais.",
+    "type": "adversarial"
+  }
+]

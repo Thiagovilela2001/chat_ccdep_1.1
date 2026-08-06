@@ -1,0 +1,52 @@
+[
+  {
+    "question": "Qual foi a variação do PIB do estado de São Paulo no 1º trimestre de 2024?",
+    "ground_truth": "No 1º trimestre de 2024, o PIB paulista teve elevação de 0,4% na passagem do 4º trimestre de 2023, considerado o ajuste sazonal. Em termos anuais, o crescimento foi de 0,7%, impulsionado pela agropecuária (3,1%) e pelos serviços (1,1%), enquanto a indústria apresentou estabilidade (0,0%).",
+    "type": "lookup"
+  },
+  {
+    "question": "Como evoluiu a taxa de desemprego em São Paulo ao longo de 2024?",
+    "ground_truth": "A taxa de desemprego no Estado de São Paulo (PNAD Contínua) recuou ao longo de 2024: no 1º trimestre atingiu 7,4%, e no 3º trimestre chegou a 6,1% (excluída a sazonalidade), o menor patamar da série histórica iniciada em 2012, refletindo a expansão do emprego formal e a formalização da força de trabalho.",
+    "type": "tendencia"
+  },
+  {
+    "question": "Qual foi a variação anual do PIB paulista no 4º trimestre de 2024 e como foi o desempenho setorial?",
+    "ground_truth": "No 4º trimestre de 2024, o PIB paulista avançou 3,4% em termos anuais, acelerando em relação ao 3º trimestre (2,8%). Em termos setoriais, a indústria encerrou 2024 com crescimento de 2,7%, o setor de serviços com expansão de 3,3%, e a agropecuária registrou retração de 3,9%.",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi o desempenho da indústria de transformação paulista no 2º trimestre de 2024?",
+    "ground_truth": "Em junho de 2024, a produção da indústria de transformação paulista teve aumento anual de 1,7%, dando sequência aos resultados positivos observados desde abril e sinalizando aceleração na recuperação do setor. No PIB paulista do 2º trimestre, a indústria total cresceu 1,4% em termos anuais.",
+    "type": "lookup"
+  },
+  {
+    "question": "O setor de serviços cresceu mais ou menos que a indústria em São Paulo no 2º trimestre de 2024?",
+    "ground_truth": "No 2º trimestre de 2024, o setor de serviços cresceu mais que a indústria: os serviços tiveram alta de 1,7% (maior peso na economia e principal responsável pela evolução do PIB paulista), enquanto a indústria cresceu 1,4%. A agropecuária recuou 1,9%.",
+    "type": "comparacao"
+  },
+  {
+    "question": "Qual foi a variação do PIB paulista no 1º trimestre de 2025 em relação ao trimestre anterior?",
+    "ground_truth": "No 1º trimestre de 2025, o PIB paulista teve elevação de 1,0% em relação ao 4º trimestre de 2024, considerado o ajuste sazonal. Em relação aos grandes setores, as taxas foram todas positivas: agropecuária 0,4%, indústria 0,3% e serviços 0,6%.",
+    "type": "lookup"
+  },
+  {
+    "question": "Quais foram as principais tendências do comércio varejista e do setor de serviços paulista em 2024?",
+    "ground_truth": "Em 2024, o volume de serviços no Estado de São Paulo expandiu 4,5%, representando importante retomada de vigor. O comércio varejista paulista apresentou crescimento positivo ao longo do ano, com desaceleração no segundo semestre. Os fatores limitantes foram os juros elevados e o endividamento das famílias.",
+    "type": "tendencia"
+  },
+  {
+    "question": "Qual foi o crescimento da construção civil no PIB paulista no 2º trimestre de 2024?",
+    "ground_truth": "No 2º trimestre de 2024, a construção civil cresceu 7,0% no PIB paulista, sendo o principal destaque positivo dentro da indústria no período. A indústria de transformação cresceu 0,2% e a extrativa mineral recuou 4,5%.",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi a variação interanual da ocupação total em São Paulo no 3º trimestre de 2024?",
+    "ground_truth": "No 3º trimestre de 2024, a ocupação total no Estado de São Paulo cresceu 2,3% em relação ao mesmo trimestre de 2023, com 564 mil postos de trabalho gerados.",
+    "type": "lookup"
+  },
+  {
+    "question": "Qual foi a taxa anual de crescimento do PIB paulista no 2º trimestre de 2024 e quais fatores explicaram o resultado?",
+    "ground_truth": "No 2º trimestre de 2024, o PIB paulista cresceu 2,8% em termos anuais, com taxa trimestral de 1,7% (ajuste sazonal). Os principais fatores foram a recuperação da indústria e a expansão dos serviços. O mercado de trabalho, com desocupação abaixo de 7,0%, também contribuiu como alicerce do crescimento.",
+    "type": "lookup"
+  }
+]
