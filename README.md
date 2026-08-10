@@ -91,7 +91,7 @@ Pare todos os serviços antes de exportar:
 ```powershell
 docker compose down
 python scripts/index_artifact.py export `
-  --output index_artifacts/rag-principal-index-v1.tar.gz `
+  --output index_artifacts/rag-principal-index-v2.tar.gz `
   --confirm-stopped
 ```
 
@@ -99,18 +99,18 @@ Valide e publique usando [GitHub CLI](https://cli.github.com/):
 
 ```powershell
 python scripts/index_artifact.py verify `
-  --archive index_artifacts/rag-principal-index-v1.tar.gz
+  --archive index_artifacts/rag-principal-index-v2.tar.gz
 
 python scripts/index_artifact.py publish `
-  --archive index_artifacts/rag-principal-index-v1.tar.gz `
+  --archive index_artifacts/rag-principal-index-v2.tar.gz `
   --repo Thiagovilela2001/chat_ccdep_1.1 `
-  --tag vector-index-v1
+  --tag vector-index-v2
 ```
 
 Em outra máquina, basta clonar e iniciar a engine Principal. No primeiro start,
 se `rag_principal/chroma_db` estiver ausente ou vazio, o sistema baixa
-automaticamente a Release `vector-index-v1`, confere o SHA-256, valida as versões
-e a contagem de 16.237 vetores e instala o banco. Nos starts seguintes, o banco
+automaticamente a Release `vector-index-v2`, confere o SHA-256, valida as versões
+e a contagem de 35.438 vetores e instala o banco. Nos starts seguintes, o banco
 local válido é reutilizado sem download e sem reindexação.
 
 O comando manual equivalente é:
@@ -118,8 +118,8 @@ O comando manual equivalente é:
 ```powershell
 python scripts/index_artifact.py download `
   --repo Thiagovilela2001/chat_ccdep_1.1 `
-  --tag vector-index-v1 `
-  --asset rag-principal-index-v1.tar.gz
+  --tag vector-index-v2 `
+  --asset rag-principal-index-v2.tar.gz
 ```
 
 O instalador valida SHA-256, versões e contagem vetorial antes da troca. Banco
@@ -183,8 +183,8 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_DB_DIR` | `<engine>/chroma_db` | usa um índice ChromaDB separado |
 | `RAG_INDEX_AUTO_DOWNLOAD` | `1` na Principal | baixa Release somente quando banco está ausente ou vazio |
 | `RAG_INDEX_REPO` | `Thiagovilela2001/chat_ccdep_1.1` | repositório da Release do índice |
-| `RAG_INDEX_TAG` | `vector-index-v1` | tag imutável da Release |
-| `RAG_INDEX_ASSET` | `rag-principal-index-v1.tar.gz` | asset do banco pré-indexado |
+| `RAG_INDEX_TAG` | `vector-index-v2` | tag imutável da Release |
+| `RAG_INDEX_ASSET` | `rag-principal-index-v2.tar.gz` | asset do banco pré-indexado |
 | `RAG_INDEX_DOWNLOAD_TIMEOUT` | `600` | timeout HTTPS em segundos |
 | `RAG_INDEX_READ_ONLY` | `1` com bootstrap | impede alteração ou reindexação do banco portátil |
 | `RAG_RETRIEVAL_TOP_K` | `80` | candidatos por pool textual ou tabular |
