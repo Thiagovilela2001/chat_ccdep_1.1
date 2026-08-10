@@ -18,6 +18,7 @@ def test_registry_discovers_all_domain_skills(monkeypatch):
     registry = _registry(monkeypatch)
 
     assert set(registry.available_domains()) == {
+        "demography",
         "economic_conjuncture",
         "investment_trade",
         "labor_market",
@@ -61,6 +62,22 @@ def test_registry_combines_investment_with_sector_question(monkeypatch):
         "investment_trade",
         "sectoral_regional",
     ]
+
+
+def test_registry_matches_demographic_question(monkeypatch):
+    registry = _registry(monkeypatch)
+
+    matches = registry.match(
+        "Como o envelhecimento populacional mudou a razão de dependência em São Paulo?"
+    )
+
+    assert matches[0].domain == "demography"
+    assert "Análise Demográfica" in registry.get_prompt_block(
+        "Como evoluiu a estrutura etária paulista?"
+    )
+    assert "Não tratar Censo, estimativa intercensitária e projeção" in (
+        matches[0].context
+    )
 
 
 def test_forced_labor_domain_preserves_legacy_interpreter_signal(monkeypatch):

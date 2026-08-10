@@ -1,0 +1,30 @@
+{
+  "domain": "demography",
+  "label": "Análise Demográfica",
+  "priority": 75,
+  "keywords": [
+    "demografia",
+    "demográfico",
+    "população",
+    "crescimento populacional",
+    "estrutura etária",
+    "pirâmide etária",
+    "envelhecimento populacional",
+    "índice de envelhecimento",
+    "razão de dependência",
+    "bônus demográfico",
+    "fecundidade",
+    "natalidade",
+    "mortalidade",
+    "mortalidade infantil",
+    "esperança de vida",
+    "migração",
+    "saldo migratório",
+    "crescimento vegetativo",
+    "projeção populacional",
+    "estimativa populacional",
+    "censo demográfico",
+    "urbanização",
+    "densidade demográfica"
+  ]
+}

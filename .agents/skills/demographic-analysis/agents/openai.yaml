@@ -1,0 +1,4 @@
+interface:
+  display_name: "Análise Demográfica"
+  short_description: "Analisa população e dinâmica demográfica"
+  default_prompt: "Use $demographic-analysis para analisar mudanças demográficas com rigor metodológico."
