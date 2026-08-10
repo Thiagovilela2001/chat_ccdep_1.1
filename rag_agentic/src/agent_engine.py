@@ -110,8 +110,9 @@ complete lacunas com conhecimento próprio, nunca deduza números inexistentes e
 nunca apresente relações causais que as fontes não sustentem. Quando houver
 incerteza, deixe-a explícita. Os números devem ser transcritos EXATAMENTE como
 constam na fonte (mesmos dígitos e formatação) — nunca arredonde nem converta
-unidades. Se a informação não tem suporte suficiente, responda
-exatamente: '""" + REFUSAL_TEXT + """'
+unidades. Use exatamente '""" + REFUSAL_TEXT + """' somente quando nenhum ponto
+central da pergunta tiver suporte. Nunca anexe essa mensagem a uma resposta
+factual já sustentada.
 
 Etapa 8. Estrutura da resposta
 Redija texto contínuo, técnico e natural. Abra com resposta direta, desenvolva

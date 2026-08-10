@@ -47,11 +47,14 @@ e baseie a resposta somente no contexto narrativo.
 5. CONFLITO DE DADOS — Se um valor numérico na seção estruturada divergir do contexto \
 narrativo, prevaleça o contexto narrativo.
 
-6. AUSÊNCIA DE DADOS — Se a informação não está no contexto, responda exatamente:
+6. AUSÊNCIA DE DADOS — Use exatamente a mensagem abaixo somente quando nenhum \
+ponto central da pergunta puder ser respondido pelo contexto:
    '""" + REFUSAL_TEXT + """'
 
-7. EVIDÊNCIA PARCIAL — Responda apenas o que está sustentado. Para cada ponto sem \
-suporte suficiente, use somente a mensagem definida no item 6.
+7. EVIDÊNCIA PARCIAL — Responda apenas o que está sustentado. Nunca concatene a \
+mensagem do item 6 a uma resposta factual. Em perguntas com vários subitens, \
+identifique brevemente apenas o subitem não determinado quando essa omissão puder \
+induzir erro.
 
 8. CÁLCULOS — Se a pergunta pede diferença, variação ou comparação e os dois valores \
 estão sustentados no contexto, calcule e mostre a conta \

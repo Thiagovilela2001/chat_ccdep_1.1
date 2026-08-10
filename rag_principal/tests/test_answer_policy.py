@@ -85,6 +85,35 @@ def test_resposta_vazia_usa_mensagem_padrao():
     assert sanitize_answer("", question="Qual o dado?") == REFUSAL_TEXT
 
 
+def test_recusa_isolada_permanece_padronizada():
+    assert sanitize_answer(
+        f"  {REFUSAL_TEXT}\n", question="Qual o dado?"
+    ) == REFUSAL_TEXT
+
+
+def test_remove_recusa_global_anexada_a_resposta_sustentada():
+    answer = (
+        "A população residente era de 44,4 milhões.\n\n"
+        f"{REFUSAL_TEXT}"
+    )
+    assert sanitize_answer(answer, question="Qual era a população?") == (
+        "A população residente era de 44,4 milhões."
+    )
+
+
+def test_remove_recusa_global_antes_de_resposta_sustentada():
+    answer = f"{REFUSAL_TEXT}\n\nA taxa anual foi de 0,62%."
+    assert sanitize_answer(answer, question="Qual foi a taxa?") == (
+        "A taxa anual foi de 0,62%."
+    )
+
+
+def test_sanitizacao_de_recusa_mista_e_idempotente():
+    answer = f"O indicador recuou. {REFUSAL_TEXT}"
+    cleaned = sanitize_answer(answer, question="Como evoluiu?")
+    assert sanitize_answer(cleaned, question="Como evoluiu?") == cleaned
+
+
 def test_pergunta_generica_sobre_documentos_nao_libera_metadados():
     assert not asks_for_sources("Analise os documentos sobre atividade econômica.")
 
