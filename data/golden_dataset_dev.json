@@ -1,0 +1,137 @@
+[
+  {
+    "id": "dev_social_01",
+    "question": "Como mudou o número de pessoas inscritas no CadÚnico paulista entre agosto de 2023 e agosto de 2024 e qual era sua composição por faixa de renda?",
+    "ground_truth": "Em agosto de 2024, o CadÚnico reunia 14,1 milhões de pessoas no Estado de São Paulo. Em relação a agosto de 2023, houve redução de 367 mil inscritos, ou 2,5%. Do total, 44,0% estavam em famílias em situação de pobreza, 25,0% em baixa renda e 31,0% em famílias com renda por pessoa acima de meio salário mínimo.",
+    "type": "tendencia",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-diminui-numero-bebeficiarios-bolsa-familia-aumeta-bcp.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_social_02",
+    "question": "Qual era o perfil das pessoas inscritas no CadÚnico e atendidas pelo Bolsa Família em abril de 2024 no Estado de São Paulo?",
+    "ground_truth": "Em abril de 2024, 14,7 milhões de pessoas estavam inscritas no CadÚnico paulista: 58% eram mulheres, 34% tinham até 17 anos, 51% eram brancas e 49% não tinham instrução ou possuíam ensino fundamental incompleto. O Bolsa Família atendia 6,8 milhões de pessoas, sendo 80% pertencentes a famílias em situação de pobreza e 20% a famílias de baixa renda. O benefício médio era de R$ 673 por família.",
+    "type": "perfil",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-programas-transferencia-renda-estado-sao-paulo-junho-2024.pdf"],
+    "source_pages": [1, 2, 3]
+  },
+  {
+    "id": "dev_social_03",
+    "question": "Em julho de 2024, quantas pessoas, famílias e benefícios estavam associados ao Bolsa Família paulista e quais tipos predominavam?",
+    "ground_truth": "Em julho de 2024, o Bolsa Família atendia 6,7 milhões de pessoas em 2,5 milhões de famílias no Estado de São Paulo e concedia 12,5 milhões de benefícios. Predominavam os Benefícios de Renda da Cidadania, com 53,5% do total, seguidos pelos Complementares, com 18,8%, pelos Variáveis da Criança, com 13,0%, e pelos de Primeira Infância, com 10,3%. O desembolso total no Estado foi de R$ 1,7 bilhão.",
+    "type": "comparacao",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-tipos-beneficios-programa-bolsa-familia.pdf"],
+    "source_pages": [1, 2]
+  },
+  {
+    "id": "dev_social_04",
+    "question": "Quais municípios apresentavam as maiores e menores proporções de atendimento do Bolsa Família e do BPC nas comparações municipais divulgadas no início de 2024?",
+    "ground_truth": "Em janeiro de 2024, Barra do Chapéu tinha a maior proporção de domicílios atendidos pelo Bolsa Família entre os municípios selecionados, 55,7%, equivalente a 1.044 famílias; São Caetano do Sul tinha a menor, 3,8%, ou 2.381 famílias. Para o BPC, com referência em novembro de 2023, Itapecerica da Serra apresentava 31,5% dos idosos atendidos, enquanto Ribeirão dos Índios registrava 0,8%, com apenas três idosos beneficiários.",
+    "type": "comparacao",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-programas-transferencia-renda-municipios-selecionados-estado-sao-paulo.pdf"],
+    "source_pages": [1, 2]
+  },
+  {
+    "id": "dev_labor_01",
+    "question": "Como evoluíram a ocupação, a desocupação e o rendimento do trabalho no Estado de São Paulo entre 2024 e 2025?",
+    "ground_truth": "Em 2025, o Estado tinha 24,7 milhões de ocupados, 587 mil a mais que em 2024, crescimento de 2,4%. A taxa de desocupação caiu de 6,2% para 5,0% e a subutilização recuou de 12,9% para 11,1%. O rendimento médio real efetivo do trabalho principal chegou a R$ 4.291, alta de 3,7%, e a massa real de todos os trabalhos alcançou R$ 108 bilhões, expansão de 4,7%.",
+    "type": "tendencia",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-anual-2025-aumenta-ocupacao-desocupacao-menor-desde-2012.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_labor_02",
+    "question": "Qual foi o resultado do emprego formal paulista no primeiro trimestre de 2026 e quais setores cresceram ou recuaram?",
+    "ground_truth": "O Caged registrou 2.280.925 admissões e 2.097.871 desligamentos no primeiro trimestre de 2026, saldo positivo de 183.054 postos, ou 1,3%. O estoque chegou a 14.806.424 vínculos em março. Frente ao trimestre anterior, construção cresceu 4,3%, serviços 1,7% e indústria 1,5%; agricultura recuou 3,3% e comércio 0,3%.",
+    "type": "lookup",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-aumenta-emprego-formal-estado-primeiro-trimestre-2026.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_labor_03",
+    "question": "Como variou a informalidade paulista no primeiro trimestre de 2026 segundo sexo e raça/cor?",
+    "ground_truth": "No primeiro trimestre de 2026, 30,0% dos 24,6 milhões de ocupados paulistas estavam na informalidade, contra 29,7% no trimestre anterior. Entre as mulheres, a taxa subiu de 28,9% para 30,1%; entre os homens, caiu de 30,3% para 29,9%. A taxa chegou a 28,7% entre brancos, 31,6% entre pretos e 31,9% entre pardos.",
+    "type": "comparacao",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-taxa-informalidade-aumenta-primeiro-trimestre-2026.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_labor_04",
+    "question": "Como se distribuiu a mudança da ocupação entre a RMSP e o interior paulista no primeiro trimestre de 2025?",
+    "ground_truth": "No primeiro trimestre de 2025, o Estado tinha 25,0 milhões de ocupados, com queda de 0,3% ante o trimestre anterior. A RMSP ganhou 43 mil ocupações, enquanto o interior perdeu 122 mil; Campinas, Baixada Santista e Sudoeste tiveram as maiores reduções, e a região Central ganhou 130 mil. Na comparação anual, a ocupação cresceu 754 mil, dos quais 500 mil na RMSP e 254 mil no interior. A taxa estadual de desocupação foi de 6,2%.",
+    "type": "comparacao",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade_trabalho_diferencas_regionais_1trim_2025.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_demography_01",
+    "question": "O que os primeiros resultados do Censo 2022 mostraram sobre o tamanho e o ritmo de crescimento da população paulista?",
+    "ground_truth": "O Censo 2022 registrou 44,4 milhões de residentes no Estado de São Paulo, acréscimo de 3,2 milhões desde 2010. Entre 2010 e 2022, a taxa geométrica anual foi de 0,62%, abaixo de 1,09% no período 2000-2010. A capital cresceu 0,15% ao ano e adicionou 197,7 mil moradores, enquanto o interior cresceu 0,79% e ganhou 2,9 milhões.",
+    "type": "tendencia",
+    "domain": "demography",
+    "source_files": ["seade_demografia/populacao/seade-informa-demografia-o-que-mostram-primeiros-resultados-censo-2022.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_demography_02",
+    "question": "Como mudou o envelhecimento da população paulista entre 2000 e 2022?",
+    "ground_truth": "Entre 2000 e 2022, a população total paulista cresceu 20%, a população de 65 anos ou mais aumentou 133% e o grupo de 0 a 14 anos diminuiu 18%. O índice de envelhecimento, definido como pessoas de 65 anos ou mais por 100 pessoas de 0 a 14 anos, passou de 23,2 em 2000 para 36,5 em 2010 e 66,3 em 2022. Em 2022, 91 municípios já tinham mais idosos do que crianças e adolescentes.",
+    "type": "tendencia",
+    "domain": "demography",
+    "source_files": ["seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_demography_03",
+    "question": "Qual era a mortalidade infantil paulista em 2024 e como ela se distribuía por idade e causas?",
+    "ground_truth": "Em 2024, a mortalidade infantil paulista foi de 11,18 óbitos de menores de um ano por mil nascidos vivos. As taxas eram de 5,5 por mil entre 0 e 6 dias, 2,1 por mil entre 7 e 27 dias e 3,7 por mil entre 28 e 364 dias. As causas perinatais respondiam por 54% dos óbitos e taxa de 6,1 por mil; malformações congênitas representavam 24%.",
+    "type": "lookup",
+    "domain": "demography",
+    "source_files": ["seade_demografia/mortalidade/seade-informa-demografia-mortalidade-infantil_2025-1.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_economy_01",
+    "question": "Qual foi o desempenho do PIB paulista no primeiro trimestre de 2026 nas diferentes bases de comparação?",
+    "ground_truth": "No primeiro trimestre de 2026, o PIB paulista cresceu 1,8% ante o trimestre imediatamente anterior, com ajuste sazonal, e 1,3% frente ao primeiro trimestre de 2025. No acumulado de quatro trimestres, avançou 0,6%. Nessa última base, agropecuária cresceu 1,5%, serviços 1,8% e indústria recuou 2,4%.",
+    "type": "comparacao",
+    "domain": "economic_conjuncture",
+    "source_files": ["pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_economy_02",
+    "question": "Como o PIB paulista se comportou em abril de 2026 nas comparações mensal, interanual e acumulada?",
+    "ground_truth": "Em abril de 2026, o PIB paulista recuou 1,1% ante março, com ajuste sazonal, mas cresceu 1,6% frente a abril de 2025. No acumulado de janeiro a abril, avançou 1,2% e, em 12 meses, 0,6%. Na comparação mensal, agropecuária cresceu 1,3%, indústria caiu 2,8% e serviços recuaram 0,8%.",
+    "type": "comparacao",
+    "domain": "economic_conjuncture",
+    "source_files": ["pib/pib-mensal-sao-paulo-abril-2026.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_investment_01",
+    "question": "Quanto foi anunciado em investimentos no Estado de São Paulo em 2025 e como os recursos se distribuíram entre os setores?",
+    "ground_truth": "Foram anunciados R$ 110,4 bilhões em investimentos no Estado de São Paulo em 2025. Infraestrutura concentrou R$ 63,4 bilhões, ou 57%; indústria, R$ 23,1 bilhões, ou 21%; comércio, R$ 13,9 bilhões, ou 13%; e serviços, R$ 10,0 bilhões, ou 9%. Dentro da infraestrutura, 84% foram destinados aos transportes.",
+    "type": "lookup",
+    "domain": "investment_trade",
+    "source_files": ["investimentos/seade-investimentos-anunciados-2025.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "dev_sectoral_01",
+    "question": "Quantas empresas foram criadas no Estado de São Paulo em 2025 e quais setores e regiões concentraram as aberturas?",
+    "ground_truth": "Em 2025, foram abertas 553.081 empresas no Estado de São Paulo. Serviços lideraram com 390.026, ou 70,5%, seguidos por comércio, com 112.085, indústria, com 24.693, construção, com 23.569, e agropecuária, com 2.708. A RMSP concentrou 324.629 aberturas, 58,7% do total, seguida pela RA de Campinas, com 74.715.",
+    "type": "lookup",
+    "domain": "sectoral_regional",
+    "source_files": ["empresa/quinhetas-cinquenta-tres-mil-empresas-criadas-estado-sao-paulo-2025.pdf"],
+    "source_pages": [1]
+  }
+]

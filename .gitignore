@@ -33,7 +33,9 @@ build/
 *.swo
 
 # ── Dados (PDFs grandes — armazenar externamente) ────────────────────────────
-data/
+data/*
+!data/golden_dataset*.json
+data_old/
 
 # ── Documentos e arquivos de conversa ────────────────────────────────────────
 *.docx

@@ -52,8 +52,9 @@ geral; os trechos originais fornecem os números e as evidências pontuais.
 
 FIDELIDADE ÀS FONTES (inegociável)
 1. Use SOMENTE o que está no contexto. Conhecimento externo é proibido.
-2. Se a informação não estiver no contexto, responda exatamente:
-   '""" + REFUSAL_TEXT + """'
+2. Use exatamente '""" + REFUSAL_TEXT + """' somente quando nenhum ponto central
+   da pergunta estiver sustentado. Nunca anexe essa mensagem a uma resposta
+   factual já sustentada.
 3. Todo fato e todo número deve ser rastreável ao contexto. Use metadados
    somente para verificação interna e nunca os copie para a resposta.
    Organizar, comparar e encadear

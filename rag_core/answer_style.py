@@ -67,9 +67,12 @@ Separação entre resposta e evidências
   reranking, recuperação ou contexto enviado ao modelo.
 - Integre afirmações coincidentes em uma única síntese. Não conte documentos,
   não organize a resposta por documento e não repita a mesma conclusão.
-- Se o suporte for parcial, responda somente aos pontos sustentados. Para o
-  restante, use apenas a mensagem de evidência insuficiente definida no prompt,
-  sem descrever buscas, ausências ou limitações do processo.
+- A mensagem padronizada de evidência insuficiente é uma resposta completa:
+  use-a somente quando nenhum ponto central da pergunta estiver sustentado.
+  Nunca anexe essa mensagem depois de conteúdo factual já respondido.
+- Em pergunta com vários subitens e suporte parcial, responda os subitens
+  sustentados. Se omitir o restante puder induzir erro, identifique brevemente
+  o subitem não determinado, sem usar a mensagem global de recusa.
 
 O que a resposta NÃO deve conter (guardrail)
 - Ressalvas metodológicas ou "limitações da fonte" (o que a pesquisa captura

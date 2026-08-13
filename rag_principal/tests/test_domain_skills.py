@@ -18,9 +18,11 @@ def test_registry_discovers_all_domain_skills(monkeypatch):
     registry = _registry(monkeypatch)
 
     assert set(registry.available_domains()) == {
+        "demography",
         "economic_conjuncture",
         "investment_trade",
         "labor_market",
+        "social_protection",
         "sectoral_regional",
     }
 
@@ -61,6 +63,56 @@ def test_registry_combines_investment_with_sector_question(monkeypatch):
         "investment_trade",
         "sectoral_regional",
     ]
+
+
+def test_registry_matches_demographic_question(monkeypatch):
+    registry = _registry(monkeypatch)
+
+    matches = registry.match(
+        "Como o envelhecimento populacional mudou a razão de dependência em São Paulo?"
+    )
+
+    assert matches[0].domain == "demography"
+    assert "Análise Demográfica" in registry.get_prompt_block(
+        "Como evoluiu a estrutura etária paulista?"
+    )
+    assert "Não tratar Censo, estimativa intercensitária e projeção" in (
+        matches[0].context
+    )
+
+
+def test_registry_matches_social_protection_question(monkeypatch):
+    registry = _registry(monkeypatch)
+
+    matches = registry.match(
+        "Qual era o perfil dos inscritos no CadÚnico paulista?"
+    )
+
+    assert matches[0].domain == "social_protection"
+    assert "Proteção Social" in registry.get_prompt_block(
+        "Como evoluiu o Programa Bolsa Família em São Paulo?"
+    )
+
+
+def test_registry_combines_social_protection_and_demography(monkeypatch):
+    registry = _registry(monkeypatch)
+
+    matches = registry.match(
+        "Compare o BPC para idosos com o envelhecimento populacional."
+    )
+
+    assert [skill.domain for skill in matches] == [
+        "demography",
+        "social_protection",
+    ]
+
+
+def test_generic_income_does_not_trigger_social_protection(monkeypatch):
+    registry = _registry(monkeypatch)
+
+    matches = registry.match("Como evoluiu a renda do trabalho?")
+
+    assert [skill.domain for skill in matches] == ["labor_market"]
 
 
 def test_forced_labor_domain_preserves_legacy_interpreter_signal(monkeypatch):

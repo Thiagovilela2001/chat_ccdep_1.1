@@ -32,11 +32,20 @@ if sys.stdout.encoding != "utf-8":
 
 from datasets import Dataset
 from ragas import evaluate
-from ragas.metrics.collections import Faithfulness, ContextPrecision, ContextRecall
+# ragas.evaluate() 0.4.3 ainda recebe as classes Metric legadas. As homônimas
+# de metrics.collections usam SimpleBaseMetric e não são aceitas por evaluate().
+# O projeto fixa ragas==0.4.3; estes imports evitam os avisos do alias obsoleto.
+from ragas.metrics._faithfulness import Faithfulness
+from ragas.metrics._context_precision import ContextPrecision
+from ragas.metrics._context_recall import ContextRecall
 from openai import OpenAI as OpenAIClient
 from ragas.llms import llm_factory
 from rag_core.answer_policy import sanitize_answer
 from rag_core.numerical_validator import validate_numbers
+
+RAG_NAME = "rag_principal"
+RAGAS_JUDGE_MODEL = "sabia-4"
+RAGAS_JUDGE_BASE_URL = "https://chat.maritaca.ai/api"
 
 DATASET_PATHS = {
     "dev":         "data/golden_dataset_dev.json",
@@ -90,7 +99,7 @@ def _run_metadata(args) -> dict:
             packages[name] = "not-installed"
     return {
         "seed": args.seed,
-        "rag": args.rag,
+        "rag": RAG_NAME,
         "use_graph": args.use_graph,
         "limit": args.limit,
         "git_commit": commit,
@@ -100,8 +109,26 @@ def _run_metadata(args) -> dict:
             split: _dataset_hash(path) for split, path in DATASET_PATHS.items()
             if os.path.exists(path)
         },
-        "ragas_judge_model": os.getenv("RAGAS_JUDGE_MODEL", "gpt-5-chat-latest"),
+        "ragas_judge_model": os.getenv("RAGAS_JUDGE_MODEL", RAGAS_JUDGE_MODEL),
+        "ragas_judge_provider": "maritaca",
+        "ragas_judge_base_url": os.getenv(
+            "RAGAS_JUDGE_BASE_URL", RAGAS_JUDGE_BASE_URL
+        ),
     }
+
+
+def _ragas_judge_llm():
+    model = os.getenv("RAGAS_JUDGE_MODEL", RAGAS_JUDGE_MODEL)
+    api_key = os.getenv("RAGAS_JUDGE_API_KEY") or os.getenv("MARITACA_API_KEY")
+    base_url = os.getenv("RAGAS_JUDGE_BASE_URL", RAGAS_JUDGE_BASE_URL)
+    if not api_key:
+        raise EnvironmentError(
+            "Defina MARITACA_API_KEY ou RAGAS_JUDGE_API_KEY para executar o judge RAGAS."
+        )
+    client = OpenAIClient(api_key=api_key, base_url=base_url)
+    return model, llm_factory(
+        model, client=client, max_tokens=8192, temperature=0
+    )
 
 
 def load_dataset(path: str) -> list[dict]:
@@ -148,12 +175,17 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
             contexts = [n.get_content() for n in source_nodes]
             number_checks = validate_numbers(answer, source_nodes)
             records.append({
-                "question":     question,
-                "answer":       answer,
-                "contexts":     contexts,
-                "ground_truth": ground_truth or "",
+                "user_input":        question,
+                "response":          answer,
+                "retrieved_contexts": contexts,
+                "reference":         ground_truth or "",
             })
             diagnostics.append({
+                "id": item.get("id"),
+                "type": q_type,
+                "domain": item.get("domain"),
+                "expected_source_files": item.get("source_files", []),
+                "expected_source_pages": item.get("source_pages", []),
                 "latency_ms": round((time.perf_counter() - started) * 1000, 1),
                 "numeric_precision": (
                     sum(check.verified for check in number_checks) / len(number_checks)
@@ -164,27 +196,29 @@ def run_ragas_split(split: str, dataset: list[dict], engine, interp_llm, interpr
         except Exception as exc:
             print(f"         ❌ ERRO: {type(exc).__name__}: {exc}")
             records.append({
-                "question":     question,
-                "answer":       f"[ERRO] {exc}",
-                "contexts":     [],
-                "ground_truth": ground_truth or "",
+                "user_input":        question,
+                "response":          f"[ERRO] {exc}",
+                "retrieved_contexts": [],
+                "reference":         ground_truth or "",
             })
             diagnostics.append({
+                "id": item.get("id"),
+                "type": q_type,
+                "domain": item.get("domain"),
+                "expected_source_files": item.get("source_files", []),
+                "expected_source_pages": item.get("source_pages", []),
                 "latency_ms": round((time.perf_counter() - started) * 1000, 1),
                 "numeric_precision": None,
             })
 
-    ragas_model = os.getenv("RAGAS_JUDGE_MODEL", "gpt-5-chat-latest")
+    ragas_model, ragas_llm = _ragas_judge_llm()
     print(f"\n  Computando métricas RAGAS (judge: {ragas_model})...")
-    ragas_llm = llm_factory(
-        ragas_model, client=OpenAIClient(), max_tokens=8192, temperature=0
-    )
     metrics = [Faithfulness(llm=ragas_llm), ContextPrecision(llm=ragas_llm), ContextRecall(llm=ragas_llm)]
     ds = Dataset.from_list(records)
     scores = evaluate(ds, metrics=metrics)
 
     scores_dict = scores.to_pandas().mean(numeric_only=True).to_dict()
-    details = scores.to_pandas().rename(columns={"question": "user_input"}).to_dict(orient="records")
+    details = scores.to_pandas().to_dict(orient="records")
     for detail, diagnostic in zip(details, diagnostics):
         detail.update(diagnostic)
 
@@ -220,6 +254,9 @@ def run_adversarial_split(dataset: list[dict], engine, interp_llm, interpret_que
             refused = False
 
         details.append({
+            "id":         item.get("id"),
+            "type":       item.get("type"),
+            "domain":     item.get("domain"),
             "user_input": question,
             "response":   answer,
             "refused":    refused,
@@ -291,11 +328,6 @@ def main():
     parser.add_argument("--seed", type=int, default=42, help="Seed da avaliação (padrão: 42)")
     parser.add_argument("--limit", type=int, default=None, help="Limita exemplos por split")
     parser.add_argument(
-        "--rag",
-        default="rag_principal",
-        help="Pasta do RAG a avaliar (padrão: rag_principal)",
-    )
-    parser.add_argument(
         "--use-graph",
         action="store_true",
         default=False,
@@ -315,20 +347,20 @@ def main():
     global _RUN_METADATA
     _RUN_METADATA = _run_metadata(args)
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    rag_dir  = os.path.join(root_dir, args.rag)
+    rag_dir  = os.path.join(root_dir, RAG_NAME)
 
     if not os.path.isdir(rag_dir):
-        print(f"[ERRO] Pasta '{args.rag}' não encontrada em {root_dir}")
+        print(f"[ERRO] Pasta '{RAG_NAME}' não encontrada em {root_dir}")
         sys.exit(1)
 
-    # Importa initialize e interpret_query do RAG especificado
+    # Importa initialize e interpret_query do rag_principal.
     sys.path.insert(0, rag_dir)
     startup_mod = importlib.import_module("src.startup")
     interp_mod  = importlib.import_module("src.query_interpreter")
     initialize      = startup_mod.initialize
     interpret_query = interp_mod.interpret_query
 
-    print(f"Inicializando pipeline RAG ({args.rag})...")
+    print(f"Inicializando pipeline RAG ({RAG_NAME})...")
     data_dir = os.path.join(root_dir, "data")
     init_kwargs = {"data_dir": data_dir}
     if args.use_graph:

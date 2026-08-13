@@ -8,6 +8,8 @@ REFUSAL_TEXT = (
     "ao ponto solicitado."
 )
 
+_REFUSAL_RE = re.compile(re.escape(REFUSAL_TEXT), re.IGNORECASE)
+
 _SOURCE_REQUEST_PATTERNS = (
     re.compile(
         r"\b(?:qual|quais|liste|mostre|informe|indique)\s+"
@@ -146,11 +148,23 @@ def _strip_source_metadata(text: str) -> str:
     return cleaned
 
 
+def _strip_mixed_refusal(text: str) -> str:
+    """Impede recusa global anexada a uma resposta já sustentada."""
+    if not _REFUSAL_RE.search(text):
+        return text
+
+    without_refusal = _REFUSAL_RE.sub("", text)
+    if re.search(r"\w", without_refusal, re.UNICODE):
+        return without_refusal
+    return REFUSAL_TEXT
+
+
 def sanitize_answer(answer: str, *, question: str = "") -> str:
     """Aplica política de apresentação ao texto que será exibido no chat."""
     cleaned = _strip_internal_details(answer or "")
     if not asks_for_sources(question):
         cleaned = _strip_source_metadata(cleaned)
+    cleaned = _strip_mixed_refusal(cleaned)
 
     cleaned = re.sub(r"\(\s*[,;:-]?\s*\)", "", cleaned)
     cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
