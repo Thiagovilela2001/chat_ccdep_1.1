@@ -212,9 +212,19 @@ docker compose config --quiet
 python benchmarks/benchmark_core.py --iterations 10000
 ```
 
-A avaliação reproduzível usa
-`python evaluate.py --split dev|test|adversarial|all --seed 42`; ela registra
-hash do dataset, commit, versões, precisão numérica/de
-citações e latências p50/p95. Cada API também expõe `/metrics` em formato
-Prometheus, sem incluir perguntas ou conteúdo documental.
+A avaliação reproduzível usa somente o `rag_principal` e o judge Maritaca
+`sabia-4` por padrão:
+
+```bash
+python evaluate.py --split dev --seed 42
+python evaluate.py --split test --seed 42
+python evaluate.py --split adversarial --seed 42
+python evaluate.py --split all --seed 42
+```
+
+O judge usa `MARITACA_API_KEY`; `RAGAS_JUDGE_API_KEY`,
+`RAGAS_JUDGE_BASE_URL` e `RAGAS_JUDGE_MODEL` permitem overrides explícitos.
+Cada execução registra hash dos splits, commit, versões, precisão numérica e
+latências p50/p95. Cada API também expõe `/metrics` em formato Prometheus, sem
+incluir perguntas ou conteúdo documental.
 A análise técnica detalhada está em [ANALISE_PROJETO.md](ANALISE_PROJETO.md).

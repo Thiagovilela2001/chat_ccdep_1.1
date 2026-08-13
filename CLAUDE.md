@@ -14,6 +14,19 @@ Tópicos que ativam a skill (exemplos):
 - Taxa de desocupação, saldo de empregos, rotatividade
 - Mercado de trabalho formal/informal
 
+## Skill automática: Proteção Social
+
+Sempre que o usuário fizer pergunta ou pedir tarefa sobre **proteção social**,
+leia e aplique:
+
+    .agents/skills/social-protection-analysis/SKILL.md
+
+Tópicos de ativação:
+- Cadastro Único ou CadÚnico
+- Programa Bolsa Família ou PBF
+- Benefício de Prestação Continuada ou BPC
+- Transferência de renda, Regra de Proteção e famílias beneficiárias
+
 ## Arquitetura do projeto
 
 Quatro engines RAG (`rag_principal/`, `rag_agentic/`, `rag_raptor/`,
@@ -65,7 +78,8 @@ versão colide com o `llama-index-llms-openai` fixado pelo core.
 
 ## Dados indexados
 
-Boletins de Conjuntura Paulista (PDFs, 2022–2025) em `/data/`.
+Boletins de Conjuntura Paulista e Seade Social em `/data/`, incluindo
+`/data/seade_social/painel/` e `/data/seade_social/trabalho/`.
 Banco vetorial: ChromaDB em `<engine>/chroma_db/`.
 Testes: `rag_principal/tests/` (pytest) e `rag_orchestrator/tests/` (scripts).
 
@@ -73,3 +87,5 @@ Testes: `rag_principal/tests/` (pytest) e `rag_orchestrator/tests/` (scripts).
 
 `python evaluate.py --split dev|test|adversarial|all`
 Métricas: Faithfulness, ContextPrecision, ContextRecall (RAGAS) + refusal_accuracy.
+O benchmark avalia somente `rag_principal`; o judge padrão é o Maritaca `sabia-4`
+e usa `MARITACA_API_KEY` (ou `RAGAS_JUDGE_API_KEY`).

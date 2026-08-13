@@ -1,52 +1,137 @@
 [
   {
-    "question": "Qual foi a variação interanual do emprego com carteira assinada em São Paulo no 3º trimestre de 2024?",
-    "ground_truth": "No 3º trimestre de 2024, a variação interanual do emprego com carteira assinada foi de 624 mil postos de trabalho no Estado de São Paulo, com taxa de crescimento anual de 5,6%.",
-    "type": "lookup"
+    "id": "test_social_01",
+    "question": "Como evoluíram o CadÚnico e o Bolsa Família no Estado de São Paulo entre agosto de 2023 e agosto de 2025?",
+    "ground_truth": "Em agosto de 2025, o CadÚnico tinha 13,7 milhões de pessoas inscritas no Estado, 372 mil a menos que em agosto de 2024 e 738 mil a menos que em agosto de 2023. O Bolsa Família atendia 5,9 milhões de pessoas, redução de 738 mil em 12 meses e de 864 mil em dois anos. O repasse mensal foi de R$ 1,5 bilhão, com benefício médio de R$ 677 por família.",
+    "type": "tendencia",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-oitocentos-sessenta-quatro-mil-pessoas-deixaram-receber-bolsa-familia.pdf"],
+    "source_pages": [1, 2, 3]
   },
   {
-    "question": "Qual tipo de vínculo empregatício liderou a geração de postos de trabalho em São Paulo no 1º trimestre de 2024?",
-    "ground_truth": "O emprego com carteira assinada liderou, com alta interanual de 3,3%, adicionando 370 mil vagas ao mercado de trabalho paulista no 1º trimestre de 2024 — mais que o dobro das ocupações sem carteira assinada, que somaram apenas 32 mil novas vagas.",
-    "type": "comparacao"
+    "id": "test_social_02",
+    "question": "Quais mudanças ocorreram no CadÚnico, no Bolsa Família e no BPC paulista entre 2024 e 2025 segundo o boletim de junho de 2025?",
+    "ground_truth": "Em maio de 2025, o CadÚnico tinha 13,8 milhões de pessoas inscritas, queda de 890 mil ou 6,0% em 12 meses. Em abril, o Bolsa Família atendia 6,5 milhões de pessoas, 292 mil ou 4,3% a menos que um ano antes; houve redução de 418 mil pessoas na faixa de pobreza e aumento de 126 mil na baixa renda. O BPC ganhou 52 mil beneficiários em um ano, alta de 5,4%, principalmente entre pessoas com deficiência, e repassou R$ 1,5 bilhão em abril de 2025.",
+    "type": "tendencia",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-reducao-pessoas-inscritas.pdf"],
+    "source_pages": [1, 2, 3]
   },
   {
-    "question": "Qual foi o rendimento médio real dos trabalhadores paulistas no 3º trimestre de 2024?",
-    "ground_truth": "No 3º trimestre de 2024, o rendimento médio real efetivo dos trabalhadores paulistas atingiu R$ 4.038, com alta de 5,7% em relação ao mesmo período de 2023.",
-    "type": "lookup"
+    "id": "test_social_03",
+    "question": "Quais eram os estoques e valores do CadÚnico, Bolsa Família e BPC paulista no final de 2024?",
+    "ground_truth": "Em novembro de 2024, 6,0 milhões de famílias estavam inscritas no CadÚnico paulista e 2,5 milhões de famílias recebiam Bolsa Família. O valor médio nominal do PBF era de R$ 674 por família e o repasse mensal totalizava R$ 1,7 bilhão. Para o BPC, a referência era outubro de 2024: 1,0 milhão de pessoas atendidas, alta anual de 9,4%, e R$ 1,4 bilhão repassado.",
+    "type": "lookup",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-transferencia-renda.pdf"],
+    "source_pages": [1, 2, 3]
   },
   {
-    "question": "Como se comportou o emprego formal em São Paulo na passagem do 3º para o 4º trimestre de 2024?",
-    "ground_truth": "O emprego com carteira assinada desacelerou na passagem do 3º para o 4º trimestre de 2024: a variação interanual caiu de 624 mil postos (taxa de 5,6%) no 3T para 241 mil postos (taxa de 2,1%) no 4T, indicando perda de intensidade na formalização do mercado de trabalho paulista.",
-    "type": "tendencia"
+    "id": "test_social_04",
+    "question": "Compare a cobertura e os valores anuais do CadÚnico, Bolsa Família e BPC no Estado de São Paulo em 2024.",
+    "ground_truth": "Em 2024, a média mensal foi de 14,4 milhões de pessoas inscritas no CadÚnico, 6,7 milhões de pessoas beneficiárias do Bolsa Família e 983 mil pessoas atendidas pelo BPC. O benefício médio mensal do PBF foi de R$ 689 por família, a preços de dezembro de 2024, e os recursos pagos no ano somaram R$ 20,9 bilhões. O BPC repassou R$ 17,0 bilhões, também a preços de dezembro de 2024.",
+    "type": "comparacao",
+    "domain": "social_protection",
+    "source_files": ["seade_social/painel/seade-informa-social-transferencia-renda-marco-2025.pdf"],
+    "source_pages": [1, 2, 3]
   },
   {
-    "question": "Qual foi o rendimento médio real dos trabalhadores paulistas no 4º trimestre de 2024?",
-    "ground_truth": "No 4º trimestre de 2024, o rendimento médio real efetivo dos trabalhadores paulistas alcançou R$ 4.032, com alta de 6,0% em relação ao mesmo período de 2023.",
-    "type": "lookup"
+    "id": "test_labor_01",
+    "question": "Como mudaram ocupação, desocupação e rendimento no Estado de São Paulo no primeiro trimestre de 2026?",
+    "ground_truth": "No primeiro trimestre de 2026, havia 24,6 milhões de ocupados, 21 mil a menos que no trimestre anterior, variação de -0,1%. O número de desocupados aumentou 350 mil, para 1,6 milhão, e a taxa de desocupação subiu de 4,7% para 6,0%; a subutilização passou de 10,8% para 11,5%. O rendimento médio real efetivo do trabalho principal aumentou 4,2%, para R$ 4.664.",
+    "type": "tendencia",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-relativa-estabilidade-ocupacao-aumento-desocupacao.pdf"],
+    "source_pages": [1]
   },
   {
-    "question": "Qual foi a queda em pontos percentuais da taxa de desemprego em São Paulo entre o 1º e o 3º trimestre de 2024?",
-    "ground_truth": "A taxa de desemprego em São Paulo recuou 1,3 ponto percentual entre o 1º trimestre de 2024 (7,4%) e o 3º trimestre de 2024 (6,1%).",
-    "type": "calculo"
+    "id": "test_labor_02",
+    "question": "Qual foi o desempenho do emprego formal paulista em junho de 2026, no primeiro semestre e no acumulado de 12 meses?",
+    "ground_truth": "Em junho de 2026, São Paulo criou 34.981 empregos formais, resultado de 708.483 admissões e 673.502 desligamentos, levando o estoque a 14,7 milhões. No primeiro semestre, o saldo foi de 253 mil postos, crescimento de 1,7%. Em 12 meses, foram criados 210.733 empregos, alta de 1,5%, concentrados sobretudo nos serviços, com 172.940 postos.",
+    "type": "comparacao",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-emprego-formal-geracao-trinta-cinco-mil-empregos-estado-sao-paulo-junho-2026.pdf"],
+    "source_pages": [1]
   },
   {
-    "question": "Qual foi a diferença em pontos percentuais entre a taxa de crescimento anual do PIB paulista no 4T2024 e no 3T2024?",
-    "ground_truth": "A taxa de crescimento anual do PIB paulista acelerou 0,6 ponto percentual do 3T2024 (2,8%) para o 4T2024 (3,4%).",
-    "type": "calculo"
+    "id": "test_labor_03",
+    "question": "Como interpretar a queda do emprego formal paulista no quarto trimestre de 2025 diante do crescimento interanual?",
+    "ground_truth": "No quarto trimestre de 2025, o Estado suprimiu 173.388 postos formais, queda de 1,2% ante o trimestre anterior, com 1.873.679 admissões e 2.047.067 desligamentos. Ainda assim, havia 311.228 postos a mais que no quarto trimestre de 2024, alta de 2,2%. O estoque em dezembro era de 14.627.382 vínculos. A queda trimestral refletiu sazonalidade e atingiu agricultura, indústria, construção e serviços, enquanto comércio cresceu 0,2%.",
+    "type": "comparacao",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-diminui-emprego-formal-estado-sao-paulo-quarto-trimestre-2025.pdf"],
+    "source_pages": [1]
   },
   {
-    "question": "Como evoluiu o mercado de trabalho no Estado de São Paulo no 1º trimestre de 2025?",
-    "ground_truth": "No 1º trimestre de 2025, a ocupação total no Estado de São Paulo cresceu 3,1% em relação ao mesmo trimestre de 2024, com acréscimo de 754 mil postos de trabalho. O emprego com carteira assinada avançou 4,0% (+453 mil), enquanto as ocupações sem carteira assinada recuaram 9,6% (-252 mil).",
-    "type": "lookup"
+    "id": "test_labor_04",
+    "question": "Como evoluíram as desigualdades de ocupação, desocupação e rendimento por sexo e raça/cor em São Paulo em 2025?",
+    "ground_truth": "Em 2025, havia 10,6 milhões de ocupados negros e 14,0 milhões de não negros. A ocupação cresceu para mulheres não negras, homens não negros e homens negros, mas caiu 0,8% para mulheres negras. A taxa de desocupação caiu em todos os grupos, chegando a 7,8% para mulheres negras, 4,9% para mulheres não negras, 4,7% para homens negros e 3,5% para homens não negros. O rendimento por hora das mulheres negras cresceu 6,4%, mas equivalia a 53% do recebido por homens não negros.",
+    "type": "comparacao",
+    "domain": "labor_market",
+    "source_files": ["seade_social/trabalho/seade-trabalho-desigualdades-menor-taxa-desocupacao-negros-nao-negros-2025.pdf"],
+    "source_pages": [1]
   },
   {
-    "question": "Qual foi a variação do volume de serviços no Estado de São Paulo em 2024 e qual segmento apresentou retração?",
-    "ground_truth": "Em 2024, o volume de serviços no Estado de São Paulo expandiu 4,5%. O segmento de transportes, serviços auxiliares aos transportes e correio registrou queda anual de 1,7%, puxada pela forte base comparativa e pelas elevadas taxas de juros.",
-    "type": "lookup"
+    "id": "test_demography_01",
+    "question": "Como avançou o envelhecimento demográfico paulista entre 1950 e 2022 e quais diferenças municipais apareciam em 2022?",
+    "ground_truth": "Entre 1950 e 2022, a proporção de pessoas com 60 anos ou mais passou de 4,4% para 16,2%, chegando a 7,313 milhões. O índice de envelhecimento aumentou de 11,6 para 86,7 idosos por 100 pessoas de 0 a 14 anos. Em 2022, o índice municipal variava de 44,4 a 281,3; entre municípios com menos de 10 mil habitantes, 60% já tinham mais idosos que jovens, contra 33% daqueles com mais de 50 mil habitantes.",
+    "type": "tendencia",
+    "domain": "demography",
+    "source_files": ["seade_demografia/populacao/seade-informa-envelhecimento-demografico-avanca-territorio-paulista.pdf"],
+    "source_pages": [1]
   },
   {
-    "question": "Qual foi a variação interanual da força de trabalho em São Paulo no 1º trimestre de 2025?",
-    "ground_truth": "No 1º trimestre de 2025, a força de trabalho no Estado de São Paulo cresceu 1,9% em relação ao mesmo trimestre de 2024, com acréscimo de 488 mil pessoas.",
-    "type": "lookup"
+    "id": "test_demography_02",
+    "question": "Como mudou a fecundidade no Município de São Paulo entre 2000 e 2024?",
+    "ground_truth": "A fecundidade no Município de São Paulo caiu 34,5% entre 2000 e 2024, passando de 2,1 filhos por mulher para cerca de 1,4. Em 2024, apenas três dos 96 distritos tinham taxas acima de 2,0 filhos; a maioria estava abaixo de 1,6 e 20 distritos abaixo de 1,2. A idade média da fecundidade subiu de 27 para 29 anos, e o intervalo entre distritos passou de 26,1-30,7 anos em 2000 para 27,7-35,1 em 2024.",
+    "type": "tendencia",
+    "domain": "demography",
+    "source_files": ["seade_demografia/fecundidade/spdemografico_2026_n1.pdf"],
+    "source_pages": [1, 2]
+  },
+  {
+    "id": "test_demography_03",
+    "question": "O que os óbitos de residentes em São Paulo em 2024 revelam sobre sua naturalidade?",
+    "ground_truth": "Em 2024, foram registrados 350.507 óbitos de residentes no Estado de São Paulo. Desses, 65% eram naturais do próprio Estado, 33% de outras unidades da federação e 2% do exterior. Entre os nascidos em outras UFs, destacavam-se Minas Gerais, com 9%, Bahia, com 7%, Pernambuco, com 4%, e Paraná, com 3%. Entre os 7.313 estrangeiros falecidos, predominavam naturais de Portugal, Japão, Itália e Espanha.",
+    "type": "perfil",
+    "domain": "demography",
+    "source_files": ["seade_demografia/mortalidade/seade-informa-demografia-obitos-naturalidade-estado-sao-paulo-2024-1.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "test_economy_01",
+    "question": "Quais eram as projeções da Fundação Seade para o PIB paulista de 2026 após o resultado de abril?",
+    "ground_truth": "Após a queda dessazonalizada de 1,1% do PIB em abril, a Fundação Seade projetava para 2026 crescimento mínimo de 1,0%, médio de 1,3% e máximo de 1,9%. Apesar do recuo mensal, o PIB avançava 1,6% frente a abril de 2025 e 0,6% no acumulado de 12 meses. O carregamento estatístico informado era de 1,6 ponto percentual.",
+    "type": "projecao",
+    "domain": "economic_conjuncture",
+    "source_files": ["pib/pib-projecoes-sao-paulo-abril-2026.pdf"],
+    "source_pages": [1]
+  },
+  {
+    "id": "test_economy_02",
+    "question": "Como a economia paulista perdeu dinamismo ao longo de 2025 e quais setores explicaram esse movimento?",
+    "ground_truth": "No acumulado em quatro trimestres, o PIB paulista cresceu 1,2% no quarto trimestre de 2025, abaixo dos 2,3% do Brasil. No acumulado do ano, o crescimento paulista caiu de 2,9% no primeiro trimestre para 1,2% no quarto. A indústria foi o principal vetor da desaceleração e recuou 1,8% no quarto trimestre, enquanto serviços e construção amorteceram o movimento sem impedir a perda de dinamismo.",
+    "type": "tendencia",
+    "domain": "economic_conjuncture",
+    "source_files": ["conjuntura/Boletim_Conjuntura_Paulista_4trim2025.pdf"],
+    "source_pages": [1, 2, 3]
+  },
+  {
+    "id": "test_investment_01",
+    "question": "Como se distribuíram os investimentos anunciados no Estado de São Paulo no primeiro semestre de 2025?",
+    "ground_truth": "No primeiro semestre de 2025, foram anunciados R$ 71,8 bilhões em investimentos. Infraestrutura recebeu R$ 28,3 bilhões, ou 39,4%, com 86% desses aportes ligados aos transportes. Indústria respondeu por R$ 21,6 bilhões, ou 30,1%; comércio, por R$ 13,7 bilhões; e serviços, por R$ 8,2 bilhões, mais da metade destinada a data centers.",
+    "type": "lookup",
+    "domain": "investment_trade",
+    "source_files": ["investimentos/investimentos-anunciados-primeiro-semestre-2025.pdf"],
+    "source_pages": [1, 2]
+  },
+  {
+    "id": "test_sectoral_01",
+    "question": "Como mudou a participação de São Paulo no Valor de Transformação Industrial nacional entre 2007 e 2021?",
+    "ground_truth": "A participação paulista no Valor de Transformação Industrial nacional caiu de 40,8% em 2007 para 34,8% em 2021, redução de 6,1 pontos percentuais. A maior queda ocorreu em biocombustíveis, de 67,7% para 25,5%, menos 42,1 pontos. Produtos químicos ampliaram a participação de 43,1% para 47,4%, e impressão e reprodução de gravações passaram de 42,0% para 42,3%.",
+    "type": "tendencia",
+    "domain": "sectoral_regional",
+    "source_files": ["industria/seade-informa-economia-participacao-sao-paulo-industria-nacional.pdf"],
+    "source_pages": [1]
   }
 ]

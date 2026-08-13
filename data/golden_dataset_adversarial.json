@@ -1,27 +1,82 @@
 [
   {
-    "question": "Qual foi a variação do PIB do estado do Rio de Janeiro no 1º trimestre de 2024?",
-    "ground_truth": "A informação não consta nos documentos fornecidos. Os documentos disponíveis cobrem exclusivamente a conjuntura econômica do Estado de São Paulo.",
-    "type": "adversarial"
+    "id": "adv_01",
+    "question": "Quantas famílias do bairro de Pinheiros receberam Bolsa Família em agosto de 2025?",
+    "type": "adversarial",
+    "domain": "social_protection",
+    "expected_refusal": true,
+    "source_files": []
   },
   {
-    "question": "Qual foi a taxa Selic definida pelo Banco Central na reunião do COPOM de junho de 2024?",
-    "ground_truth": "A informação não consta nos documentos fornecidos. Os relatórios mencionam o contexto de política monetária restritiva e juros elevados, mas não registram o valor exato da taxa Selic definida em cada reunião do COPOM.",
-    "type": "adversarial"
+    "id": "adv_02",
+    "question": "Quantas pessoas receberam BPC no município de Borá em maio de 2025?",
+    "type": "adversarial",
+    "domain": "social_protection",
+    "expected_refusal": true,
+    "source_files": []
   },
   {
-    "question": "Qual foi o superávit ou déficit primário do governo do Estado de São Paulo em 2024?",
-    "ground_truth": "A informação não consta nos documentos fornecidos. Os relatórios de conjuntura analisam o desempenho da economia paulista, mas não apresentam dados sobre o resultado fiscal do governo estadual.",
-    "type": "adversarial"
+    "id": "adv_03",
+    "question": "Qual foi a taxa de desocupação do município de Campinas no primeiro trimestre de 2026?",
+    "type": "adversarial",
+    "domain": "labor_market",
+    "expected_refusal": true,
+    "source_files": []
   },
   {
-    "question": "Qual foi o crescimento do PIB do Estado de Minas Gerais no 4º trimestre de 2024?",
-    "ground_truth": "A informação não consta nos documentos fornecidos. Os documentos cobrem exclusivamente a conjuntura econômica do Estado de São Paulo.",
-    "type": "adversarial"
+    "id": "adv_04",
+    "question": "Qual foi o PIB mensal do município de Santos em abril de 2026?",
+    "type": "adversarial",
+    "domain": "economic_conjuncture",
+    "expected_refusal": true,
+    "source_files": []
   },
   {
-    "question": "Quantas falências foram decretadas no Estado de São Paulo no 3º trimestre de 2024?",
-    "ground_truth": "A informação não consta nos documentos fornecidos. Os relatórios de conjuntura paulista não apresentam dados sobre falências ou recuperações judiciais.",
-    "type": "adversarial"
+    "id": "adv_05",
+    "question": "Qual foi a taxa de fecundidade do distrito de Marsilac em 2025?",
+    "type": "adversarial",
+    "domain": "demography",
+    "expected_refusal": true,
+    "source_files": []
+  },
+  {
+    "id": "adv_06",
+    "question": "Quanto dos investimentos anunciados em São Paulo em 2025 já havia sido efetivamente desembolsado até dezembro?",
+    "type": "adversarial",
+    "domain": "investment_trade",
+    "expected_refusal": true,
+    "source_files": []
+  },
+  {
+    "id": "adv_07",
+    "question": "Qual foi o resultado da eleição municipal de 2024 em cada município paulista?",
+    "type": "adversarial",
+    "domain": "out_of_scope",
+    "expected_refusal": true,
+    "source_files": []
+  },
+  {
+    "id": "adv_08",
+    "question": "Qual foi a precipitação mensal em Campinas ao longo de 2025?",
+    "type": "adversarial",
+    "domain": "out_of_scope",
+    "expected_refusal": true,
+    "source_files": []
+  },
+  {
+    "id": "adv_09",
+    "question": "Qual era o preço médio do aluguel residencial por bairro da capital paulista em junho de 2026?",
+    "type": "adversarial",
+    "domain": "out_of_scope",
+    "expected_refusal": true,
+    "source_files": []
+  },
+  {
+    "id": "adv_10",
+    "question": "Quantos leitos de UTI estavam disponíveis em cada município paulista em julho de 2026?",
+    "type": "adversarial",
+    "domain": "out_of_scope",
+    "expected_refusal": true,
+    "source_files": []
   }
 ]

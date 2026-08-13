@@ -1,0 +1,4 @@
+interface:
+  display_name: "Análise de Proteção Social"
+  short_description: "Analisa CadÚnico, Bolsa Família e BPC"
+  default_prompt: "Use $social-protection-analysis para analisar indicadores de proteção social em São Paulo."

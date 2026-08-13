@@ -1,0 +1,1504 @@
+{
+  "schema_version": 1,
+  "corpus": "data/seade_social",
+  "total_documents": 185,
+  "by_collection": {
+    "painel": 11,
+    "trabalho": 174
+  },
+  "by_topic": {
+    "bolsa_familia": 4,
+    "cadunico": 2,
+    "desigualdades": 20,
+    "diferencas_regionais": 7,
+    "emprego_formal": 88,
+    "informalidade": 12,
+    "mercado_de_trabalho": 19,
+    "ocupacao_rendimento": 24,
+    "renda_domiciliar_do_trabalho": 2,
+    "sintese_mensal": 2,
+    "transferencia_renda": 5
+  },
+  "documents": [
+    {
+      "path": "painel/seade-informa-social-diminui-numero-bebeficiarios-bolsa-familia-aumeta-bcp.pdf",
+      "collection": "painel",
+      "topic": "bolsa_familia",
+      "title": "Seade Informa Social - setembro 2024",
+      "pages": 3,
+      "bytes": 359000
+    },
+    {
+      "path": "painel/seade-informa-social-oitocentos-sessenta-quatro-mil-pessoas-deixaram-receber-bolsa-familia.pdf",
+      "collection": "painel",
+      "topic": "bolsa_familia",
+      "title": "Seade Informa Social - outubro 2025",
+      "pages": 7,
+      "bytes": 731693
+    },
+    {
+      "path": "painel/seade-informa-social-perfil-inscritos-cadunico-beneficarios-pbf-estado-sao-paulo.pdf",
+      "collection": "painel",
+      "topic": "cadunico",
+      "title": "Seade Informa - Transferência de Renda - jun.2024",
+      "pages": 3,
+      "bytes": 356718
+    },
+    {
+      "path": "painel/seade-informa-social-programas-transferencia-renda-bolsa-familia-1.pdf",
+      "collection": "painel",
+      "topic": "bolsa_familia",
+      "title": "Seade Informa - Transferência de Renda - dez.2023",
+      "pages": 2,
+      "bytes": 329411
+    },
+    {
+      "path": "painel/seade-informa-social-programas-transferencia-renda-estado-sao-paulo-junho-2024.pdf",
+      "collection": "painel",
+      "topic": "transferencia_renda",
+      "title": "Seade Informa - Social - junho 2024",
+      "pages": 3,
+      "bytes": 353770
+    },
+    {
+      "path": "painel/seade-informa-social-programas-transferencia-renda-municipios-selecionados-estado-sao-paulo.pdf",
+      "collection": "painel",
+      "topic": "transferencia_renda",
+      "title": "Seade Informa - Social - março 2024",
+      "pages": 2,
+      "bytes": 327770
+    },
+    {
+      "path": "painel/seade-informa-social-programas-transferencia-renda-sao-paulo-brasil.pdf",
+      "collection": "painel",
+      "topic": "transferencia_renda",
+      "title": "Seade Informa - Transferência de Renda - out.2023",
+      "pages": 2,
+      "bytes": 337180
+    },
+    {
+      "path": "painel/seade-informa-social-reducao-pessoas-inscritas.pdf",
+      "collection": "painel",
+      "topic": "cadunico",
+      "title": "Seade Informa Social - jul.2024",
+      "pages": 3,
+      "bytes": 487949
+    },
+    {
+      "path": "painel/seade-informa-social-tipos-beneficios-programa-bolsa-familia.pdf",
+      "collection": "painel",
+      "topic": "bolsa_familia",
+      "title": "Seade Informa - Social - agosto 2024",
+      "pages": 4,
+      "bytes": 466396
+    },
+    {
+      "path": "painel/seade-informa-social-transferencia-renda-marco-2025.pdf",
+      "collection": "painel",
+      "topic": "transferencia_renda",
+      "title": "Seade Informa Social - dez.2024",
+      "pages": 3,
+      "bytes": 419306
+    },
+    {
+      "path": "painel/seade-informa-social-transferencia-renda.pdf",
+      "collection": "painel",
+      "topic": "transferencia_renda",
+      "title": "Seade Informa Social - dez.2024",
+      "pages": 3,
+      "bytes": 394763
+    },
+    {
+      "path": "trabalho/seade-trabalho-anual-2025-aumenta-ocupacao-desocupacao-menor-desde-2012.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho Ocupação e Rendimento - Anual 2025",
+      "pages": 6,
+      "bytes": 704767
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-primeiro-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Trimestral – 1trim.2022",
+      "pages": 21,
+      "bytes": 2203980
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-primeiro-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho_1º trim.2024",
+      "pages": 24,
+      "bytes": 2494096
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-primeiro-trimestre-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 1º trimestre 2026",
+      "pages": 24,
+      "bytes": 1634873
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-primeiro-trimestre.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Trimestral - 1º trim.2023",
+      "pages": 24,
+      "bytes": 2580519
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-sao-paulo-primeiro-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 1º trimestre 2025",
+      "pages": 24,
+      "bytes": 2457621
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-sao-paulo-segundo-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 2º trimestre 2025",
+      "pages": 24,
+      "bytes": 2515390
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-segundo-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Trimestral – 2trim.2022",
+      "pages": 21,
+      "bytes": 2170722
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-segundo-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Trimestral - 2º trim.2023",
+      "pages": 24,
+      "bytes": 1309160
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-terceiro-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Trimestral - 3º trim.2022",
+      "pages": 21,
+      "bytes": 2193148
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-terceiro-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Trimestral - 3º trimestre de 2023",
+      "pages": 24,
+      "bytes": 1365331
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-estado-terceiro-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 3° trimestre 2024",
+      "pages": 24,
+      "bytes": 2555043
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-emprego-formal-quarto-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Trimestral – 4trim.2021",
+      "pages": 21,
+      "bytes": 2180013
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-ocupacao-desocupacao-menor-desde-2012.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho Ocupação e Rendimento - 4º trim.2025",
+      "pages": 6,
+      "bytes": 730321
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumenta-ocupacao-diminui-rendimento-segundo-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho Ocupação e Rendimento - 2º trim.2025",
+      "pages": 6,
+      "bytes": 933703
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-57-mil-empregos-esp-setembro-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Mensal - set.2024",
+      "pages": 2,
+      "bytes": 1008588
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-cento-e-um-mil-empregos-sao-paulo-fevereiro-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Mensal - abril 2024",
+      "pages": 2,
+      "bytes": 135038
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-quarenta-dois-mil-empregos-estado-sao-paulo-maio-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Mensal - julho 2024",
+      "pages": 2,
+      "bytes": 344156
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-quarenta-oito-milempregos-estado-sao-paulo-junho-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade_Trabalho - Emprego formal mensal - Ago.2024",
+      "pages": 2,
+      "bytes": 268786
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-quarenta-sete-mil-empregos-estado-sao-paulo-setembro-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal dez.2024",
+      "pages": 2,
+      "bytes": 342717
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-sessenta-um-mil-empregos-estado-sao-paulo-agosto-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Empego Mensal Formal - outubro 2024",
+      "pages": 2,
+      "bytes": 344188
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-setenta-seis-mil-empregos-sao-paulo-abril-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Mensal - junho 2024",
+      "pages": 2,
+      "bytes": 343754
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-setenta-sete-mil-empregos-sao-paulo-marco-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "",
+      "pages": 2,
+      "bytes": 339575
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-trinta-e-oito-mil-empregos-sao-paulo-janeiro-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Mensal - Março 2024",
+      "pages": 2,
+      "bytes": 349084
+    },
+    {
+      "path": "trabalho/seade-trabalho-aumento-trinta-nove-mil-empregos-estado-sao-paulo-novembro-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 337684
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-33-mil-empregos-esp-maio-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - julho.2025",
+      "pages": 2,
+      "bytes": 337594
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-cento-trinta-oito-mil-empregos-estado-sao-paulo-fevereiro-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - abril 2025",
+      "pages": 2,
+      "bytes": 337825
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-cinquenta-cinco-mil-empregos-estado-sao-paulo-abril-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - jun.2023",
+      "pages": 2,
+      "bytes": 346645
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-cinquenta-mil-empregos-estado-sao-paulo-maio-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - jul.2023",
+      "pages": 2,
+      "bytes": 346340
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-cinquenta-um-mil-empregos-estado-sao-paulo-marco-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - maio.2023",
+      "pages": 2,
+      "bytes": 346298
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-dezenove-mil-empregos-estado-sao-paulo-janeiro-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Mensal – jan.2023",
+      "pages": 2,
+      "bytes": 314647
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-dezoito-mil-empregos-estado-sao-paulo-outubro-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - dez 2025",
+      "pages": 2,
+      "bytes": 375607
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-cinco-mil-empregos-estado-sao-paulo-agosto-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - outubro 2025",
+      "pages": 2,
+      "bytes": 338360
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-mil-empregos-estado-sao-paulo-junho-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - agosto 2025",
+      "pages": 2,
+      "bytes": 356855
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-nove-mil-empregos-estado-sao-paulo-setembro-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - novembro 2025",
+      "pages": 2,
+      "bytes": 338165
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-sete-mil-empregos-estado-sao-paulo-novembro-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - Janeiro 2024",
+      "pages": 2,
+      "bytes": 346386
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-sete-mil-empregos-estado-sao-paulo-setembro-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - novembro 2023",
+      "pages": 2,
+      "bytes": 373146
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-tres-mil-empregos-estado-sao-paulo-julho-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - set.2023",
+      "pages": 2,
+      "bytes": 272654
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quarenta-tres-mil-empregos-estado-sao-paulo-julho-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - setembro 2025",
+      "pages": 2,
+      "bytes": 341302
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-quatrocentos-cinquenta-nove-mil-empregos-estado-sao-paulo-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - Fevereiro 2025",
+      "pages": 2,
+      "bytes": 337380
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-sessenta-cinco-mil-empregos-estado-sao-paulo-agosto-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - outubro 2023",
+      "pages": 2,
+      "bytes": 135299
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-sessenta-cinco-mil-empregos-estado-sao-paulo-fevereiro-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Mensal – fev.2023",
+      "pages": 2,
+      "bytes": 345549
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-sessenta-nove-mil-empregos-estado-sao-paulo-outubro-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - dezembro 2023",
+      "pages": 2,
+      "bytes": 346374
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-setenta-dois-mil-empregos-estado-sao-paulo-abril-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - junho.2025",
+      "pages": 2,
+      "bytes": 364779
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-trinta-cinco-mil-empregos-estado-sao-paulo-marco-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - maio.2025",
+      "pages": 2,
+      "bytes": 341465
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-trinta-seis-mil-empregos-estado-sao-paulo-junho-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - agosto 2023",
+      "pages": 2,
+      "bytes": 347514
+    },
+    {
+      "path": "trabalho/seade-trabalho-criacao-trinta-um-mil-empregos-estado-sao-paulo-novembro-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal - Jan.2026",
+      "pages": 2,
+      "bytes": 345214
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-34-mil-empregos-estado-sao-paulo-marco-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Mensal – maio.2022",
+      "pages": 2,
+      "bytes": 446336
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-48-mil-empregos-esp-janeiro.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Mensal – mar.2021",
+      "pages": 2,
+      "bytes": 441662
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-51-mil-empregos-estado-sao-paulo-novembro-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Mensal – nov.2022",
+      "pages": 2,
+      "bytes": 311276
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-54-mil-empregos-estado-sao-paulo-abril-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego formal mensal - jun.2022",
+      "pages": 2,
+      "bytes": 338187
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-61-mil-empregos-estado-sao-paulo-setembro-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - setembro.2022",
+      "pages": 2,
+      "bytes": 308433
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-67-mil-empregos-estado-sao-paulo-julho-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SEADE TRABALHO - EMPREGO FORMAL MENSAL- julho.2022",
+      "pages": 2,
+      "bytes": 240362
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-75-mil-empregos-estado-sao-paulo-agosto-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - agosto.2022",
+      "pages": 2,
+      "bytes": 312974
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-80-mil-empregos-estado-sao-paulo-junho-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SEADE TRABALHO - EMPREGO FORMAL MENSAL- junho.2022",
+      "pages": 2,
+      "bytes": 320075
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-86-mil-empregos-estado-sao-paulo-maio-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SEADE TRABALHO - EMPREGO FORMAL MENSAL- maio2022",
+      "pages": 2,
+      "bytes": 311289
+    },
+    {
+      "path": "trabalho/seade-trabalho-criados-98-mil-empregos-estado-sao-paulo-fevereiro-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Mensal – abr.2021",
+      "pages": 2,
+      "bytes": 441094
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-aumenta-ocupacao-desocupacao-mulheres-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 446284
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-aumenta-ocupacao-diminui-desocupacao-para-mulheres-nao-negras1.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor - dez.2024",
+      "pages": 2,
+      "bytes": 452172
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-aumenta-ocupacao-homens-negros-mulheres-negras-2023.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho  desigualdades de sexo e raça/cor - anual.2023",
+      "pages": 2,
+      "bytes": 451338
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-aumenta-ocupacao-mulheres-negras-nao-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 374276
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-aumentam-ocupacao-taxas-desocupacao-mulheres-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Desigualdade de sexo e raça/cor - 1° trimestre 2023",
+      "pages": 2,
+      "bytes": 452743
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-diminuem-ocupacao-desocupacao-mulheres-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade trabalho - Desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 467586
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-diminui-ocupacao-aumenta-desocupacao-homens-negros-mulheres-nao-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Desigualdade de sexo e raça/cor - 1° trimestre 2024",
+      "pages": 2,
+      "bytes": 450840
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-menor-taxa-desocupacao-negros-nao-negros-2025.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 441941
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-ocupacao-atinge-maior-patamar-populacao-negra-2024-1.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 446283
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-ocupacao-cresce-principalmente-entre-mulheres-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 362874
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-renda-domiciliar-do-trabalho-na-pandemia-interior-rmsp-1.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Renda e desigualdade",
+      "pages": 6,
+      "bytes": 706537
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-renda-domiciliar-do-trabalho-na-pandemia.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Renda e desigualdade",
+      "pages": 5,
+      "bytes": 683937
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-sexo-raca-cor-2trim-2024.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Desigualdade de Sexo e Raça/Cor - 2º trim.2024",
+      "pages": 2,
+      "bytes": 456714
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-taxa-desocupacao-diminui-mulheres-homens-negros.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Desigualdades de sexo e raça/cor - 4° trimestre 2023",
+      "pages": 2,
+      "bytes": 453263
+    },
+    {
+      "path": "trabalho/seade-trabalho-desigualdades-taxa-desocupacao-estavel-mulheres-negras.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Desigualdades de Sexo e Raça/Cor - 3º trimestre 2023",
+      "pages": 2,
+      "bytes": 460894
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferenca-regionais-primeiro-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade trabalho – Diferenças regionais – 1º trim.2023",
+      "pages": 3,
+      "bytes": 2557440
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferencas-regionais-desocupacao-diminui-quase-todas-regioes.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade Trabalho - diferenças regionais - 3º trim.2024",
+      "pages": 3,
+      "bytes": 2539586
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferencas-regionais-ocupacao-cresce-interior-estavel-regiao-metropolitana.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade Trabalho - Diferenças Regionais - 2º trim.2025",
+      "pages": 3,
+      "bytes": 2541650
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferencas-regionais-reducao-desemprego-quase-todas-regioes.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade trabalho – Diferenças regionais – 2º trim.2023",
+      "pages": 3,
+      "bytes": 2657473
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferencas-regionais-taxa-desocupacao-diminui-maioria-regioes-quarto-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade Trabalho -Diferenças Regionais - 4° trimestre 2023",
+      "pages": 3,
+      "bytes": 2659425
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferencas-regionais-taxa-desocupacao-diminui-maioria-regioes.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade trabalho – Diferenças regionais – 3º trim.2023",
+      "pages": 3,
+      "bytes": 2658081
+    },
+    {
+      "path": "trabalho/seade-trabalho-diferencas-regionais-taxa-desocupacao-fica-menor-maioria-regioes.pdf",
+      "collection": "trabalho",
+      "topic": "diferencas_regionais",
+      "title": "Seade Trabalho - Diferenças Regionais - 1º trimestre 2024",
+      "pages": 3,
+      "bytes": 2656586
+    },
+    {
+      "path": "trabalho/seade-trabalho-diminui-desocupacao-mulheres.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 450311
+    },
+    {
+      "path": "trabalho/seade-trabalho-diminui-emprego-formal-estado-quarto-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 4º trim. 2022",
+      "pages": 24,
+      "bytes": 1344064
+    },
+    {
+      "path": "trabalho/seade-trabalho-diminui-emprego-formal-estado-quarto-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 4º trimestre 2024",
+      "pages": 24,
+      "bytes": 2467137
+    },
+    {
+      "path": "trabalho/seade-trabalho-diminui-emprego-formal-estado-sao-paulo-quarto-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 4º trimestre 2025",
+      "pages": 24,
+      "bytes": 1660529
+    },
+    {
+      "path": "trabalho/seade-trabalho-emprego-formal-110-mil-empregos-gerados-estado-sao-paulo-novembro-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Mensal – nov.2021",
+      "pages": 2,
+      "bytes": 358527
+    },
+    {
+      "path": "trabalho/seade-trabalho-emprego-formal-cresceu-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "",
+      "pages": 2,
+      "bytes": 462154
+    },
+    {
+      "path": "trabalho/seade-trabalho-emprego-formal-fica-estavel-quarto-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Trimestral - 4º trim.2022",
+      "pages": 24,
+      "bytes": 2274411
+    },
+    {
+      "path": "trabalho/seade-trabalho-emprego-formal-geracao-dezoito-mil-empregos-estado-sao-paulo-maio-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 290399
+    },
+    {
+      "path": "trabalho/seade-trabalho-emprego-formal-geracao-trinta-cinco-mil-empregos-estado-sao-paulo-junho-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 274489
+    },
+    {
+      "path": "trabalho/seade-trabalho-emprego-formal-geracao-vinte-mil-empregos-estado-sao-paulo-abril-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 346791
+    },
+    {
+      "path": "trabalho/seade-trabalho-geracao-dezesseis-mil-empregos-estado-sao-paulo-janeiro-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 284767
+    },
+    {
+      "path": "trabalho/seade-trabalho-geracao-noventa-seis-mil-empregos-estado-sao-paulo-fevereiro-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 285874
+    },
+    {
+      "path": "trabalho/seade-trabalho-geracao-sessenta-oito-mil-empregos-estado-sao-paulo-marco-2026.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 285904
+    },
+    {
+      "path": "trabalho/seade-trabalho-gerados-60-mil-empregos-estado-sao-paulo-outubro-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - outubro.2022",
+      "pages": 2,
+      "bytes": 309879
+    },
+    {
+      "path": "trabalho/seade-trabalho-mensal-setembro-2024.pdf",
+      "collection": "trabalho",
+      "topic": "sintese_mensal",
+      "title": "Seade Trabalho - Emprego Formal Mensal - setembro 2024",
+      "pages": 2,
+      "bytes": 344570
+    },
+    {
+      "path": "trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-diminui-desocupacao-terceiro-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho Ocupação e Rendimento - 3º trim.2024",
+      "pages": 6,
+      "bytes": 939191
+    },
+    {
+      "path": "trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-permanece-estavel-desocupacao.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho Ocupação e Rendimento - 3trim.2024",
+      "pages": 6,
+      "bytes": 931699
+    },
+    {
+      "path": "trabalho/seade-trabalho-ocupacao-rendimento-diminui-ocupacao-aumenta-desocupacao-primeiro-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "",
+      "pages": 6,
+      "bytes": 947081
+    },
+    {
+      "path": "trabalho/seade-trabalho-ocupacao-rendimento-diminui-ocupacao-aumenta-desocupacao-primeiro-trimestre-2025-1.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho Ocupação e Rendimento - 1º trim.2025",
+      "pages": 6,
+      "bytes": 936910
+    },
+    {
+      "path": "trabalho/seade-trabalho-ocupacao-rendimento-opucacao-aumenta-menor-taxa-desocpacao-desde-2012.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho Ocupação e Rendimento - anual 2024",
+      "pages": 6,
+      "bytes": 1017533
+    },
+    {
+      "path": "trabalho/seade-trabalho-ocupacao-rendimento-relativa-estabilidade-ocupacao-desocupacao-terceiro-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho Ocupação e Rendimento - 3º trim.2025",
+      "pages": 6,
+      "bytes": 943218
+    },
+    {
+      "path": "trabalho/seade-trabalho-reducao-cento-sessenta-quatro-mil-empregos-estado-sao-paulo-dezembro-2023.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Emprego Formal Mensal - Fevereiro 2024",
+      "pages": 2,
+      "bytes": 348359
+    },
+    {
+      "path": "trabalho/seade-trabalho-reducao-duzentos-vinte-quatro-mil-empregos-estado-sao-paulo-dezembro-2025.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho - emprego formal mensal",
+      "pages": 2,
+      "bytes": 287520
+    },
+    {
+      "path": "trabalho/seade-trabalho-reducao-empregos-estado-sao-paulo-dezembro-2022.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Seade Trabalho Mensal – dez.2022",
+      "pages": 2,
+      "bytes": 311170
+    },
+    {
+      "path": "trabalho/seade-trabalho-relativa-estabilidade-ocupacao-aumento-desocupacao.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho Ocupação e Rendimento - 1º trim.2026",
+      "pages": 6,
+      "bytes": 697900
+    },
+    {
+      "path": "trabalho/seade-trabalho-renda-desigualdade-renda-domiciliar-trabalho-interior-rmsp-2023.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - Renda e Desigualdade - Interior e Região Metropolitana de São Paulo - Junho 2024",
+      "pages": 6,
+      "bytes": 703352
+    },
+    {
+      "path": "trabalho/seade-trabalho-renda-domiciliar-estado-sao-paulo-2024.pdf",
+      "collection": "trabalho",
+      "topic": "renda_domiciliar_do_trabalho",
+      "title": "Seade Trabalho - Renda e Desigualdade - julho 2025",
+      "pages": 5,
+      "bytes": 735588
+    },
+    {
+      "path": "trabalho/seade-trabalho-renda-domiciliar-estado-sao-paulo-2025.pdf",
+      "collection": "trabalho",
+      "topic": "renda_domiciliar_do_trabalho",
+      "title": "Seade Trabalho - Renda e Desigualdade - julho 2026",
+      "pages": 6,
+      "bytes": 575491
+    },
+    {
+      "path": "trabalho/seade-trabalho-retracao-taxa-informalidade-terceiro-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 3° trimestre 2024",
+      "pages": 6,
+      "bytes": 932494
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-de-informalidade-cresce-2o-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 2° trimestre 2023",
+      "pages": 6,
+      "bytes": 936717
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-desocupacao-cresce-apenas-mulheres-negras.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 451852
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-aumenta-primeiro-trimestre-2026.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 1° trim.2026",
+      "pages": 6,
+      "bytes": 940620
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-aumenta-quarto-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 4° trimestre 2025",
+      "pages": 6,
+      "bytes": 710126
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-diminui-terceiro-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho Informalidade - 3° trim.2023",
+      "pages": 6,
+      "bytes": 938485
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-diminui-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 1° trimestre 2025",
+      "pages": 6,
+      "bytes": 957732
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-praticamente-estavel-segundo-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 2° trimestre 2025",
+      "pages": 6,
+      "bytes": 939980
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-praticamente-estavel-terceiro-trimestre-2025.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 3° trim.2025",
+      "pages": 6,
+      "bytes": 951455
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-relativamente-estavel-primeiro-trimestre-2024.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 1º trimestre 2024",
+      "pages": 6,
+      "bytes": 937503
+    },
+    {
+      "path": "trabalho/seade-trabalho-taxa-informalidade-relativamente-estavel-quarto-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 4° trimestre 2023",
+      "pages": 6,
+      "bytes": 930479
+    },
+    {
+      "path": "trabalho/seade-trabalho_2trim2024.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho Emprego Formal Trimestral - 2º trimestre 2024",
+      "pages": 24,
+      "bytes": 2390398
+    },
+    {
+      "path": "trabalho/seade-trabalho_emprego_formal_3trim2025.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho - Emprego Formal Trimestral - 3º trimestre 2025",
+      "pages": 24,
+      "bytes": 2531444
+    },
+    {
+      "path": "trabalho/seade_trabalho-diferencas_regionais-desocupacao-caiu-em-quase-todas-as-regioes-do-estado-2trim-2024.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho - diferenças regionais",
+      "pages": 3,
+      "bytes": 2545209
+    },
+    {
+      "path": "trabalho/seade_trabalho_desigualdades_2024_4trim.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho - desigualdades de sexo e raça/cor",
+      "pages": 2,
+      "bytes": 452964
+    },
+    {
+      "path": "trabalho/seade_trabalho_diferencas_regionais_1trim_2025.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho - Diferenças Regionais - 1º trim.2025",
+      "pages": 3,
+      "bytes": 2537168
+    },
+    {
+      "path": "trabalho/seade_trabalho_diferencas_regionais_4trim_2024-1.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho - Diferenças Regionais - 4º trim.2024",
+      "pages": 3,
+      "bytes": 2539806
+    },
+    {
+      "path": "trabalho/seade_trabalho_informalidade_2trim2024.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 2° trimestre 2024",
+      "pages": 6,
+      "bytes": 936277
+    },
+    {
+      "path": "trabalho/seade_trabalho_informalidade_4trim2024.pdf",
+      "collection": "trabalho",
+      "topic": "informalidade",
+      "title": "Seade Trabalho - Informalidade - 4° trimestre 2024",
+      "pages": 6,
+      "bytes": 925640
+    },
+    {
+      "path": "trabalho/seade_trabalho_mensal_2025_mar.pdf",
+      "collection": "trabalho",
+      "topic": "sintese_mensal",
+      "title": "Seade Trabalho - emprego formal mensal - Mar.2025",
+      "pages": 2,
+      "bytes": 347167
+    },
+    {
+      "path": "trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho ocupação e rendimento ago.2024",
+      "pages": 6,
+      "bytes": 950536
+    },
+    {
+      "path": "trabalho/seade_trabalho_ocupados_e_rendimento_2021.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Seade Trabalho – Ocupação e Rendimento – 2021",
+      "pages": 5,
+      "bytes": 661255
+    },
+    {
+      "path": "trabalho/seadetrabalho-aumenta-emprego-formal-agosto-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho – Emprego Formal Mensal",
+      "pages": 2,
+      "bytes": 343552
+    },
+    {
+      "path": "trabalho/seadetrabalho-cento-vinte-nove-mil-empregos-gerados-fevereiro-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho Emprego Formal Mensal - Fev.2021",
+      "pages": 2,
+      "bytes": 274890
+    },
+    {
+      "path": "trabalho/seadetrabalho-cinquenta-um-mil-empregos-gerados-marco-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego formal mensal – mar.2021",
+      "pages": 2,
+      "bytes": 485611
+    },
+    {
+      "path": "trabalho/seadetrabalho-desigualdades-aumenta-ocupacao-mulheres-negras-reduz-taxa-desocupacao.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho 4.trim.2022",
+      "pages": 2,
+      "bytes": 382274
+    },
+    {
+      "path": "trabalho/seadetrabalho-desigualdades-aumento-ocupacao-maior-mulheres-negras-2022.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho 2017-2022",
+      "pages": 2,
+      "bytes": 379052
+    },
+    {
+      "path": "trabalho/seadetrabalho-desigualdades-aumento-ocupacao-mulheres-negras-pouco-altera-taxa-desocupacao.pdf",
+      "collection": "trabalho",
+      "topic": "desigualdades",
+      "title": "Seade Trabalho 3.trim.2022",
+      "pages": 2,
+      "bytes": 276702
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-aumenta-agosto-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho Emprego Formal Mensal - ago.2021",
+      "pages": 2,
+      "bytes": 448144
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-aumenta-julho-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho Emprego Formal Mensal - jul.2021",
+      "pages": 2,
+      "bytes": 359408
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-aumenta-junho-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho Emprego Formal Mensal - jun.2021",
+      "pages": 2,
+      "bytes": 446952
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-aumenta-maio-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego formal mensal – maio.2021",
+      "pages": 2,
+      "bytes": 438349
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-aumenta-outubro-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho – Emprego Formal Mensal",
+      "pages": 2,
+      "bytes": 335049
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-aumenta-setembro-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho Emprego Formal Mensal - set.2021",
+      "pages": 2,
+      "bytes": 449500
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-cresce-novembro-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "",
+      "pages": 2,
+      "bytes": 485825
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-estavel-dezembro-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego formal mensal - dez. 2020",
+      "pages": 2,
+      "bytes": 407286
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-estavel-junho-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho - Emprego Formal Mensal",
+      "pages": 2,
+      "bytes": 386828
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-gerados-setenta-e-aete-mil-empregos-no-estado-outubro-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho Emprego Formal Mensal - out.2021",
+      "pages": 2,
+      "bytes": 452323
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-paulista-cresce-setembro-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho – Emprego Formal Mensal",
+      "pages": 2,
+      "bytes": 479211
+    },
+    {
+      "path": "trabalho/seadetrabalho-emprego-formal-permanece-estavel-julho-2020.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "SP Trabalho – Emprego Formal Mensal",
+      "pages": 2,
+      "bytes": 370256
+    },
+    {
+      "path": "trabalho/seadetrabalho-estabilidade-emprego-formal-abril-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego formal mensal - abril.2021",
+      "pages": 2,
+      "bytes": 356188
+    },
+    {
+      "path": "trabalho/seadetrabalho-gerados-setenta-cinco-mil-empregos-janeiro-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "",
+      "pages": 2,
+      "bytes": 265100
+    },
+    {
+      "path": "trabalho/seadetrabalho-informativo-primeiro-trimestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Emprego Formal Trimestral – 1 trim.2020",
+      "pages": 80,
+      "bytes": 6216441
+    },
+    {
+      "path": "trabalho/seadetrabalho-informativo-primeiro-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Emprego Formal Trimestral – 1 trim.2021",
+      "pages": 80,
+      "bytes": 5158462
+    },
+    {
+      "path": "trabalho/seadetrabalho-informativo-quarto-trimestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Emprego Formal Trimestral – 4 trim.2020",
+      "pages": 80,
+      "bytes": 5175177
+    },
+    {
+      "path": "trabalho/seadetrabalho-informativo-segundo-trimestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Emprego Formal Trimestral – 2 trim.2020",
+      "pages": 80,
+      "bytes": 6230335
+    },
+    {
+      "path": "trabalho/seadetrabalho-informativo-segundo-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Emprego Formal Trimestral – 2 trim.2021",
+      "pages": 80,
+      "bytes": 5209915
+    },
+    {
+      "path": "trabalho/seadetrabalho-informativo-terceiro-trimestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "Emprego Formal Trimestral – 3 trim.2020",
+      "pages": 80,
+      "bytes": 5135740
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-entre-negros-diminui-primeiro-semestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "mercado_de_trabalho",
+      "title": "SP Trabalho – População Negra – nov.2020",
+      "pages": 4,
+      "bytes": 463798
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-aumento-coupacao-reducao-desocupacao-segundo-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento – 2º trim.2023",
+      "pages": 6,
+      "bytes": 975002
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-aumento-ocupacao-reducao-desocupacao-quarto-trimestre.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho - ocupação e rendimento 4ºtrim.2023",
+      "pages": 6,
+      "bytes": 956049
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-aumento-ocupacao-reducao-desocupacao-terceiro-trimestre.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho - Ocupação e Rendimento - 3º trimestre 2023",
+      "pages": 6,
+      "bytes": 960659
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-descrescimo-ocupacao-aumento-desocupacao-primeiro-trimestre-2023.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento - 1° trim.2023",
+      "pages": 6,
+      "bytes": 859780
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-medias-anuais-2012-2020.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento – Estado de São Paulo",
+      "pages": 5,
+      "bytes": 369170
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-medias-anuais-2012-2022.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Seade Trabalho – Ocupação e Rendimento – 2012-2022",
+      "pages": 6,
+      "bytes": 619132
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-ocupacao-cresce-rendimento-aumenta-2023.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "",
+      "pages": 6,
+      "bytes": 554151
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-primeiro-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Brasil – Ocupação e Rendimento – 1 trim.2021",
+      "pages": 5,
+      "bytes": 380161
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-primeiro-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento - 1 trim.2022",
+      "pages": 5,
+      "bytes": 648895
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-quarto-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Emprego Formal Trimestral - 4 trim.2021",
+      "pages": 5,
+      "bytes": 653792
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-quarto-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento - 4° trim.2022",
+      "pages": 5,
+      "bytes": 591316
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-segundo-trimestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "SP Trabalho - Ocupacao e Rendimento - Estado de Sao Paulo exceto Regiao Metropolitana de Sao Paulo",
+      "pages": 5,
+      "bytes": 649295
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-segundo-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "ESP – Ocupação e Rendimento – 2 trim.2021",
+      "pages": 5,
+      "bytes": 366707
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-segundo-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento - 2° trim.2022",
+      "pages": 5,
+      "bytes": 593497
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-terceiro-trimestre-2020.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "ESP – Ocupação e Rendimento – 3 trim.2020",
+      "pages": 5,
+      "bytes": 363900
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-terceiro-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Emprego Formal Trimestral – 3 trim.2021",
+      "pages": 5,
+      "bytes": 635486
+    },
+    {
+      "path": "trabalho/seadetrabalho-ocupacao-rendimento-terceiro-trimestre-2022.pdf",
+      "collection": "trabalho",
+      "topic": "ocupacao_rendimento",
+      "title": "Ocupação e Rendimento - 3° trim.2022",
+      "pages": 5,
+      "bytes": 591094
+    },
+    {
+      "path": "trabalho/sptrabalho-aumenta-emprego-formal-estado-terceiro-trimestre-2021.pdf",
+      "collection": "trabalho",
+      "topic": "emprego_formal",
+      "title": "Emprego Formal Trimestral – 3trim.2021",
+      "pages": 80,
+      "bytes": 6249315
+    }
+  ]
+}
