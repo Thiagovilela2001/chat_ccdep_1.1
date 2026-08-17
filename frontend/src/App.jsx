@@ -42,6 +42,7 @@ import {
 import {
   annotateNumericCitations,
   conceptualizeTabularSnippet,
+  isCalendarYearCitation,
   parseTabularSnippet,
 } from "./lib/numericCitations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
@@ -150,7 +151,7 @@ function AnswerMetrics({ meta }) {
 function BrandMark() {
   return (
     <div className="brand-mark" aria-hidden="true">
-      <span>N</span>
+      <span>n</span>
     </div>
   );
 }
@@ -198,7 +199,6 @@ function Sidebar({
         <button className="new-chat" onClick={onNewChat}>
           <MessageSquarePlus size={18} />
           Nova análise
-          <span>⌘ K</span>
         </button>
 
         <section className="sidebar-section history-section">
@@ -244,16 +244,14 @@ function Sidebar({
 function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
   return (
     <section className="empty-state">
-      <div className="theme-ribbon" aria-label="Áreas de conhecimento">
-        <span><Activity size={17} /> Mercado de trabalho</span>
-        <span><Gauge size={17} /> Economia</span>
-        <span><Layers3 size={17} /> Indicadores sociais</span>
+      <div className="welcome-mark">
+        <BrandMark />
+        <span>Nadia · inteligência Seade</span>
       </div>
-      <div className="hero-kicker">Inteligência para dados públicos</div>
-      <h1>Informação confiável<br />para entender São Paulo.</h1>
+      <h1>O que você quer saber<br />sobre São Paulo?</h1>
       <p>
-        Consulte os Boletins de Conjuntura Paulista em linguagem natural. A Nadia
-        encontra evidências, compara períodos e mostra a origem de cada informação.
+        Converse com os dados da Fundação Seade. Pergunte em linguagem natural e
+        receba respostas objetivas, com fontes e números verificáveis.
       </p>
       <Composer
         value={input}
@@ -263,8 +261,8 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
         onCancel={() => {}}
       />
       <div className="suggestion-label">
-        <strong>Perguntas em destaque</strong>
-        <span>Escolha um tema para começar</span>
+        <strong>Experimente perguntar</strong>
+        <span>ou escreva sua própria pergunta</span>
       </div>
       <div className="suggestion-grid">
         {suggestions.map(({ id, eyebrow, title }) => {
@@ -284,6 +282,11 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
         <span><CheckCircle2 size={15} /> Validação numérica</span>
         <span><Sparkles size={15} /> Síntese técnica</span>
       </div>
+      <div className="theme-ribbon" aria-label="Áreas de conhecimento">
+        <span><Activity size={15} /> Trabalho</span>
+        <span><Gauge size={15} /> Economia</span>
+        <span><Layers3 size={15} /> Sociedade</span>
+      </div>
     </section>
   );
 }
@@ -293,8 +296,10 @@ function NumericCitation({ citation, children, onOpenSource }) {
   const buttonRef = useRef(null);
   const popoverRef = useRef(null);
   const hideTimer = useRef(null);
+  const copyTimer = useRef(null);
   const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [position, setPosition] = useState(null);
   const visible = hovered || pinned;
   const sourceName = String(citation.file || "Documento")
@@ -410,7 +415,10 @@ function NumericCitation({ citation, children, onOpenSource }) {
     return () => document.removeEventListener("pointerdown", close);
   }, [pinned]);
 
-  useEffect(() => () => window.clearTimeout(hideTimer.current), []);
+  useEffect(() => () => {
+    window.clearTimeout(hideTimer.current);
+    window.clearTimeout(copyTimer.current);
+  }, []);
 
   const cancelHide = () => {
     window.clearTimeout(hideTimer.current);
@@ -427,6 +435,19 @@ function NumericCitation({ citation, children, onOpenSource }) {
     updatePosition();
     setHovered(true);
   };
+
+  async function copyEvidence() {
+    const evidence = String(citation.snippet || conceptText || "").trim();
+    if (!evidence || !navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(evidence);
+      setCopied(true);
+      window.clearTimeout(copyTimer.current);
+      copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <span className="numeric-citation-wrap">
@@ -471,8 +492,8 @@ function NumericCitation({ citation, children, onOpenSource }) {
         >
           <header>
             <span className="numeric-source-heading">
-              <span><FileText size={16} /></span>
-              <span><small>De onde veio este número</small><strong>{citation.value}</strong></span>
+              <span><CheckCircle2 size={17} /></span>
+              <span><small>Dado verificado</small><strong>{citation.value}</strong></span>
             </span>
             <button
               type="button"
@@ -486,78 +507,81 @@ function NumericCitation({ citation, children, onOpenSource }) {
               <X size={15} />
             </button>
           </header>
-          <div className="numeric-source-origin">
-            <small>Documento</small>
-            <strong title={citation.file}>{sourceName}</strong>
-            <div className="numeric-source-meta">
-              <span>{citation.page != null ? `Página ${citation.page}` : "Página não informada"}</span>
-              {Number.isFinite(Number(citation.score)) && <span>Correspondência: {Math.round(Number(citation.score) * 100)}%</span>}
-            </div>
-          </div>
-          {(citation.snippet || generatedExplanation) && (
-            <div className={`numeric-source-excerpt ${tableEvidence ? "is-table" : ""}`}>
-              {tableEvidence ? (
-                <>
-                  <div className="numeric-source-concept">
-                    <small>O que esse dado mostra</small>
-                    <p>{highlightValue(conceptText)}</p>
-                    {conceptQualifiers.length > 0 && (
-                      <div className="numeric-source-context">
-                        {conceptQualifiers.map(({ label, value }, index) => (
-                          <span key={`${label}-${index}`}>
-                            <small>{label}</small>
-                            <strong>{highlightTableNumbers(value)}</strong>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <details className="numeric-source-raw">
-                    <summary>Ver dados de origem <ChevronDown size={14} /></summary>
-                    <div className={`numeric-source-table ${tableEvidence.kind === "key-value" ? "is-key-value" : ""}`}>
-                      <table>
-                        <thead>
-                          <tr>{tableEvidence.headers.map((header, index) => <th key={`${header}-${index}`}>{header}</th>)}</tr>
-                        </thead>
-                        <tbody>
-                          {tableEvidence.rows.map((row, rowIndex) => (
-                            <tr key={`row-${rowIndex}`}>
-                              {row.map((cell, cellIndex) => (
-                                <td
-                                  className={/\d/.test(cell) ? "has-number" : ""}
-                                  key={`cell-${rowIndex}-${cellIndex}`}
-                                >
-                                  {highlightTableNumbers(cell)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </details>
-                </>
-              ) : (
-                <>
-                  {generatedExplanation && (
-                    <div className="numeric-source-concept">
-                      <small>O que esse dado mostra</small>
-                      <p>{highlightValue(generatedExplanation)}</p>
-                    </div>
-                  )}
-                  {citation.snippet && (
-                    <>
-                      <small>Trecho que sustenta o dado</small>
-                      <p>{highlightValue(citation.snippet)}</p>
-                    </>
-                  )}
-                </>
+          <div className={`numeric-source-excerpt ${tableEvidence ? "is-table" : ""}`}>
+            <div className="numeric-source-concept">
+              <small>O que esse dado mostra</small>
+              <p>{highlightValue(conceptText)}</p>
+              {conceptQualifiers.length > 0 && (
+                <div className="numeric-source-context">
+                  {conceptQualifiers.map(({ label, value }, index) => (
+                    <span key={`${label}-${index}`}>
+                      <small>{label}</small>
+                      <strong>{highlightTableNumbers(value)}</strong>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-          )}
+
+            <div className="numeric-source-origin">
+              <span className="numeric-source-file-icon"><FileText size={16} /></span>
+              <span className="numeric-source-file">
+                <small>Fonte</small>
+                <strong title={citation.file}>{sourceName}</strong>
+              </span>
+              <div className="numeric-source-meta">
+                <span>{citation.page != null ? `p. ${citation.page}` : "Sem página"}</span>
+                {Number.isFinite(Number(citation.score)) && <span>{Math.round(Number(citation.score) * 100)}% relevante</span>}
+              </div>
+            </div>
+
+            {citation.snippet && (
+              <details className="numeric-source-raw">
+                <summary>
+                  <span>{tableEvidence ? "Ver dados de origem" : "Ver trecho usado"}</span>
+                  <ChevronDown size={15} />
+                </summary>
+                {tableEvidence ? (
+                  <div className={`numeric-source-table ${tableEvidence.kind === "key-value" ? "is-key-value" : ""}`}>
+                    <table>
+                      <thead>
+                        <tr>{tableEvidence.headers.map((header, index) => <th key={`${header}-${index}`}>{header}</th>)}</tr>
+                      </thead>
+                      <tbody>
+                        {tableEvidence.rows.map((row, rowIndex) => (
+                          <tr key={`row-${rowIndex}`}>
+                            {row.map((cell, cellIndex) => (
+                              <td
+                                className={/\d/.test(cell) ? "has-number" : ""}
+                                key={`cell-${rowIndex}-${cellIndex}`}
+                              >
+                                {highlightTableNumbers(cell)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p>{highlightValue(citation.snippet)}</p>
+                )}
+              </details>
+            )}
+          </div>
           <footer>
             <button
               type="button"
+              className="numeric-source-copy"
+              onClick={copyEvidence}
+              disabled={!citation.snippet && !conceptText}
+            >
+              {copied ? <Check size={15} /> : <Copy size={15} />}
+              {copied ? "Copiado" : "Copiar trecho"}
+            </button>
+            <button
+              type="button"
+              className="numeric-source-open"
               onClick={() => {
                 setPinned(false);
                 setHovered(false);
@@ -576,7 +600,8 @@ function NumericCitation({ citation, children, onOpenSource }) {
 
 function Message({ message, onInspect }) {
   const isUser = message.role === "user";
-  const numericCitations = message.meta?.numeric_citations || [];
+  const numericCitations = (message.meta?.numeric_citations || [])
+    .filter((citation) => !isCalendarYearCitation(citation?.value));
   const annotatedContent = annotateNumericCitations(message.content, numericCitations);
   return (
     <article className={`message message--${message.role}`}>
@@ -684,13 +709,13 @@ function Composer({ value, setValue, onSubmit, loading, onCancel }) {
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Pergunte sobre emprego, PIB, indústria, serviços…"
+          placeholder="Pergunte alguma coisa sobre São Paulo"
           rows="1"
           maxLength="4000"
           aria-label="Digite sua pergunta"
         />
         <div className="composer-bottom">
-          <span><Sparkles size={14} /> {ASSISTANT_MODE_LABEL}</span>
+          <span><Sparkles size={14} /> Resposta com fontes do Seade</span>
           {loading ? (
             <button className="send-button is-stop" type="button" onClick={onCancel} aria-label="Cancelar consulta">
               <CircleStop size={18} />
@@ -702,7 +727,7 @@ function Composer({ value, setValue, onSubmit, loading, onCancel }) {
           )}
         </div>
       </form>
-      <small className="composer-note">A Nadia pode cometer erros. Confira as fontes e a validação antes de usar os dados.</small>
+      <small className="composer-note">A Nadia pode cometer erros. Confirme informações importantes nas fontes.</small>
     </div>
   );
 }

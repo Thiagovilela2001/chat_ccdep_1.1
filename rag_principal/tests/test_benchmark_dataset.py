@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 import evaluate
 from ragas.metrics.base import Metric
 
@@ -60,6 +62,19 @@ def test_supervised_items_have_ground_truth_and_existing_sources():
             assert item["source_files"]
             assert item["source_pages"]
             assert all(page >= 1 for page in item["source_pages"])
+            for relative_path in item["source_files"]:
+                path = Path(relative_path)
+                assert not path.is_absolute(), relative_path
+                assert ".." not in path.parts, relative_path
+                assert path.suffix.lower() == ".pdf", relative_path
+
+
+def test_supervised_source_files_exist_when_corpus_is_available():
+    if not any(DATA_DIR.rglob("*.pdf")):
+        pytest.skip("corpus PDF externo não está disponível")
+
+    for split in ("dev", "test"):
+        for item in _load(split):
             for relative_path in item["source_files"]:
                 assert (DATA_DIR / relative_path).is_file(), relative_path
 
