@@ -1,3 +1,7 @@
+export function isCalendarYearCitation(value) {
+  return /^(?:18|19|20|21)\d{2}$/.test(String(value || "").trim());
+}
+
 export function annotateNumericCitations(content, citations = []) {
   if (!content || !Array.isArray(citations) || citations.length === 0) return content;
   const characters = Array.from(content);
