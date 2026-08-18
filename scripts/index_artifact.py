@@ -21,7 +21,7 @@ from urllib.request import Request, urlopen
 import chromadb
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DB_DIR = ROOT / "rag_principal" / "chroma_db"
+DEFAULT_DB_DIR = ROOT / "var" / "principal" / "chroma_db"
 DEFAULT_COLLECTION = "estatisticas"
 DEFAULT_RELEASE_REPO = "Thiagovilela2001/chat_ccdep_1.1"
 DEFAULT_RELEASE_TAG = "vector-index-v1"
@@ -612,7 +612,7 @@ def main() -> int:
         if args.command == "export":
             if not args.confirm_stopped:
                 raise ArtifactError(
-                    "Pare serviços (`docker compose down`) e repita com --confirm-stopped."
+                    "Pare todas as engines e repita com --confirm-stopped."
                 )
             archive, sidecar, manifest = build_artifact(
                 args.output,

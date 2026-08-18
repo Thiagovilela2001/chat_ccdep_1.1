@@ -22,6 +22,7 @@ import math
 import hashlib
 import platform
 import random
+import re
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -40,8 +41,9 @@ from ragas.metrics._context_precision import ContextPrecision
 from ragas.metrics._context_recall import ContextRecall
 from openai import OpenAI as OpenAIClient
 from ragas.llms import llm_factory
-from rag_core.answer_policy import sanitize_answer
-from rag_core.numerical_validator import validate_numbers
+from rag_ccdep.core.answer_policy import sanitize_answer
+from rag_ccdep.core.numerical_validator import validate_numbers
+from rag_ccdep.paths import data_dir, runtime_dir
 
 RAG_NAME = "rag_principal"
 RAGAS_JUDGE_MODEL = "sabia-4"
@@ -114,6 +116,9 @@ def _run_metadata(args) -> dict:
         "ragas_judge_base_url": os.getenv(
             "RAGAS_JUDGE_BASE_URL", RAGAS_JUDGE_BASE_URL
         ),
+        "llm_provider": os.getenv("RAG_LLM_PROVIDER", "maritaca"),
+        "llm_model": os.getenv("RAG_LLM_MODEL", "sabia-4"),
+        "interp_model": os.getenv("RAG_INTERP_MODEL", "sabia-4"),
     }
 
 
@@ -282,9 +287,24 @@ def print_results(scores_dict: dict):
             print(f"  {metric:<30} {value:.3f}  {bar}")
 
 
-def save_results(split: str, scores_dict: dict, details: list):
+def _safe_output_label(label: str | None) -> str:
+    if not label:
+        return ""
+    normalized = re.sub(r"[^a-zA-Z0-9._-]+", "-", label).strip("-._")
+    return f"_{normalized}" if normalized else ""
+
+
+def save_results(
+    split: str,
+    scores_dict: dict,
+    details: list,
+    output_label: str | None = None,
+):
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    path = os.path.join(RESULTS_DIR, f"results_{split}.json")
+    path = os.path.join(
+        RESULTS_DIR,
+        f"results_{split}{_safe_output_label(output_label)}.json",
+    )
     output = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "split":     split,
@@ -297,7 +317,14 @@ def save_results(split: str, scores_dict: dict, details: list):
     print(f"\n  Resultados salvos em: {path}\n")
 
 
-def run_split(split: str, engine, interp_llm, interpret_query, limit: int | None = None):
+def run_split(
+    split: str,
+    engine,
+    interp_llm,
+    interpret_query,
+    limit: int | None = None,
+    output_label: str | None = None,
+):
     print(f"\n{'=' * 55}")
     print(f" SPLIT: {split.upper()}")
     print(f"{'=' * 55}")
@@ -313,7 +340,7 @@ def run_split(split: str, engine, interp_llm, interpret_query, limit: int | None
         scores_dict, details = run_ragas_split(split, dataset, engine, interp_llm, interpret_query)
 
     print_results(scores_dict)
-    save_results(split, scores_dict, details)
+    save_results(split, scores_dict, details, output_label=output_label)
     return scores_dict
 
 
@@ -327,6 +354,11 @@ def main():
     )
     parser.add_argument("--seed", type=int, default=42, help="Seed da avaliação (padrão: 42)")
     parser.add_argument("--limit", type=int, default=None, help="Limita exemplos por split")
+    parser.add_argument(
+        "--output-label",
+        default=None,
+        help="Sufixo seguro para preservar resultados de modelos diferentes",
+    )
     parser.add_argument(
         "--use-graph",
         action="store_true",
@@ -347,22 +379,15 @@ def main():
     global _RUN_METADATA
     _RUN_METADATA = _run_metadata(args)
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    rag_dir  = os.path.join(root_dir, RAG_NAME)
+    rag_dir = str(runtime_dir("principal"))
 
-    if not os.path.isdir(rag_dir):
-        print(f"[ERRO] Pasta '{RAG_NAME}' não encontrada em {root_dir}")
-        sys.exit(1)
-
-    # Importa initialize e interpret_query do rag_principal.
-    sys.path.insert(0, rag_dir)
-    startup_mod = importlib.import_module("src.startup")
-    interp_mod  = importlib.import_module("src.query_interpreter")
+    startup_mod = importlib.import_module("rag_ccdep.engines.principal.startup")
+    interp_mod = importlib.import_module("rag_ccdep.engines.principal.query_interpreter")
     initialize      = startup_mod.initialize
     interpret_query = interp_mod.interpret_query
 
     print(f"Inicializando pipeline RAG ({RAG_NAME})...")
-    data_dir = os.path.join(root_dir, "data")
-    init_kwargs = {"data_dir": data_dir}
+    init_kwargs = {"data_dir": str(data_dir())}
     if args.use_graph:
         init_kwargs["use_graph"] = True
     engine, interp_llm = initialize(rag_dir, **init_kwargs)
@@ -372,7 +397,12 @@ def main():
     all_scores = {}
     for split in splits:
         all_scores[split] = run_split(
-            split, engine, interp_llm, interpret_query, limit=args.limit
+            split,
+            engine,
+            interp_llm,
+            interpret_query,
+            limit=args.limit,
+            output_label=args.output_label,
         )
 
     if args.split == "all":

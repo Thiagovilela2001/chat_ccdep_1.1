@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rag_core.citation_validator import validate_citations
-from rag_core.numerical_validator import validate_numbers
+from rag_ccdep.core.citation_validator import validate_citations
+from rag_ccdep.core.numerical_validator import validate_numbers
 
 
 def _measure(callable_, iterations: int) -> dict:

@@ -22,13 +22,13 @@ jobs:
           node-version: "22"
       - run: python -m pip install --upgrade pip
       - run: pip install -r requirements-dev.txt
+      - run: pip install -e . --no-deps
       - run: ruff check .
       - run: >-
-          mypy rag_core/api_models.py rag_core/runtime.py rag_core/provenance.py
-          rag_core/index_manifest.py rag_core/citation_validator.py rag_core/metrics.py
+          mypy src/rag_ccdep/core/api_models.py src/rag_ccdep/core/runtime.py
+          src/rag_ccdep/core/provenance.py src/rag_ccdep/core/index_manifest.py
+          src/rag_ccdep/core/citation_validator.py src/rag_ccdep/core/metrics.py
       - run: python -m pytest -q
-      - run: python rag_orchestrator/tests/test_router.py
-      - run: python rag_orchestrator/tests/test_pipeline.py
       - run: python benchmarks/benchmark_core.py --iterations 1000
       - run: npm ci
         working-directory: frontend
@@ -38,27 +38,3 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
-      - run: touch .env
-      - run: docker compose config --quiet
-
-  container-build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          tags: rag-ccdep:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - uses: docker/build-push-action@v6
-        with:
-          context: frontend
-          file: frontend/Dockerfile
-          push: false
-          tags: rag-ccdep-frontend:ci
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend

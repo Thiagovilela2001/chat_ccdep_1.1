@@ -29,33 +29,33 @@ Tópicos de ativação:
 
 ## Arquitetura do projeto
 
-Quatro engines RAG (`rag_principal/`, `rag_agentic/`, `rag_raptor/`,
-`rag_selfrag/`) + orquestrador (`rag_orchestrator/`, Meta RAG). A
-infraestrutura comum vive em **`rag_core/`** (raiz do repo); cada engine mantém
-em `<engine>/src/` apenas o que a diferencia. O `src/__init__.py` de cada
-engine adiciona o diretório-pai ao `sys.path` para tornar `rag_core` importável.
+Pacote instalável em `src/rag_ccdep/`. Quatro engines ficam em
+`src/rag_ccdep/engines/`; Meta RAG fica em `src/rag_ccdep/orchestrator/`; código
+compartilhado fica em `src/rag_ccdep/core/`. Não adicionar hacks de `sys.path`.
+Dados de entrada ficam em `data/`; índices, grafo e caches mutáveis ficam em
+`var/<engine>/`.
 
 | Módulo | Função |
 |---|---|
-| `rag_core/ingestion.py` / `processing.py` / `indexing.py` | Pipeline PDF → nós → ChromaDB (+ cache BM25 ancorado ao db_path) |
-| `rag_core/text_retriever.py` | Retrieval híbrido (Vector + BM25) para texto narrativo |
-| `rag_core/tables_retriever.py` | Extração de dados de tabelas estáticas via pandas |
-| `rag_core/timeseries_retriever.py` | Extração e análise de séries temporais via pandas |
-| `rag_core/structured_output.py` | Validação de JSON tabular produzido pelo LLM; sem execução de código |
-| `rag_core/safe_exec.py` | Helper legado restrito; não usado pelo fluxo RAG e não é isolamento de segurança |
-| `rag_core/numerical_validator.py` | Confere números da resposta contra as fontes |
-| `rag_core/labor_market_skill.py` | Carrega a skill e detecta queries de mercado de trabalho |
-| `rag_core/api_security.py` | API keys, CORS/CSP, headers defensivos e rate limiting |
-| `rag_core/api_models.py` / `query_service.py` | Schemas e fluxo HTTP compartilhado pelas engines |
-| `rag_core/runtime.py` | Deadline, limites de iteração e orçamento de contexto |
-| `<engine>/src/startup.py` | Inicialização da engine: indexação, LLMs, retrievers |
-| `rag_core/llm.py` | Fábrica única de LLM: escolhe o provedor (Maritaca/OpenAI) por env |
+| `src/rag_ccdep/core/ingestion.py` / `processing.py` / `indexing.py` | Pipeline PDF → nós → ChromaDB (+ cache BM25 ancorado ao db_path) |
+| `src/rag_ccdep/core/text_retriever.py` | Retrieval híbrido (Vector + BM25) para texto narrativo |
+| `src/rag_ccdep/core/tables_retriever.py` | Extração de dados de tabelas estáticas via pandas |
+| `src/rag_ccdep/core/timeseries_retriever.py` | Extração e análise de séries temporais via pandas |
+| `src/rag_ccdep/core/structured_output.py` | Validação de JSON tabular produzido pelo LLM; sem execução de código |
+| `src/rag_ccdep/core/safe_exec.py` | Helper legado restrito; não usado pelo fluxo RAG e não é isolamento de segurança |
+| `src/rag_ccdep/core/numerical_validator.py` | Confere números da resposta contra as fontes |
+| `src/rag_ccdep/core/labor_market_skill.py` | Carrega a skill e detecta queries de mercado de trabalho |
+| `src/rag_ccdep/core/api_security.py` | API keys, CORS/CSP, headers defensivos e rate limiting |
+| `src/rag_ccdep/core/api_models.py` / `query_service.py` | Schemas e fluxo HTTP compartilhado pelas engines |
+| `src/rag_ccdep/core/runtime.py` | Deadline, limites de iteração e orçamento de contexto |
+| `src/rag_ccdep/engines/<engine>/startup.py` | Inicialização da engine: indexação, LLMs, retrievers |
+| `src/rag_ccdep/core/llm.py` | Fábrica única de LLM: escolhe o provedor (Maritaca/OpenAI) por env |
 | `scripts/index_artifact.py` | Publica e instala índice portátil via GitHub Releases |
-| `<engine>/src/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |
-| `<engine>/src/api.py` | FastAPI: endpoint POST /query |
-| `<engine>/main.py` | Entrypoint: servidor HTTP ou CLI interativo |
+| `src/rag_ccdep/engines/<engine>/query_interpreter.py` | Roteia query para fontes + detecta `is_labor_market` |
+| `src/rag_ccdep/engines/<engine>/api.py` | FastAPI: endpoint POST /query |
+| `rag-ccdep <engine>` | Entrypoint: servidor HTTP ou CLI interativo |
 
-### Provedor de LLM (`rag_core/llm.py`)
+### Provedor de LLM (`src/rag_ccdep/core/llm.py`)
 
 Todo o projeto usa a API no formato OpenAI; o provedor é configurável por
 ambiente (embeddings continuam locais — `BAAI/bge-m3`). Todos os sites de LLM
@@ -80,8 +80,8 @@ versão colide com o `llama-index-llms-openai` fixado pelo core.
 
 Boletins de Conjuntura Paulista e Seade Social em `/data/`, incluindo
 `/data/seade_social/painel/` e `/data/seade_social/trabalho/`.
-Banco vetorial: ChromaDB em `<engine>/chroma_db/`.
-Testes: `rag_principal/tests/` (pytest) e `rag_orchestrator/tests/` (scripts).
+Banco vetorial: ChromaDB em `var/<engine>/chroma_db/`.
+Testes: `tests/unit/` e `tests/integration/` (pytest).
 
 ## Avaliação
 

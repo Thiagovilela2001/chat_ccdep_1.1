@@ -1,12 +1,12 @@
 # RAG CCDEP — análise econômica de São Paulo
 
 Sistema RAG distribuído para consultar boletins e bases tabulares. Quatro engines
-especializadas compartilham ingestão, indexação e contratos em `rag_core/`; o
+especializadas compartilham ingestão, indexação e contratos em `src/rag_ccdep/core/`; o
 Meta RAG analisa a pergunta, escolhe uma estratégia e aplica failover quando o
 backend preferido não está saudável.
 
 ```text
-React SPA :8501
+React SPA :5173 (desenvolvimento)
       │
       ▼
 Orquestrador :8010 ── health + circuit breaker + failover
@@ -17,8 +17,13 @@ Orquestrador :8010 ── health + circuit breaker + failover
       └── Self-RAG :8003  (relevância e verificação de suporte)
                           │
                           ▼
-                 ChromaDB + cache BM25 local
+ChromaDB + cache BM25 local
 ```
+
+Código Python usa layout instalável `src/`: infraestrutura em
+`src/rag_ccdep/core/`, engines em `src/rag_ccdep/engines/` e Meta RAG em
+`src/rag_ccdep/orchestrator/`. Testes ficam em `tests/`; índices e demais
+artefatos mutáveis ficam em `var/`.
 
 ## Início rápido
 
@@ -32,6 +37,14 @@ RAG_POPUP_MODEL=sabiazinho-4
 # Recomendado em ambientes compartilhados
 RAG_API_KEY=chave-da-interface
 RAG_BACKEND_API_KEY=chave-interna-entre-servicos
+```
+
+Para execução local:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pip install -e . --no-deps
+python -m rag_ccdep.cli principal --port 8000
 ```
 
 As explicações curtas dos popups numéricos usam `sabiazinho-4` por padrão,
@@ -58,24 +71,65 @@ O reranking das consultas também preserva diretamente o score híbrido Vector+B
 por padrão. `RAG_LLM_RERANK=1` reativa o reranker por LLM, caso o Ollama esteja
 configurado com janela de contexto e timeout suficientes.
 
+Para testar modelos open-weight grandes sem hospedar os pesos localmente, use o
+endpoint OpenAI-compatible do OpenRouter:
+
+```dotenv
+RAG_LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=...
+RAG_LLM_MODEL=openai/gpt-oss-120b
+RAG_INTERP_MODEL=openai/gpt-oss-120b
+RAG_POPUP_MODEL=openai/gpt-oss-120b
+RAG_LLM_RERANK=0
+```
+
+Para comparar com o Nemotron, mantenha o provedor e troque os três modelos:
+
+```dotenv
+RAG_LLM_MODEL=nvidia/nemotron-3-super-120b-a12b
+RAG_INTERP_MODEL=nvidia/nemotron-3-super-120b-a12b
+RAG_POPUP_MODEL=nvidia/nemotron-3-super-120b-a12b
+```
+
+O endpoint hospedado da NVIDIA NIM também é suportado diretamente:
+
+```dotenv
+RAG_LLM_PROVIDER=nvidia
+NVIDIA_API_KEY=...
+RAG_LLM_MODEL=openai/gpt-oss-120b
+RAG_INTERP_MODEL=openai/gpt-oss-120b
+RAG_POPUP_MODEL=openai/gpt-oss-120b
+```
+
+Nos provedores reasoning, o padrão usa esforço `low`, oculta o raciocínio da
+resposta e reserva 4.096 tokens de saída. Ajustes opcionais:
+`RAG_REASONING_EFFORT`, `RAG_REASONING_EXCLUDE` e `RAG_LLM_MAX_TOKENS`.
+Para preservar resultados separados durante a comparação:
+
+```bash
+python evaluate.py --split dev --limit 1 --output-label gpt-oss-120b
+python evaluate.py --split dev --limit 1 --output-label nemotron-3-super
+```
+
 2. Coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`. Após a primeira carga,
    Principal, Agentic e Self-RAG processam somente arquivos novos, modificados
    ou removidos. RAPTOR e o grafo opcional da Principal reconstroem suas
    estruturas globais quando o corpus muda.
-3. Suba o ambiente:
+3. Em um terminal, suba a engine Principal:
 
-```bash
-docker compose up --build
+```powershell
+python -m rag_ccdep.cli principal --port 8000
 ```
 
-O frontend React fica disponível em `http://127.0.0.1:8501`. Para desenvolver
-somente a interface com hot reload:
+4. Em outro terminal, suba o frontend:
 
-```bash
+```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
+
+O frontend fica disponível em `http://127.0.0.1:5173`.
 
 Por padrão, a interface usa o Meta RAG em `:8010` e permite alternar para as
 engines diretas nas portas `8000`–`8003`. Endpoints e API key podem ser ajustados
@@ -86,10 +140,9 @@ na própria tela de configurações.
 O ChromaDB Principal pode ser publicado como artefato versionado sem entrar no
 histórico Git. O pacote inclui banco vetorial, segmentos HNSW, cache BM25,
 manifesto, checksums por arquivo, versões das dependências e contagem de vetores.
-Pare todos os serviços antes de exportar:
+Pare todas as engines antes de exportar:
 
 ```powershell
-docker compose down
 python scripts/index_artifact.py export `
   --output index_artifacts/rag-principal-index-v1.tar.gz `
   --confirm-stopped
@@ -108,7 +161,7 @@ python scripts/index_artifact.py publish `
 ```
 
 Em outra máquina, basta clonar e iniciar a engine Principal. No primeiro start,
-se `rag_principal/chroma_db` estiver ausente ou vazio, o sistema baixa
+se `var/principal/chroma_db` estiver ausente ou vazio, o sistema baixa
 automaticamente a Release `vector-index-v1`, confere o SHA-256, valida as versões
 e a contagem de 16.237 vetores e instala o banco. Nos starts seguintes, o banco
 local válido é reutilizado sem download e sem reindexação.
@@ -141,24 +194,25 @@ repositório privado quando o corpus não puder ser redistribuído. Para atualiz
 o índice, desative o modo somente leitura, faça sincronização local, exporte novo
 artefato e publique nova tag.
 
-Interfaces locais: React em `http://127.0.0.1:8501`, API principal em
+Interfaces locais: React dev em `http://127.0.0.1:5173`, API principal em
 `:8000` e orquestrador em `:8010`. As portas ficam vinculadas ao loopback por
-padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
+padrão. Use `python -m rag_ccdep.cli <componente>`; componentes:
+`principal`, `agentic`, `raptor`, `selfrag` e `orchestrator`.
 
 ## Componentes compartilhados
 
 | Módulo | Responsabilidade |
 |---|---|
-| `rag_core/ingestion.py`, `processing.py`, `indexing.py` | ingestão, normalização, ChromaDB e BM25 |
-| `rag_core/index_manifest.py` | detecção recursiva de mudanças e exclusões |
+| `src/rag_ccdep/core/ingestion.py`, `processing.py`, `indexing.py` | ingestão, normalização, ChromaDB e BM25 |
+| `src/rag_ccdep/core/index_manifest.py` | detecção recursiva de mudanças e exclusões |
 | `scripts/index_artifact.py` | exportação/instalação verificável via GitHub Releases |
-| `rag_core/*_retriever.py` | recuperação narrativa, tabular e temporal |
-| `rag_core/domain_skills.py` | descoberta e roteamento das skills econômicas locais |
-| `rag_core/api_models.py`, `query_service.py` | contrato e fluxo HTTP comum das engines |
-| `rag_core/api_security.py` | autenticação, CORS, CSP, headers e rate limit |
-| `rag_core/runtime.py` | deadline, limites e orçamento de contexto |
-| `rag_core/provenance.py` | arquivo, página e score normalizados |
-| `rag_orchestrator/` | classificação, roteamento, health, circuit breaker e failover |
+| `src/rag_ccdep/core/*_retriever.py` | recuperação narrativa, tabular e temporal |
+| `src/rag_ccdep/core/domain_skills.py` | descoberta e roteamento das skills econômicas locais |
+| `src/rag_ccdep/core/api_models.py`, `query_service.py` | contrato e fluxo HTTP comum das engines |
+| `src/rag_ccdep/core/api_security.py` | autenticação, CORS, CSP, headers e rate limit |
+| `src/rag_ccdep/core/runtime.py` | deadline, limites e orçamento de contexto |
+| `src/rag_ccdep/core/provenance.py` | arquivo, página e score normalizados |
+| `src/rag_ccdep/orchestrator/` | classificação, roteamento, health, circuit breaker e failover |
 
 As respostas tabulares do LLM usam JSON validado; nenhum código gerado pelo
 modelo é executado no fluxo de produção. `safe_exec.py` permanece apenas como
@@ -179,8 +233,9 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_CORS_ORIGINS` | interfaces locais | allowlist CORS separada por vírgula |
 | `RAG_RATE_LIMIT` / `RAG_RATE_WINDOW` | `30` / `60` s | limite em memória por IP |
 | `RAG_USE_GRAPH` | `0` | habilita grafo na engine principal |
-| `RAG_DATA_DIR` | `<engine>/data` ou `../data` | seleciona o corpus documental |
-| `RAG_DB_DIR` | `<engine>/chroma_db` | usa um índice ChromaDB separado |
+| `RAG_DATA_DIR` | `data/` | seleciona o corpus documental compartilhado |
+| `RAG_RUNTIME_DIR` | `var/` | raiz dos artefatos mutáveis de todas as engines |
+| `RAG_DB_DIR` | `var/<engine>/chroma_db` | usa um índice ChromaDB separado |
 | `RAG_INDEX_AUTO_DOWNLOAD` | `1` na Principal | baixa Release somente quando banco está ausente ou vazio |
 | `RAG_INDEX_REPO` | `Thiagovilela2001/chat_ccdep_1.1` | repositório da Release do índice |
 | `RAG_INDEX_TAG` | `vector-index-v1` | tag imutável da Release |
@@ -198,17 +253,13 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_INPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 | `RAG_OUTPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 
-Os containers executam como usuário não-root. Em hosts Linux, ajuste
-`APP_UID`/`APP_GID` no build se os diretórios persistentes tiverem outro dono.
-
 ## Verificação
 
 ```bash
-python -m pytest -p no:cacheprovider rag_principal/tests rag_orchestrator/tests -q
-python rag_orchestrator/tests/test_router.py
-python rag_orchestrator/tests/test_pipeline.py
+python -m pytest -q
+python -m pytest tests/unit -q
+python -m pytest tests/integration -q
 cd frontend && npm ci && npm run lint && npm test && npm run build
-docker compose config --quiet
 python benchmarks/benchmark_core.py --iterations 10000
 ```
 
