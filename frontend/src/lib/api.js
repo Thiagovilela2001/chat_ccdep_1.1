@@ -75,7 +75,12 @@ export async function checkHealth(baseUrl, { signal } = {}) {
   return response.json();
 }
 
-export async function queryBackend(baseUrl, question, apiKey = "", { signal } = {}) {
+export async function queryBackend(
+  baseUrl,
+  question,
+  apiKey = "",
+  { signal, conversationId, history = [] } = {},
+) {
   const startedAt = performance.now();
   const headers = { Accept: "application/json", "Content-Type": "application/json" };
   if (apiKey.trim()) headers["x-api-key"] = apiKey.trim();
@@ -83,7 +88,11 @@ export async function queryBackend(baseUrl, question, apiKey = "", { signal } = 
   const response = await fetch(`${baseUrl}/query`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({
+      question,
+      ...(conversationId ? { conversation_id: conversationId } : {}),
+      ...(history.length ? { history } : {}),
+    }),
     signal,
   });
   if (!response.ok) {

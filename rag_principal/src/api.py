@@ -145,6 +145,8 @@ async def query(
             interpreter=interpret_query,
             rag_type=RAG_TYPE,
             rag_label=RAG_LABEL,
+            conversation_id=request.conversation_id,
+            history=request.history,
         )
         latency_ms = round((time.monotonic() - t0) * 1000)
         log.info(

@@ -27,6 +27,7 @@ from rag_core.api_security import (
     require_api_key,
 )
 from rag_core.api_models import QueryRequest
+from rag_core.conversation_memory import conversation_memory
 from rag_core.runtime import request_timeout_seconds
 from rag_core.metrics import MetricsMiddleware, render_prometheus
 from .orchestrator import Orchestrator
@@ -93,9 +94,13 @@ async def query(
     if not question:
         raise HTTPException(status_code=400, detail="A pergunta não pode ser vazia.")
 
+    conversation_id = request.conversation_id or conversation_memory.new_id()
+    contextual_question, memory_turns = conversation_memory.contextualize(
+        conversation_id, question, request.history
+    )
     try:
         result = await asyncio.wait_for(
-            _orchestrator.answer(question), timeout=request_timeout_seconds()
+            _orchestrator.answer(contextual_question), timeout=request_timeout_seconds()
         )
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc
@@ -106,6 +111,9 @@ async def query(
         )
     result.setdefault("rag_type", RAG_TYPE)
     result.setdefault("rag_label", RAG_LABEL)
+    result["conversation_id"] = conversation_id
+    result["memory_turns"] = memory_turns
+    conversation_memory.remember(conversation_id, question, result["answer"])
     return result
 
 
@@ -120,9 +128,16 @@ async def route_only(
     question = request.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="A pergunta não pode ser vazia.")
+    conversation_id = request.conversation_id or conversation_memory.new_id()
+    contextual_question, memory_turns = conversation_memory.contextualize(
+        conversation_id, question, request.history
+    )
     try:
-        return await asyncio.wait_for(
-            _orchestrator.route_only(question), timeout=request_timeout_seconds()
+        result = await asyncio.wait_for(
+            _orchestrator.route_only(contextual_question), timeout=request_timeout_seconds()
         )
+        result["conversation_id"] = conversation_id
+        result["memory_turns"] = memory_turns
+        return result
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc

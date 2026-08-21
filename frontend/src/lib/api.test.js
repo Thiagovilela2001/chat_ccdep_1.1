@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { apiUrls, defaultApiUrl, isBackendReady, RAG_OPTIONS } from "./api";
+import { apiUrls, defaultApiUrl, isBackendReady, queryBackend, RAG_OPTIONS } from "./api";
 
 describe("configuração da API", () => {
   it("monta endpoints locais usando hostname e porta da metodologia", () => {
@@ -34,5 +34,30 @@ describe("configuração da API", () => {
     expect(isBackendReady({ orchestrator_ready: true })).toBe(true);
     expect(isBackendReady({ engine_ready: true })).toBe(true);
     expect(isBackendReady({ engine_ready: false })).toBe(false);
+  });
+
+  it("envia identificador e histórico da conversa", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ answer: "Resposta contextual." }),
+    });
+
+    await queryBackend("https://rag.example", "E em 2023?", "", {
+      conversationId: "conversation_123456",
+      history: [{ role: "user", content: "Qual foi o PIB em 2024?" }],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://rag.example/query",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          question: "E em 2023?",
+          conversation_id: "conversation_123456",
+          history: [{ role: "user", content: "Qual foi o PIB em 2024?" }],
+        }),
+      }),
+    );
+    fetchMock.mockRestore();
   });
 });

@@ -13,6 +13,7 @@ from .api_models import (
     ValidationInfo,
 )
 from .citation_validator import validate_citations
+from .conversation_memory import conversation_memory
 from .logger import get_logger
 from .numerical_validator import validate_numbers
 from .metrics import record_estimated_usage
@@ -53,12 +54,18 @@ async def execute_engine_query(
     interpreter,
     rag_type: str,
     rag_label: str,
+    conversation_id: str | None = None,
+    history: list | None = None,
 ) -> tuple[QueryResponse, QueryDiagnostics]:
     """Interpreta, executa, valida e serializa uma consulta de engine."""
-    interp = await asyncio.to_thread(interpreter, question, interp_llm)
+    conversation_id = conversation_id or conversation_memory.new_id()
+    contextual_question, memory_turns = conversation_memory.contextualize(
+        conversation_id, question, history or ()
+    )
+    interp = await asyncio.to_thread(interpreter, contextual_question, interp_llm)
     answer, source_nodes = await asyncio.wait_for(
         engine.answer(
-            question=question,
+            question=contextual_question,
             sources=interp["sources"],
             rewritten_query=interp["rewritten_query"],
             is_labor_market=interp.get("is_labor_market", False),
@@ -141,7 +148,10 @@ async def execute_engine_query(
         numeric_citations=numeric_citations,
         rag_type=rag_type,
         rag_label=rag_label,
+        conversation_id=conversation_id,
+        memory_turns=memory_turns,
     )
+    conversation_memory.remember(conversation_id, question, answer)
     diagnostics = QueryDiagnostics(
         sources=interp["sources"],
         chunks=len(source_nodes),

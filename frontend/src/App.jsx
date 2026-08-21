@@ -53,6 +53,7 @@ const STORAGE = {
   theme: "nadia.theme.v1",
   endpoints: "nadia.endpoints.v1",
   apiKey: "nadia.apiKey.v1",
+  conversationId: "nadia.conversationId.v1",
 };
 
 const ACTIVE_RAG_TYPE = "principal";
@@ -909,6 +910,9 @@ export default function App() {
   const [theme, setTheme] = useState(storedTheme);
   const [endpointOverrides, setEndpointOverrides] = useState(storedEndpoints);
   const [apiKey, setApiKey] = useState(() => readStorage(globalThis.sessionStorage, STORAGE.apiKey));
+  const [conversationId, setConversationId] = useState(
+    () => readStorage(globalThis.localStorage, STORAGE.conversationId) || uid(),
+  );
   const [developerMode, setDeveloperMode] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -936,6 +940,7 @@ export default function App() {
 
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.endpoints, JSON.stringify(endpointOverrides)), [endpointOverrides]);
   useEffect(() => writeStorage(globalThis.sessionStorage, STORAGE.apiKey, apiKey), [apiKey]);
+  useEffect(() => writeStorage(globalThis.localStorage, STORAGE.conversationId, conversationId), [conversationId]);
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.messages, JSON.stringify(messages.slice(-40))), [messages]);
   useEffect(() => {
     const container = messageScroll.current;
@@ -1009,6 +1014,7 @@ export default function App() {
     setSourceRequest(null);
     setInput("");
     setLoading(false);
+    setConversationId(uid());
   }
 
   async function submitQuestion(value) {
@@ -1022,7 +1028,15 @@ export default function App() {
     const controller = new AbortController();
     activeController.current = controller;
     try {
-      const payload = await queryBackend(activeUrl, question, apiKey, { signal: controller.signal });
+      const history = messages
+        .filter((message) => !message.error && ["user", "assistant"].includes(message.role))
+        .slice(-12)
+        .map(({ role, content }) => ({ role, content: String(content).slice(0, 4000) }));
+      const payload = await queryBackend(activeUrl, question, apiKey, {
+        signal: controller.signal,
+        conversationId,
+        history,
+      });
       const assistantMessage = {
         id: uid(),
         role: "assistant",

@@ -145,6 +145,14 @@ Interfaces locais: React em `http://127.0.0.1:8501`, API principal em
 `:8000` e orquestrador em `:8010`. As portas ficam vinculadas ao loopback por
 padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
 
+`POST /query` aceita `conversation_id` e até 12 mensagens em `history`, além de
+`question`. O frontend cria um identificador por conversa, envia o histórico
+recente e o troca ao iniciar novo chat. Sem `history`, a API recupera os turnos
+anteriores do cache local pelo mesmo `conversation_id`. Respostas informam
+`conversation_id` e `memory_turns`.
+
+O turno fica na memória para que a resposta curta do usuário complete a consulta.
+
 ## Componentes compartilhados
 
 | Módulo | Responsabilidade |
@@ -155,6 +163,7 @@ padrão. Para execução sem Docker, use `python main.py` dentro de cada engine.
 | `rag_core/*_retriever.py` | recuperação narrativa, tabular e temporal |
 | `rag_core/domain_skills.py` | descoberta e roteamento das skills econômicas locais |
 | `rag_core/api_models.py`, `query_service.py` | contrato e fluxo HTTP comum das engines |
+| `rag_core/conversation_memory.py` | cache TTL/LRU da memória conversacional por sessão |
 | `rag_core/api_security.py` | autenticação, CORS, CSP, headers e rate limit |
 | `rag_core/runtime.py` | deadline, limites e orçamento de contexto |
 | `rag_core/provenance.py` | arquivo, página e score normalizados |
@@ -170,6 +179,10 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 |---|---:|---|
 | `RAG_REQUEST_TIMEOUT` | `180` s | deadline total por consulta |
 | `RAG_MAX_CONTEXT_TOKENS` | `12000` | orçamento aproximado do contexto |
+| `RAG_MEMORY_TTL_SECONDS` | `3600` s | expiração de conversa inativa no cache |
+| `RAG_MEMORY_MAX_CONVERSATIONS` | `1000` | sessões mantidas no cache LRU por processo |
+| `RAG_MEMORY_MAX_TURNS` | `6` | turnos recentes usados para resolver perguntas subsequentes |
+| `RAG_MEMORY_MAX_CONTEXT_CHARS` | `12000` | limite de caracteres do histórico injetado no RAG |
 | `RAG_AGENTIC_MAX_ITERATIONS` | `8` | iterações Agentic, limitado a 12 |
 | `RAG_AGENTIC_MAX_TOOL_CALLS` | `12` | chamadas de ferramenta, limitado a 32 |
 | `RAG_AGENTIC_CRITIC_ROUNDS` | `1` | revisões críticas, limitado a 3 |

@@ -1,11 +1,25 @@
 """Contratos HTTP compartilhados pelas engines RAG."""
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4_000)
 
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=4_000)
+    conversation_id: str | None = Field(
+        default=None,
+        min_length=16,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9_-]+$",
+    )
+    history: list[ChatMessage] = Field(default_factory=list, max_length=12)
 
 
 class SourceInfo(BaseModel):
@@ -51,3 +65,5 @@ class QueryResponse(BaseModel):
     numeric_citations: list[NumericCitationInfo] = Field(default_factory=list)
     rag_type: str
     rag_label: str
+    conversation_id: str
+    memory_turns: int = Field(default=0, ge=0)
