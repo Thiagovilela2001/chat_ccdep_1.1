@@ -30,6 +30,13 @@ _NUM_ATOM = (
 _EQUATION_RE = re.compile(
     rf"({_NUM_ATOM})\s*([+\-−×x*/÷])\s*({_NUM_ATOM})\s*=\s*({_NUM_ATOM})"
 )
+_RATIO_EQUATION_RE = re.compile(
+    rf"({_NUM_ATOM})\s*/\s*({_NUM_ATOM})\s*[×x*]\s*100\s*=\s*({_NUM_ATOM})"
+)
+_TOTAL_RATIO_EQUATION_RE = re.compile(
+    rf"\(\s*({_NUM_ATOM})\s*\+\s*({_NUM_ATOM})\s*\)\s*/\s*"
+    rf"({_NUM_ATOM})\s*[×x*]\s*100\s*=\s*({_NUM_ATOM})"
+)
 
 # ── Dataclass de resultado ────────────────────────────────────────────────────
 
@@ -85,6 +92,47 @@ def _derived_results(response_text: str, source_texts: list[str]) -> set[str]:
                 calculated = left / right
             else:
                 continue
+        except (InvalidOperation, ZeroDivisionError):
+            continue
+        decimals = max(0, -expected.as_tuple().exponent)
+        tolerance = Decimal("0.5") * (Decimal(10) ** -decimals)
+        if abs(calculated - expected) <= tolerance:
+            derived.add(_normalize(result_raw))
+
+    for match in _RATIO_EQUATION_RE.finditer(response_text):
+        numerator_raw, denominator_raw, result_raw = match.groups()
+        if (
+            _normalize(numerator_raw) not in source_numbers
+            or _normalize(denominator_raw) not in source_numbers
+        ):
+            continue
+        try:
+            numerator = Decimal(_normalize(numerator_raw))
+            denominator = Decimal(_normalize(denominator_raw))
+            expected = Decimal(_normalize(result_raw))
+            if denominator == 0:
+                continue
+            calculated = numerator / denominator * Decimal(100)
+        except (InvalidOperation, ZeroDivisionError):
+            continue
+        decimals = max(0, -expected.as_tuple().exponent)
+        tolerance = Decimal("0.5") * (Decimal(10) ** -decimals)
+        if abs(calculated - expected) <= tolerance:
+            derived.add(_normalize(result_raw))
+
+    for match in _TOTAL_RATIO_EQUATION_RE.finditer(response_text):
+        young_raw, elderly_raw, denominator_raw, result_raw = match.groups()
+        operands = (young_raw, elderly_raw, denominator_raw)
+        if any(_normalize(value) not in source_numbers for value in operands):
+            continue
+        try:
+            young = Decimal(_normalize(young_raw))
+            elderly = Decimal(_normalize(elderly_raw))
+            denominator = Decimal(_normalize(denominator_raw))
+            expected = Decimal(_normalize(result_raw))
+            if denominator == 0:
+                continue
+            calculated = (young + elderly) / denominator * Decimal(100)
         except (InvalidOperation, ZeroDivisionError):
             continue
         decimals = max(0, -expected.as_tuple().exponent)

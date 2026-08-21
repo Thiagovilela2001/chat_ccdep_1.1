@@ -86,6 +86,15 @@ FIDELIDADE ÀS FONTES (inegociável)
    nenhum trecho sustente, direta ou numericamente.
 3. Se a pergunta pede cálculo e os valores estão disponíveis, calcule e
    mostre a conta (ex: 3,4% − 2,8% = 0,6 p.p.).
+4. Para índice de envelhecimento e razões de dependência, use exclusivamente
+   [Cálculo Demográfico Determinístico] retornado pelas tabelas. Não recalcule,
+   estime ou combine faixas. Se o cálculo foi bloqueado, explique o motivo.
+5. Se período, território, indicador ou faixa estiver ambíguo, não escolha um
+   recorte nem calcule. Faça uma única pergunta objetiva de esclarecimento.
+6. Se faltar dado de um período pedido para cálculo ou comparação, responda somente
+   com uma frase direta, "Dado encontrado" (período disponível, sem valor), "Dado
+   ausente" e "Operação cancelada por ausência de dados na fonte." Não cite valores
+   nem períodos diferentes dos solicitados.
 {skill_block}
 """ + ANALYST_WRITING_GUIDE
 

@@ -7,7 +7,15 @@ estrutura via pandas para o Analysis Engine.
 """
 import re
 
+from .demographic_indicators import (
+    DEMOGRAPHIC_EXTRACTION_RULES,
+    DemographicCalculationError,
+    calculate_demographic_indicators,
+    demographic_failure,
+    is_demographic_indicator_query,
+)
 from .logger import get_logger
+from .provenance import format_source_context
 from .runtime import limit_context
 from .text_retriever import rerank_candidate_limit, structured_top_n
 from .structured_output import (
@@ -46,6 +54,7 @@ Regras:
 - Use apenas strings, números, booleanos ou null nas células.
 - Não inclua código, comentários ou campos adicionais.
 - Use nomes de colunas em português quando possível.
+{special_rules}
 
 Trechos:
 {context}
@@ -59,7 +68,8 @@ Retorne SOMENTE JSON válido no formato {{"resultado": "texto final"}}.
 Regras:
 - Não inclua código ou explicações fora do campo `resultado`.
 - Formate números com separador de milhar e 2 casas decimais quando aplicável.
-- Se a pergunta exigir uma conta, apresente a operação no texto final.
+- Se a pergunta exigir uma conta, mostre obrigatoriamente a substituição numérica
+  completa com operador e resultado no formato `valor operador valor = resultado`.
 
 Pergunta: {question}
 
@@ -116,21 +126,39 @@ class TablesRetriever:
             reranked = table_nodes[:_FALLBACK_TOP_N]
         reranked = list(reranked[:structured_top_n()])
 
-        context = limit_context("\n\n---\n\n".join(n.get_content() for n in reranked))
+        if is_demographic_indicator_query(question):
+            raw_context = "\n\n---\n\n".join(format_source_context(n) for n in reranked)
+        else:
+            raw_context = "\n\n---\n\n".join(n.get_content() for n in reranked)
+        context = limit_context(raw_context)
         structured = self._extract_and_calculate(question, context)
         return structured, reranked
 
     def _extract_and_calculate(self, question: str, context: str) -> str:
+        demographic_query = is_demographic_indicator_query(question)
         # Fase 1: extração estruturada em JSON (nenhum código do LLM é executado)
         extract_resp = self._llm.complete(
-            _EXTRACT_PROMPT.format(context=context, question=question)
+            _EXTRACT_PROMPT.format(
+                context=context,
+                question=question,
+                special_rules=DEMOGRAPHIC_EXTRACTION_RULES if demographic_query else "",
+            )
         )
         try:
             payload = parse_json_object(extract_resp.text)
             df, data = tabular_payload(payload)
         except StructuredOutputError as exc:
             log.warning("Extracao estruturada de tabela falhou: %s", exc)
+            if demographic_query:
+                return demographic_failure(exc)
             return "[Sem dados estruturados extraídos da tabela]"
+
+        if demographic_query:
+            try:
+                return calculate_demographic_indicators(question, df)
+            except DemographicCalculationError as exc:
+                log.warning("Calculo demografico bloqueado: %s", exc)
+                return demographic_failure(exc)
 
         if df is not None:
             data_preview = df.to_string(max_rows=20)

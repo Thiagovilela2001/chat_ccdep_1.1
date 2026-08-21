@@ -113,6 +113,16 @@ constam na fonte (mesmos dígitos e formatação) — nunca arredonde nem conver
 unidades. Use exatamente '""" + REFUSAL_TEXT + """' somente quando nenhum ponto
 central da pergunta tiver suporte. Nunca anexe essa mensagem a uma resposta
 factual já sustentada.
+Para índice de envelhecimento e razões de dependência, use exclusivamente o bloco
+[Cálculo Demográfico Determinístico] retornado por search_tables. Transcreva as
+contas; nunca recalcule, estime ou combine faixas por conta própria. Se o bloco
+informar falha, explique-a sem produzir o indicador.
+Se período, território, indicador ou faixa necessária estiver ambíguo, não escolha
+um recorte. Faça uma única pergunta objetiva de esclarecimento e não calcule.
+Se faltar dado de um período pedido para cálculo ou comparação, responda somente
+com uma frase direta, "Dado encontrado" (período disponível, sem valor), "Dado
+ausente" e "Operação cancelada por ausência de dados na fonte." Não cite valores
+nem períodos diferentes dos solicitados.
 
 Etapa 8. Estrutura da resposta
 Redija texto contínuo, técnico e natural. Abra com resposta direta, desenvolva

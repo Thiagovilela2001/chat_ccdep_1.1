@@ -10,7 +10,8 @@ from __future__ import annotations
 import asyncio
 import time
 
-from rag_core.answer_policy import REFUSAL_TEXT
+from rag_core.answer_policy import REFUSAL_TEXT, enforce_calculation_provenance
+from rag_core.demographic_indicators import is_demographic_indicator_query
 
 from .fusion import run_engines, select_best
 from .query_analyzer import QueryAnalyzer
@@ -31,18 +32,29 @@ class Orchestrator:
         # 1. Análise semântica (LLM síncrono → thread, não bloqueia o loop).
         t0 = time.perf_counter()
         cls = await asyncio.to_thread(self.analyzer.analyze, question)
+        demographic_calculation = is_demographic_indicator_query(question)
+        if demographic_calculation:
+            cls = self._demographic_classification(cls)
         analyzer_ms = (time.perf_counter() - t0) * 1000
 
         # 2. Roteamento (single-best por padrão).
         t0 = time.perf_counter()
-        decision = route(cls, multi_engine=self.multi_engine)
+        decision = route(
+            cls,
+            multi_engine=self.multi_engine and not demographic_calculation,
+        )
         router_ms = (time.perf_counter() - t0) * 1000
 
         # 3. Recusa por escopo — curto-circuito, nenhuma engine chamada.
         if decision.mode == "refuse":
             timings = self._timings(analyzer_ms, router_ms, 0.0, t_start)
+            refusal = enforce_calculation_provenance(
+                REFUSAL_TEXT,
+                question=question,
+                checks=[],
+            )
             return self._envelope(
-                {"answer": REFUSAL_TEXT, "sources": [], "sources_used": [],
+                {"answer": refusal, "sources": [], "sources_used": [],
                  "rewritten_query": question, "validation": {"verified": 0, "total": 0, "unverified": []}},
                 chosen=None, decision=decision, cls=cls, timings=timings,
             )
@@ -136,8 +148,29 @@ class Orchestrator:
     async def route_only(self, question: str) -> dict:
         """Decisão de roteamento sem executar engine (debug/inspeção)."""
         cls = await asyncio.to_thread(self.analyzer.analyze, question)
-        decision = route(cls, multi_engine=self.multi_engine)
+        demographic_calculation = is_demographic_indicator_query(question)
+        if demographic_calculation:
+            cls = self._demographic_classification(cls)
+        decision = route(
+            cls,
+            multi_engine=self.multi_engine and not demographic_calculation,
+        )
         return {"analysis": cls, "route": _route_dict(decision)}
+
+    @staticmethod
+    def _demographic_classification(cls: dict) -> dict:
+        """Garante recuperação tabular determinística para indicadores etários."""
+        return {
+            **cls,
+            "intent": "consulta_dado",
+            "query_type": "tabular",
+            "expected_answer": "numerico",
+            "priority": "precisao",
+            "retrieval_need": "hibrida",
+            "complexity": "baixa",
+            "needs_multi_hop": False,
+            "in_scope": True,
+        }
 
     # ── Montagem da resposta final ────────────────────────────────────────────
 

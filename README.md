@@ -153,6 +153,20 @@ anteriores do cache local pelo mesmo `conversation_id`. Respostas informam
 
 O turno fica na memória para que a resposta curta do usuário complete a consulta.
 
+Respostas a pedidos de cálculo recebem obrigatoriamente uma nota de proveniência
+inserida pelo backend, fora do LLM. A nota positiva só é emitida quando todos os
+números passam pela validação contra os documentos, a substituição numérica com
+operador e resultado está explícita e ao menos um documento de origem foi
+identificado. A resposta lista esses documentos e suas páginas/abas. Caso
+contrário, o resultado numérico é bloqueado.
+
+Quando o bloqueio decorre de ambiguidade, a resposta não usa a recusa genérica:
+ela pede objetivamente o período, território, indicador ou faixa etária ausente.
+
+Quando um cálculo ou comparação é bloqueado por falta de dados, a resposta informa
+somente o período encontrado, o período ausente e o cancelamento da operação. Valores
+e períodos não solicitados são removidos deterministicamente pelo backend.
+
 ## Componentes compartilhados
 
 | Módulo | Responsabilidade |
@@ -164,6 +178,7 @@ O turno fica na memória para que a resposta curta do usuário complete a consul
 | `rag_core/domain_skills.py` | descoberta e roteamento das skills econômicas locais |
 | `rag_core/api_models.py`, `query_service.py` | contrato e fluxo HTTP comum das engines |
 | `rag_core/conversation_memory.py` | cache TTL/LRU da memória conversacional por sessão |
+| `rag_core/demographic_indicators.py` | valida faixas etárias e calcula envelhecimento/dependência em Python |
 | `rag_core/api_security.py` | autenticação, CORS, CSP, headers e rate limit |
 | `rag_core/runtime.py` | deadline, limites e orçamento de contexto |
 | `rag_core/provenance.py` | arquivo, página e score normalizados |

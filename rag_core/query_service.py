@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
-from .answer_policy import sanitize_answer
+from .answer_policy import enforce_calculation_provenance, sanitize_answer
 from .api_models import (
     CitationValidationInfo,
     NumericCitationInfo,
@@ -74,6 +74,26 @@ async def execute_engine_query(
     )
     answer = sanitize_answer(answer, question=question)
     checks = await asyncio.to_thread(validate_numbers, answer, source_nodes)
+    calculation_sources = []
+    for source_index in dict.fromkeys(
+        check.source_index for check in checks if check.source_index is not None
+    ):
+        node = source_nodes[source_index]
+        file = source_file(node)
+        if not file or file == "?":
+            continue
+        page = source_page(node)
+        suffix = f", p./aba {page}" if page is not None else ""
+        calculation_sources.append(f"{file}{suffix}")
+    answer_with_provenance = enforce_calculation_provenance(
+        answer,
+        question=question,
+        checks=checks,
+        sources=calculation_sources,
+    )
+    if answer_with_provenance != answer:
+        answer = answer_with_provenance
+        checks = await asyncio.to_thread(validate_numbers, answer, source_nodes)
     unverified = [check.value for check in checks if not check.verified]
     verified = len(checks) - len(unverified)
     citation_checks = await asyncio.to_thread(validate_citations, answer, source_nodes)

@@ -4,6 +4,7 @@ Query Interpreter — analisa a pergunta e determina:
   - versão reescrita da query para melhor recuperação
 """
 import json
+from rag_core.demographic_indicators import is_demographic_indicator_query
 from rag_core.labor_market_skill import is_labor_market_query
 
 INTERPRET_PROMPT = """\
@@ -43,6 +44,7 @@ def interpret_query(question: str, llm) -> dict:
 
     Sempre retorna ao menos "text" em sources como fallback seguro.
     """
+    demographic_calculation = is_demographic_indicator_query(question)
     raw = llm.complete(INTERPRET_PROMPT.format(question=question)).text.strip()
 
     # Remove markdown code fences, se presentes
@@ -55,6 +57,8 @@ def interpret_query(question: str, llm) -> dict:
         sources = [s for s in result.get("sources", []) if s in _VALID_SOURCES]
         if "text" not in sources:
             sources = ["text"] + sources
+        if demographic_calculation and "tables" not in sources:
+            sources.append("tables")
         return {
             "sources": sources or ["text"],
             "rewritten_query": result.get("rewritten_query", question),
@@ -62,7 +66,7 @@ def interpret_query(question: str, llm) -> dict:
         }
     except (json.JSONDecodeError, AttributeError):
         return {
-            "sources": ["text"],
+            "sources": ["text", "tables"] if demographic_calculation else ["text"],
             "rewritten_query": question,
             "is_labor_market": is_labor_market_query(question),
         }

@@ -102,6 +102,8 @@ Regras:
 - Não inclua código ou explicações fora do campo `resultado`.
 - Calcule variações, tendências e estatísticas relevantes para a pergunta.
 - Formate números com separador de milhar e 2 casas decimais.
+- Para cada conta, mostre obrigatoriamente a substituição numérica completa
+  com operador e resultado no formato `valor operador valor = resultado`.
 
 Pergunta: {question}
 

@@ -92,3 +92,83 @@ def test_servico_compartilhado_preserva_contrato_http(monkeypatch):
     assert response.answer == "A taxa foi 7,9%."
     assert response.validation.verified == 1
     assert diagnostics.chunks == 1
+
+
+def test_servico_http_nunca_omite_proveniencia_de_calculo(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "tabela.pdf", "page": 4},
+        score=0.9,
+        get_content=lambda: "Valores documentados: 10 e 20.",
+    )
+
+    class Engine:
+        async def answer(self, **_kwargs):
+            return "A soma é 10 + 20 = 30.", [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["tables"], "rewritten_query": question}
+
+    async def no_popup(_citations):
+        return {}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        no_popup,
+    )
+    response, _diagnostics = asyncio.run(
+        execute_engine_query(
+            question="Calcule a soma de 10 e 20.",
+            engine=Engine(),
+            interp_llm=object(),
+            interpreter=interpreter,
+            rag_type="test",
+            rag_label="Test RAG",
+        )
+    )
+
+    assert "Proveniência obrigatória do cálculo" in response.answer
+    assert "não foi criado pela LLM" in response.answer
+    assert "Documentos dos quais os valores foram extraídos" in response.answer
+    assert "tabela.pdf, p./aba 4" in response.answer
+    assert "10 + 20 = 30" in response.answer
+    assert response.validation.verified == response.validation.total == 3
+
+
+def test_servico_http_converte_ambiguidade_em_pedido_de_direcionamento(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "demografia.pdf", "page": 8},
+        score=0.9,
+        get_content=lambda: "Índices disponíveis: 43,3 e 49,0.",
+    )
+
+    class Engine:
+        async def answer(self, **_kwargs):
+            return (
+                "A diferença seria 49,0 - 43,3 = 5,7, mas os documentos não "
+                "especificam os períodos correspondentes."
+            ), [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["tables"], "rewritten_query": question}
+
+    async def no_popup(_citations):
+        return {}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        no_popup,
+    )
+    response, _diagnostics = asyncio.run(
+        execute_engine_query(
+            question="Compare os índices e calcule a diferença absoluta.",
+            engine=Engine(),
+            interp_llm=object(),
+            interpreter=interpreter,
+            rag_type="test",
+            rag_label="Test RAG",
+        )
+    )
+
+    assert response.answer.startswith("Quais períodos você deseja comparar?")
+    assert "5,7" not in response.answer
+    assert response.validation.total == 0

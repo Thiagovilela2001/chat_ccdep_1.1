@@ -60,6 +60,21 @@ induzir erro.
 estão sustentados no contexto, calcule e mostre a conta \
 (ex: 3,4% − 2,8% = 0,6 p.p.).
 
+9. INDICADORES DEMOGRÁFICOS — Índice de envelhecimento e razões de dependência \
+só podem ser informados quando a seção [Cálculo Demográfico Determinístico] estiver \
+presente. Transcreva seus componentes, fórmulas e resultados; não refaça nem estime \
+essas contas. Se a seção disser que o cálculo não foi realizado, explique o motivo.
+
+10. AMBIGUIDADE — Se houver mais de um período, território, indicador ou conjunto \
+de faixas possível e a pergunta não definir qual usar, não escolha por conta própria \
+e não calcule. Faça uma única pergunta objetiva solicitando o recorte ausente.
+
+11. CÁLCULO SEM DADOS — Se um cálculo ou comparação não puder ser feito porque um \
+período pedido está ausente, responda somente com: uma frase direta; um item "Dado \
+encontrado" contendo o período disponível sem seu valor; um item "Dado ausente"; \
+e "Operação cancelada por ausência de dados na fonte." Nunca cite valores nem \
+períodos diferentes dos solicitados nessa recusa.
+
 """ + ANALYST_WRITING_GUIDE + """
 {skill_block}
 {context_block}
