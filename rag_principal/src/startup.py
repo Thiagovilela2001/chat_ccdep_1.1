@@ -13,6 +13,9 @@ from llama_index.core.postprocessor import LLMRerank
 from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.index_manifest import (
+    data_snapshot,
+    detect_changes,
+    load_manifest,
     resolve_data_dir,
     resolve_db_dir,
 )
@@ -50,12 +53,17 @@ def _env_enabled(name: str, default: str = "1") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
 
 
-def ensure_principal_index(db_path: str) -> None:
-    """Baixa índice portátil quando banco local ainda não existe."""
+def ensure_principal_index(db_path: str, data_dir: str | None = None) -> None:
+    """Baixa o índice portátil e escolhe entre carga imutável e sincronização.
+
+    Um corpus local explicitamente disponível deve poder complementar o índice
+    da Release. Antes, o bootstrap sempre ligava ``RAG_INDEX_READ_ONLY`` e
+    ignorava silenciosamente qualquer documento adicionado depois do artefato.
+    Uma configuração explícita da variável continua tendo precedência.
+    """
     if not _env_enabled("RAG_INDEX_AUTO_DOWNLOAD"):
         return
 
-    os.environ.setdefault("RAG_INDEX_READ_ONLY", "1")
     repo = os.getenv("RAG_INDEX_REPO", DEFAULT_RELEASE_REPO)
     tag = os.getenv("RAG_INDEX_TAG", DEFAULT_RELEASE_TAG)
     asset = os.getenv("RAG_INDEX_ASSET", DEFAULT_RELEASE_ASSET)
@@ -78,6 +86,20 @@ def ensure_principal_index(db_path: str) -> None:
         log.info("[0] Índice baixado e validado (%d vetores)", count)
     else:
         log.info("[0] Índice local válido (%d vetores); download dispensado", count)
+
+    if "RAG_INDEX_READ_ONLY" in os.environ:
+        return
+
+    snapshot = data_snapshot(data_dir) if data_dir else {}
+    changed = detect_changes(snapshot, load_manifest(db_path)) if snapshot else []
+    if changed:
+        os.environ["RAG_INDEX_READ_ONLY"] = "0"
+        log.info(
+            "[0] Corpus local contém %d diferença(s); sincronização habilitada",
+            len(changed),
+        )
+    else:
+        os.environ["RAG_INDEX_READ_ONLY"] = "1"
 
 
 # ── Detecção de mudanças ──────────────────────────────────────────────────────
@@ -116,7 +138,7 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     log.info("Inicializando RAG Estatistico SP")
 
     # 0. Bootstrap portátil: baixa uma vez, valida e impede reindexação implícita.
-    ensure_principal_index(db_path)
+    ensure_principal_index(db_path, data_dir)
 
     # 1–3. Detecção, ingestão seletiva e sincronização vetorial/BM25
     index, changed = sync_standard_index(data_dir, db_path, log)

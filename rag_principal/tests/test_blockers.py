@@ -147,6 +147,8 @@ def test_cache_incremental_substitui_alterados_e_remove_excluidos():
 def test_sincronizacao_incremental_carrega_apenas_arquivo_novo(tmp_path, monkeypatch):
     import rag_core.index_sync as sync
 
+    monkeypatch.delenv("RAG_INDEX_READ_ONLY", raising=False)
+
     data_dir = tmp_path / "data"
     data_dir.mkdir()
     old_file = data_dir / "antigo.txt"
@@ -157,6 +159,8 @@ def test_sincronizacao_incremental_carrega_apenas_arquivo_novo(tmp_path, monkeyp
 
     db_path = tmp_path / "db"
     save_manifest(str(db_path), old_snapshot)
+    artifact_manifest = db_path / ".index_artifact.json"
+    artifact_manifest.write_text("{}", encoding="utf-8")
     save_nodes_cache(
         [TextNode(text="antigo", metadata={"source_file": "antigo.txt"})],
         str(db_path),
@@ -202,10 +206,13 @@ def test_sincronizacao_incremental_carrega_apenas_arquivo_novo(tmp_path, monkeyp
     assert calls["loaded"] == (str(data_dir), ["novo.txt"], False)
     assert calls["updated"][1] == ["novo.txt"]
     assert load_manifest(str(db_path)) == data_snapshot(str(data_dir))
+    assert not artifact_manifest.exists()
 
 
 def test_sincronizacao_incremental_remove_fonte_sem_reler_corpus(tmp_path, monkeypatch):
     import rag_core.index_sync as sync
+
+    monkeypatch.delenv("RAG_INDEX_READ_ONLY", raising=False)
 
     data_dir = tmp_path / "data"
     data_dir.mkdir()

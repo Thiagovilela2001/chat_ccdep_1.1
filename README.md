@@ -91,7 +91,7 @@ Pare todos os serviços antes de exportar:
 ```powershell
 docker compose down
 python scripts/index_artifact.py export `
-  --output index_artifacts/rag-principal-index-v2.tar.gz `
+  --output index_artifacts/rag-principal-index-v3.tar.gz `
   --confirm-stopped
 ```
 
@@ -99,17 +99,17 @@ Valide e publique usando [GitHub CLI](https://cli.github.com/):
 
 ```powershell
 python scripts/index_artifact.py verify `
-  --archive index_artifacts/rag-principal-index-v2.tar.gz
+  --archive index_artifacts/rag-principal-index-v3.tar.gz
 
 python scripts/index_artifact.py publish `
-  --archive index_artifacts/rag-principal-index-v2.tar.gz `
+  --archive index_artifacts/rag-principal-index-v3.tar.gz `
   --repo Thiagovilela2001/chat_ccdep_1.1 `
-  --tag vector-index-v2
+  --tag vector-index-v3
 ```
 
 Em outra máquina, basta clonar e iniciar a engine Principal. No primeiro start,
 se `rag_principal/chroma_db` estiver ausente ou vazio, o sistema baixa
-automaticamente a Release `vector-index-v2`, confere o SHA-256, valida as versões
+automaticamente a Release `vector-index-v3`, confere o SHA-256, valida as versões
 e a contagem de 35.438 vetores e instala o banco. Nos starts seguintes, o banco
 local válido é reutilizado sem download e sem reindexação.
 
@@ -118,8 +118,8 @@ O comando manual equivalente é:
 ```powershell
 python scripts/index_artifact.py download `
   --repo Thiagovilela2001/chat_ccdep_1.1 `
-  --tag vector-index-v2 `
-  --asset rag-principal-index-v2.tar.gz
+  --tag vector-index-v3 `
+  --asset rag-principal-index-v3.tar.gz
 ```
 
 O instalador valida SHA-256, versões e contagem vetorial antes da troca. Banco
@@ -196,10 +196,10 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_DB_DIR` | `<engine>/chroma_db` | usa um índice ChromaDB separado |
 | `RAG_INDEX_AUTO_DOWNLOAD` | `1` na Principal | baixa Release somente quando banco está ausente ou vazio |
 | `RAG_INDEX_REPO` | `Thiagovilela2001/chat_ccdep_1.1` | repositório da Release do índice |
-| `RAG_INDEX_TAG` | `vector-index-v2` | tag imutável da Release |
-| `RAG_INDEX_ASSET` | `rag-principal-index-v2.tar.gz` | asset do banco pré-indexado |
+| `RAG_INDEX_TAG` | `vector-index-v3` | tag imutável da Release |
+| `RAG_INDEX_ASSET` | `rag-principal-index-v3.tar.gz` | asset do banco pré-indexado |
 | `RAG_INDEX_DOWNLOAD_TIMEOUT` | `600` | timeout HTTPS em segundos |
-| `RAG_INDEX_READ_ONLY` | `1` com bootstrap | impede alteração ou reindexação do banco portátil |
+| `RAG_INDEX_READ_ONLY` | automático com bootstrap | usa somente leitura sem diferenças; habilita sincronização quando o corpus local contém fontes novas |
 | `RAG_RETRIEVAL_TOP_K` | `80` | candidatos por pool textual ou tabular |
 | `RAG_QUERY_FUSION_QUERIES` | `2` | consulta original mais expansões semânticas |
 | `RAG_RERANK_CANDIDATE_LIMIT` | `40` | candidatos enviados ao reranker |
@@ -240,4 +240,9 @@ O judge usa `MARITACA_API_KEY`; `RAGAS_JUDGE_API_KEY`,
 Cada execução registra hash dos splits, commit, versões, precisão numérica e
 latências p50/p95. Cada API também expõe `/metrics` em formato Prometheus, sem
 incluir perguntas ou conteúdo documental.
+
+Quando `RAG_DATA_DIR` aponta para um corpus local mais recente que o índice da
+Release, a Principal sincroniza somente as fontes adicionadas, modificadas ou
+removidas. Defina `RAG_INDEX_READ_ONLY=1` explicitamente apenas quando quiser
+ignorar essas diferenças e manter o artefato portátil imutável.
 A análise técnica detalhada está em [ANALISE_PROJETO.md](ANALISE_PROJETO.md).

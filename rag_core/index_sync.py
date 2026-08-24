@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import chromadb
 
@@ -19,6 +20,23 @@ from rag_core.indexing import (
 )
 from rag_core.ingestion import load_documents
 from rag_core.processing import process_documents
+
+_PORTABLE_ARTIFACT_MANIFEST = ".index_artifact.json"
+
+
+def _mark_index_as_locally_updated(db_path: str) -> None:
+    """Remove o manifesto imutável depois que o banco diverge da Release.
+
+    O arquivo descreve hashes e contagem do artefato baixado. Mantê-lo após um
+    upsert faz o próximo bootstrap rejeitar como corrompido um índice local
+    perfeitamente válido e atualizado.
+    """
+    try:
+        (Path(db_path) / _PORTABLE_ARTIFACT_MANIFEST).unlink(missing_ok=True)
+    except OSError:
+        # A atualização do índice já foi concluída; a ausência de permissão para
+        # limpar metadados obsoletos não deve desfazê-la.
+        pass
 
 
 def index_read_only_enabled() -> bool:
@@ -94,6 +112,7 @@ def sync_standard_index(data_dir: str, db_path: str, log, collection_name="estat
             collection_name=collection_name,
         )
         save_manifest(db_path, snapshot)
+        _mark_index_as_locally_updated(db_path)
         return index, changed
 
     if changed or not already_indexed:
@@ -121,6 +140,7 @@ def sync_standard_index(data_dir: str, db_path: str, log, collection_name="estat
             collection_name=collection_name,
         )
         save_manifest(db_path, snapshot)
+        _mark_index_as_locally_updated(db_path)
         return index, changed
 
     log.info("[1] Banco atualizado (%d vetores); sem mudanças", collection.count())

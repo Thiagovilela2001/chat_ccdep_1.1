@@ -140,7 +140,7 @@ def test_url_da_release_escapa_tag_e_asset():
     )
 
 
-def test_startup_principal_ativa_bootstrap_somente_leitura(tmp_path, monkeypatch):
+def test_startup_principal_ativa_bootstrap_somente_leitura_sem_corpus(tmp_path, monkeypatch):
     from rag_principal.src import startup
 
     captured = {}
@@ -158,6 +158,43 @@ def test_startup_principal_ativa_bootstrap_somente_leitura(tmp_path, monkeypatch
     assert captured["tag"] == index_artifact.DEFAULT_RELEASE_TAG
     assert captured["asset"] == index_artifact.DEFAULT_RELEASE_ASSET
     assert captured["target"] == tmp_path / "chroma_db"
+    assert startup.os.environ["RAG_INDEX_READ_ONLY"] == "1"
+
+
+def test_startup_principal_sincroniza_corpus_local_mais_recente(tmp_path, monkeypatch):
+    from rag_principal.src import startup
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "novo.pdf").write_bytes(b"pdf")
+    db_dir = tmp_path / "chroma_db"
+    captured = {}
+
+    def fake_ensure(**kwargs):
+        captured.update(kwargs)
+        return 16_237, False
+
+    monkeypatch.delenv("RAG_INDEX_READ_ONLY", raising=False)
+    monkeypatch.setattr(startup, "ensure_release_index", fake_ensure)
+
+    startup.ensure_principal_index(str(db_dir), str(data_dir))
+
+    assert captured["target"] == db_dir
+    assert startup.os.environ["RAG_INDEX_READ_ONLY"] == "0"
+
+
+def test_startup_principal_respeita_modo_somente_leitura_explicito(tmp_path, monkeypatch):
+    from rag_principal.src import startup
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "novo.pdf").write_bytes(b"pdf")
+
+    monkeypatch.setenv("RAG_INDEX_READ_ONLY", "1")
+    monkeypatch.setattr(startup, "ensure_release_index", lambda **_kwargs: (1, False))
+
+    startup.ensure_principal_index(str(tmp_path / "chroma_db"), str(data_dir))
+
     assert startup.os.environ["RAG_INDEX_READ_ONLY"] == "1"
 
 
