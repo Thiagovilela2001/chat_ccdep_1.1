@@ -134,11 +134,25 @@ async def query(
                 "chunks": diagnostics.chunks,
                 "latency_ms": latency_ms,
                 "verified": f"{diagnostics.verified}/{diagnostics.total}",
+                "unsupported_arguments": len(diagnostics.unsupported_arguments),
                 "estimated_input_tokens": diagnostics.estimated_input_tokens,
                 "estimated_output_tokens": diagnostics.estimated_output_tokens,
                 "estimated_cost_usd": diagnostics.estimated_cost_usd,
             },
         )
+        if diagnostics.unverified:
+            log.warning(
+                "Numeros nao verificados na resposta",
+                extra={"question": question[:120], "unverified": diagnostics.unverified},
+            )
+        if diagnostics.unsupported_arguments:
+            log.warning(
+                "Argumentos sem suporte textual na resposta",
+                extra={
+                    "question": question[:120],
+                    "unsupported_arguments": diagnostics.unsupported_arguments[:3],
+                },
+            )
     except TimeoutError as exc:
         log.warning("Timeout global ao processar requisicao", extra={"question": question[:120]})
         raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc

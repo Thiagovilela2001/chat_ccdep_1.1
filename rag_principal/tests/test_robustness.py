@@ -92,3 +92,138 @@ def test_servico_compartilhado_preserva_contrato_http(monkeypatch):
     assert response.answer == "A taxa foi 7,9%."
     assert response.validation.verified == 1
     assert diagnostics.chunks == 1
+
+
+def test_servico_compartilhado_bloqueia_resposta_com_numero_nao_verificado(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "boletim.pdf", "page": 2},
+        score=0.9,
+        get_content=lambda: "A taxa foi 7,9%.",
+    )
+
+    class Engine:
+        calls = 0
+
+        async def answer(self, **_kwargs):
+            self.calls += 1
+            return "A taxa foi 7,9%, mas o saldo chegou a 99.", [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    popup_called = False
+
+    async def popup_explanations(_citations):
+        nonlocal popup_called
+        popup_called = True
+        return {}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        popup_explanations,
+    )
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Qual foi a taxa e o saldo?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert "evidência suficiente" in response.answer
+    assert response.validation.verified == 1
+    assert response.validation.total == 2
+    assert response.validation.unverified == ["99"]
+    assert response.numeric_citations == []
+    assert not popup_called
+    assert response.sources_used == ["text"]
+    assert diagnostics.verified == 1
+    assert diagnostics.total == 2
+
+
+def test_servico_compartilhado_recupera_numeros_com_busca_ampliada(monkeypatch):
+    partial_node = SimpleNamespace(
+        metadata={"source_file": "boletim.pdf", "page": 2},
+        score=0.8,
+        get_content=lambda: "A taxa foi 7,9%.",
+    )
+    complete_node = SimpleNamespace(
+        metadata={"source_file": "boletim.pdf", "page": 3},
+        score=0.95,
+        get_content=lambda: "A taxa foi 7,9% e o saldo chegou a 99.",
+    )
+
+    class Engine:
+        calls = 0
+
+        async def answer(self, **kwargs):
+            self.calls += 1
+            if "graph" in kwargs["sources"]:
+                return "A taxa foi 7,9%, e o saldo chegou a 99.", [complete_node]
+            return "A taxa foi 7,9%, e o saldo chegou a 99.", [partial_node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    async def popup_explanations(_citations):
+        return {}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        popup_explanations,
+    )
+    engine = Engine()
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Qual foi a taxa e o saldo?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert engine.calls == 2
+    assert response.answer == "A taxa foi 7,9%, e o saldo chegou a 99."
+    assert response.validation.verified == 2
+    assert response.validation.total == 2
+    assert response.validation.unverified == []
+    assert response.sources_used == ["text", "tables", "timeseries", "graph"]
+    assert diagnostics.verified == 2
+
+
+def test_servico_compartilhado_bloqueia_argumento_textual_sem_suporte():
+    node = SimpleNamespace(
+        metadata={"source_file": "boletim.pdf", "page": 4},
+        score=0.9,
+        get_content=lambda: "As admissoes superaram os desligamentos na industria.",
+    )
+
+    class Engine:
+        calls = 0
+
+        async def answer(self, **_kwargs):
+            self.calls += 1
+            return (
+                "A composicao setorial reforca recuperacao parcial apos retracao "
+                "de fim de ano.",
+                [node],
+            )
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    engine = Engine()
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Como foi a composicao setorial?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert engine.calls == 2
+    assert "evidência suficiente" in response.answer
+    assert diagnostics.unsupported_arguments
+    assert response.numeric_citations == []

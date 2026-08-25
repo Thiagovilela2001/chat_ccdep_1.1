@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+from rag_core.argument_validator import validate_arguments
 from rag_core.citation_validator import validate_citations
 from rag_core.numerical_validator import validate_numbers
 from rag_core.provenance import format_source_context
@@ -94,6 +95,28 @@ def test_numero_verificado_preserva_posicao_e_fonte_exatas():
     assert by_value["18,7%"].source_index == 1
 
 
+def test_numero_curto_nao_valida_por_substring_em_ano():
+    checks = validate_numbers(
+        "Foram gerados 16 mil postos.",
+        [_node("Estado de Sao Paulo - janeiro de 2016 a julho de 2018.")],
+    )
+
+    assert checks[0].value == "16"
+    assert not checks[0].verified
+
+
+def test_trecho_do_numero_curto_usa_match_exato_nao_primeira_substring():
+    checks = validate_numbers(
+        "Desde 2016, foram gerados 16 mil postos.",
+        [_node("Periodo de 2016 a 2018. Saldo observado: 16 mil postos.")],
+    )
+    check = {item.value: item for item in checks}["16"]
+
+    assert check.verified
+    assert "Saldo observado: 16 mil" in check.source_snippet
+    assert "foram gerados 16 mil" in check.response_snippet
+
+
 def test_citacao_tabular_preserva_linha_estruturada_completa():
     table_node = _node(
         "Setor: Indústria\nEmpregos: 125.400\nVariação: 3,2%\nFonte: tabela.pdf",
@@ -108,3 +131,22 @@ def test_citacao_tabular_preserva_linha_estruturada_completa():
     assert checks[0].source_snippet == (
         "Setor: Indústria\nEmpregos: 125.400\nVariação: 3,2%"
     )
+
+
+def test_argumento_textual_rejeita_vocabulario_sem_suporte():
+    checks = validate_arguments(
+        "A composicao setorial reforca recuperacao parcial apos retracao de fim de ano.",
+        [_node("As admissoes superaram os desligamentos na industria e na construcao.")],
+    )
+
+    assert not checks[0].verified
+    assert "recuperacao" in checks[0].missing_terms
+
+
+def test_argumento_textual_aceita_termos_presentes_na_fonte():
+    checks = validate_arguments(
+        "As admissoes superaram os desligamentos na industria e na construcao.",
+        [_node("As admissoes superaram os desligamentos na industria e na construcao.")],
+    )
+
+    assert checks[0].verified

@@ -34,6 +34,11 @@ diferentes em uma mesma narrativa é permitido e esperado; criar fato novo, não
 nenhuma afirmação causal, estimativa ou conclusão que nenhum trecho sustente, \
 direta ou numericamente.
 
+2A. NUMEROS NA RESPOSTA - Todo numero deve ser copiado literalmente de algum \
+trecho do contexto recuperado ou ser resultado de uma conta explicita com operandos \
+tambem presentes no contexto. Nao arredonde, nao converta unidades e nao estime. \
+Se o numero necessario nao estiver no contexto recuperado, omita esse numero ou recuse.
+
 3. SEPARAÇÃO DA EVIDÊNCIA — Use os rótulos de origem apenas internamente para \
 verificar o suporte. Não os copie para a resposta. Não escreva citações, nomes \
 de arquivos, páginas, abas ou listas de referências, salvo pedido explícito do usuário.

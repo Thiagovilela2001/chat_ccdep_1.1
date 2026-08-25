@@ -68,6 +68,10 @@ const ASSISTANT_MODE_LABEL = "Análise documental";
 
 const CLIENT_DIAGNOSTIC_URL = "http://127.0.0.1:8501/client-error";
 
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function reportClientDiagnostic(detail) {
   fetch(CLIENT_DIAGNOSTIC_URL, {
     method: "POST",
@@ -79,6 +83,21 @@ function reportClientDiagnostic(detail) {
       occurredAt: new Date().toISOString(),
     }),
   }).catch(() => {});
+}
+
+function highlightVerifiedValues(text, values = []) {
+  const content = String(text || "");
+  const uniqueValues = [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))]
+    .sort((left, right) => right.length - left.length);
+  if (!content || uniqueValues.length === 0) return content;
+
+  const pattern = new RegExp(`(${uniqueValues.map(escapeRegExp).join("|")})`, "g");
+  const parts = content.split(pattern);
+  return parts.map((part, index) => (
+    uniqueValues.includes(part)
+      ? <mark className="verified-source-value" key={`${part}-${index}`}>{part}</mark>
+      : part
+  ));
 }
 
 const SUGGESTION_ICONS = {
@@ -787,12 +806,20 @@ function Composer({ value, setValue, onSubmit, loading, onCancel }) {
 }
 
 function Inspector({ open, onClose, meta, tab, setTab, developerMode, sourceRequest }) {
-  const sources = meta?.sources || [];
+  const requestedSourceIndex = sourceRequest?.meta === meta ? sourceRequest.index : null;
+  const allSources = meta?.sources || [];
+  const sources = requestedSourceIndex == null
+    ? allSources
+    : allSources
+      .map((source, index) => ({ source, originalIndex: index }))
+      .filter(({ originalIndex }) => originalIndex === Number(requestedSourceIndex));
+  const numericCitations = (meta?.numeric_citations || [])
+    .filter((citation) => !isCalendarYearCitation(citation?.value));
   const validation = meta?.validation || {};
   const route = meta?.route || {};
   const timings = meta?.timings || {};
   const [expandedSource, setExpandedSource] = useState(null);
-  const requestedIndex = sourceRequest?.meta === meta ? sourceRequest.index : null;
+  const requestedIndex = requestedSourceIndex == null ? null : 0;
   const expandedIndex = (
     expandedSource?.meta === meta
     && expandedSource?.requestId === sourceRequest?.id
@@ -834,7 +861,13 @@ function Inspector({ open, onClose, meta, tab, setTab, developerMode, sourceRequ
                 )}
                 <div className="section-title"><span>Trechos recuperados</span><b>{sources.length}</b></div>
                 <div className="source-cards">
-                  {sources.length === 0 ? <p className="muted">Nenhuma fonte detalhada retornada.</p> : sources.map((source, index) => (
+                  {sources.length === 0 ? <p className="muted">Nenhuma fonte detalhada retornada.</p> : sources.map((sourceEntry, index) => {
+                    const source = sourceEntry?.source || sourceEntry;
+                    const sourceIndex = sourceEntry?.originalIndex ?? index;
+                    const verifiedValues = numericCitations
+                      .filter((citation) => Number(citation.source_index) === sourceIndex)
+                      .map((citation) => citation.value);
+                    return (
                     <article className={expandedIndex === index ? "is-expanded" : ""} key={`${source.file || "source"}-${index}`}>
                       <button
                         type="button"
@@ -856,13 +889,25 @@ function Inspector({ open, onClose, meta, tab, setTab, developerMode, sourceRequ
                         <ChevronDown className="source-card-chevron" size={15} aria-hidden="true" />
                       </button>
                       {expandedIndex === index && (
-                        <div className="source-excerpt" id={`source-excerpt-${index}`}>
+                        <div className={`source-excerpt ${verifiedValues.length > 0 ? "has-verified-values" : ""}`} id={`source-excerpt-${index}`}>
                           <small>Trecho utilizado</small>
+                          {verifiedValues.length > 0 && (
+                            <div className="verified-source-values" aria-label="Dados verificados nesta fonte">
+                              <span>Dados verificados</span>
+                              {verifiedValues.map((value) => <b key={value}>{value}</b>)}
+                            </div>
+                          )}
                           <p>{source.excerpt || "O texto deste trecho não está disponível em respostas salvas anteriormente. Faça uma nova consulta para visualizá-lo."}</p>
+                          {source.excerpt && verifiedValues.length > 0 && (
+                            <p className="source-excerpt-highlighted">
+                              {highlightVerifiedValues(source.excerpt, verifiedValues)}
+                            </p>
+                          )}
                         </div>
                       )}
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -977,10 +1022,7 @@ export default function App() {
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState("sources");
-  const [selectedMeta, setSelectedMeta] = useState(() => {
-    const last = [...storedMessages()].reverse().find((item) => item?.meta);
-    return last?.meta || null;
-  });
+  const [selectedMeta, setSelectedMeta] = useState(null);
   const [sourceRequest, setSourceRequest] = useState(null);
   const activeController = useRef(null);
   const messageScroll = useRef(null);
@@ -1071,6 +1113,7 @@ export default function App() {
     activeController.current?.abort();
     setMessages([]);
     setSelectedMeta(null);
+    setInspectorOpen(false);
     setSourceRequest(null);
     setInput("");
     setLoading(false);
@@ -1080,10 +1123,10 @@ export default function App() {
   function openConversation(conversation) {
     activeController.current?.abort();
     const restoredMessages = Array.isArray(conversation?.messages) ? conversation.messages : [];
-    const lastAnswer = [...restoredMessages].reverse().find((message) => message?.meta);
     setConversationId(conversation.id);
     setMessages(restoredMessages);
-    setSelectedMeta(lastAnswer?.meta || null);
+    setSelectedMeta(null);
+    setInspectorOpen(false);
     setSourceRequest(null);
     setInput("");
     setLoading(false);
@@ -1118,8 +1161,9 @@ export default function App() {
         createdAt: new Date().toISOString(),
       };
       setMessages((current) => [...current, assistantMessage]);
-      setSelectedMeta(payload);
-      setSourceRequest({ id: uid(), meta: payload, index: null });
+      setSelectedMeta(null);
+      setSourceRequest(null);
+      setInspectorOpen(false);
       setInspectorTab("sources");
     } catch (error) {
       if (error.name !== "AbortError") {
@@ -1180,9 +1224,7 @@ export default function App() {
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="Alternar tema">
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-            <button className="icon-button inspector-toggle" onClick={() => setInspectorOpen(!inspectorOpen)} aria-label="Alternar painel de evidências">
-              {inspectorOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
-            </button>
+
           </div>
         </header>
 

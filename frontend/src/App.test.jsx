@@ -91,7 +91,7 @@ describe("inicialização da interface", () => {
     expect(container.querySelectorAll(".history-list button")).toHaveLength(1);
   });
 
-  it("expande e recolhe o trecho recuperado ao clicar na fonte", async () => {
+  it("mantem o painel de transparencia escondido sem pop-up numerico", async () => {
     localStorage.setItem("nadia.messages.v1", JSON.stringify([{
       id: "assistant-1",
       role: "assistant",
@@ -103,28 +103,17 @@ describe("inicialização da interface", () => {
           file: "conjuntura/boletim.pdf",
           page: 25,
           score: 0.9,
-          excerpt: "Este é o trecho documental recuperado.",
+          excerpt: "Este e o trecho documental recuperado.",
         }],
         validation: { verified: 0, total: 0, unverified: [] },
       },
     }]));
 
     await act(async () => root.render(<App />));
-    await act(async () => {
-      container.querySelector('[aria-label="Alternar painel de evidências"]').click();
-    });
-
-    const sourceButton = container.querySelector(".source-card-trigger");
-    expect(sourceButton.getAttribute("aria-expanded")).toBe("false");
-    expect(container.textContent).not.toContain("Este é o trecho documental recuperado.");
-
-    await act(async () => sourceButton.click());
-    expect(sourceButton.getAttribute("aria-expanded")).toBe("true");
-    expect(container.textContent).toContain("Este é o trecho documental recuperado.");
-
-    await act(async () => sourceButton.click());
-    expect(sourceButton.getAttribute("aria-expanded")).toBe("false");
-    expect(container.textContent).not.toContain("Este é o trecho documental recuperado.");
+    expect(container.querySelector('[aria-label="Alternar painel de evidencias"]')).toBeNull();
+    expect(container.querySelector('.inspector').classList.contains('is-open')).toBe(false);
+    expect(container.querySelector('.source-card-trigger')).toBeNull();
+    expect(container.textContent).not.toContain("Este e o trecho documental recuperado.");
   });
 
   it("torna um dado numérico verificável e fixa sua fonte ao clicar", async () => {
@@ -142,6 +131,11 @@ describe("inicialização da interface", () => {
           page: 8,
           score: 0.92,
           excerpt: "O PIB paulista cresceu 12,5% no período.",
+        }, {
+          file: "conjuntura/anexo.pdf",
+          page: 2,
+          score: 0.81,
+          excerpt: "Outro trecho recuperado, sem o dado selecionado.",
         }],
         numeric_citations: [{
           value: "12,5%",
@@ -191,7 +185,11 @@ describe("inicialização da interface", () => {
       .find((button) => button.textContent.includes("Ver fonte completa"));
     await act(async () => openSourceButton.click());
     expect(container.querySelector(".inspector").classList.contains("is-open")).toBe(true);
+    expect(container.querySelectorAll(".source-card-trigger")).toHaveLength(1);
+    expect(container.textContent).not.toContain("Outro trecho recuperado, sem o dado selecionado.");
     expect(container.querySelector(".source-card-trigger").getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector(".verified-source-values").textContent).toContain("12,5%");
+    expect(container.querySelector(".source-excerpt-highlighted mark").textContent).toBe("12,5%");
   });
 
   it("mantém anos no texto sem abrir validação argumentativa", async () => {

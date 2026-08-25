@@ -98,18 +98,31 @@ def _find_snippet(needle: str, haystack: str, ctx: int = 60) -> str:
     idx = haystack.find(needle)
     if idx == -1:
         return ""
-    start = max(0, idx - ctx)
-    end = min(len(haystack), idx + len(needle) + ctx)
-    return "…" + haystack[start:end].strip() + "…"
+    return _find_snippet_at(haystack, idx, idx + len(needle), ctx=ctx)
 
 
-def _source_snippet(needle: str, source_text: str, source_node) -> str:
-    """Preserva uma linha tabular completa; usa contexto narrativo nos demais casos."""
+def _find_snippet_at(haystack: str, start_idx: int, end_idx: int, ctx: int = 60) -> str:
+    start = max(0, start_idx - ctx)
+    end = min(len(haystack), end_idx + ctx)
+    return "..." + haystack[start:end].strip() + "..."
+
+
+def _source_snippet(
+    needle: str,
+    source_text: str,
+    source_node,
+    match_start: Optional[int] = None,
+    match_end: Optional[int] = None,
+) -> str:
+    """Preserva bloco tabular completo; usa contexto narrativo nos demais casos."""
     metadata = getattr(source_node, "metadata", {}) or {}
     if metadata.get("type") == "table":
-        blocks = re.split(r"\n\s*---\s*\n", source_text)
-        for block in blocks:
-            if needle not in block:
+        for match in re.finditer(r"(?s)(?:^|\n\s*---\s*\n)(.*?)(?=\n\s*---\s*\n|$)", source_text):
+            block = match.group(1)
+            if match_start is not None:
+                if not (match.start(1) <= match_start <= match.end(1)):
+                    continue
+            elif needle not in block:
                 continue
             lines = [
                 line.strip()
@@ -117,10 +130,12 @@ def _source_snippet(needle: str, source_text: str, source_node) -> str:
                 if line.strip() and not line.strip().lower().startswith("fonte:")
             ]
             return "\n".join(lines)[:1_000]
+    if match_start is not None and match_end is not None:
+        return _find_snippet_at(source_text, match_start, match_end, ctx=140)
     return _find_snippet(needle, source_text, ctx=140)
 
 
-# ── Validação principal ───────────────────────────────────────────────────────
+# Validacao principal
 
 def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
     """
@@ -139,33 +154,38 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
             continue
         seen.add(raw)
 
-        resp_snippet = _find_snippet(raw, response_text, ctx=140)
+        resp_snippet = _find_snippet_at(response_text, m.start(1), m.end(1), ctx=140)
         response_position = {
             "response_start": m.start(1),
             "response_end": m.end(1),
         }
 
-        # 1. Match verbatim
-        verbatim_source = next(
-            (
-                (source_index, node_text)
-                for source_index, node_text in enumerate(source_texts)
-                if raw in node_text
-            ),
-            None,
-        )
-        if verbatim_source is not None:
-            source_index, node_text = verbatim_source
-            results.append(NumberCheck(
-                value=raw,
-                verified=True,
-                source_snippet=_source_snippet(
-                    raw, node_text, source_nodes[source_index]
-                ),
-                response_snippet=resp_snippet,
-                source_index=source_index,
-                **response_position,
-            ))
+        # 1. Match verbatim, only as a complete numeric token.
+        found = False
+        for source_index, node_text in enumerate(source_texts):
+            for cm in _NUM_RE.finditer(node_text):
+                candidate = cm.group(1).strip()
+                if candidate != raw:
+                    continue
+                results.append(NumberCheck(
+                    value=raw,
+                    verified=True,
+                    source_snippet=_source_snippet(
+                        candidate,
+                        node_text,
+                        source_nodes[source_index],
+                        cm.start(1),
+                        cm.end(1),
+                    ),
+                    response_snippet=resp_snippet,
+                    source_index=source_index,
+                    **response_position,
+                ))
+                found = True
+                break
+            if found:
+                break
+        if found:
             continue
 
         # 2. Match normalizado (trata diferenças de formatação PT-BR vs EN)
@@ -178,7 +198,11 @@ def validate_numbers(response_text: str, source_nodes) -> list[NumberCheck]:
                         value=raw,
                         verified=True,
                         source_snippet=_source_snippet(
-                            cm.group(1), node_text, source_nodes[source_index]
+                            cm.group(1),
+                            node_text,
+                            source_nodes[source_index],
+                            cm.start(1),
+                            cm.end(1),
                         ),
                         response_snippet=resp_snippet,
                         source_index=source_index,
