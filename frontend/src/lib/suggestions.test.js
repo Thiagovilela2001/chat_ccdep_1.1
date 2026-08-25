@@ -40,4 +40,13 @@ describe("perguntas em destaque", () => {
 
     expect(selected.every(({ title }) => typeof title === "string")).toBe(true);
   });
+
+  it("mantém vários cards dedicados à demografia", () => {
+    const demographicPools = FEATURED_QUESTION_POOLS.filter(({ id }) =>
+      id.startsWith("demography"),
+    );
+
+    expect(demographicPools.length).toBeGreaterThanOrEqual(6);
+    expect(demographicPools.every(({ questions }) => questions.length >= 4)).toBe(true);
+  });
 });

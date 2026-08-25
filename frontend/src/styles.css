@@ -176,6 +176,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .history-list { display: grid; gap: 3px; max-height: 100%; overflow: auto; scrollbar-width: thin; }
 .history-list button { display: grid; gap: 3px; width: 100%; padding: 8px; color: rgba(235,243,238,.67); text-align: left; cursor: pointer; background: transparent; border: 0; border-radius: 9px; }
 .history-list button:hover { color: white; background: rgba(255,255,255,.05); }
+.history-list button.is-active { color: white; background: rgba(255,255,255,.08); }
 .history-list button span { overflow: hidden; font-size: 11px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .history-list button small { color: rgba(235,243,238,.32); font-size: 9px; }
 .history-empty { padding: 6px 8px; color: rgba(235,243,238,.35); font-size: 10px; line-height: 1.5; }
@@ -568,6 +569,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .sidebar-label { color: var(--ink-faint); }
 .history-list button { padding: 9px 10px; color: var(--ink-soft); border-radius: 9px; }
 .history-list button:hover { color: var(--ink); background: var(--surface); }
+.history-list button.is-active { color: var(--brand); background: var(--brand-soft); }
 .history-list button small, .history-empty { color: var(--ink-faint); }
 .sidebar-foot { border-color: var(--line); }
 .connection-card, .settings-button { color: var(--ink-soft); }
@@ -665,6 +667,59 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .suggestion-label { width: min(720px, 100%); margin-top: 27px; padding: 0; border: 0; }
 .suggestion-label strong { margin: 0; padding: 0; font-size: 12px; font-weight: 750; border: 0; }
 .suggestion-label span { font-size: 8px; }
+.suggestion-actions, .suggestion-controls { display: flex; align-items: center; gap: 8px; }
+.suggestion-controls { gap: 5px; }
+.suggestion-controls button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+.suggestion-controls button:hover { color: var(--brand); background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 35%, var(--line)); }
+.suggestion-carousel {
+  display: grid;
+  width: min(720px, 100%);
+  grid-auto-columns: calc((100% - 16px) / 3);
+  grid-auto-flow: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 2px 2px 10px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: inline mandatory;
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
+}
+.suggestion-carousel::-webkit-scrollbar { height: 5px; }
+.suggestion-carousel::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 99px; }
+.suggestion-card {
+  position: relative;
+  display: grid;
+  min-height: 112px;
+  padding: 13px;
+  overflow: hidden;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  scroll-snap-align: start;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.suggestion-card.is-demography { background: color-mix(in srgb, var(--brand-soft) 34%, var(--surface)); }
+.suggestion-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 42%, var(--line)); box-shadow: 0 9px 22px rgba(30,35,45,.07); }
+.suggestion-card .suggestion-icon { width: 28px; height: 28px; border: 0; border-radius: 8px; background: var(--brand-soft); }
+.suggestion-card small { align-self: end; margin-top: 11px; color: var(--ink-faint); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.suggestion-card strong { margin-top: 4px; padding-right: 10px; font-size: 10px; line-height: 1.4; }
+.suggestion-card > svg { position: absolute; right: 12px; bottom: 12px; color: var(--ink-faint); transform: rotate(45deg); }
 .suggestion-grid { width: min(720px, 100%); grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
 .suggestion-grid button {
   min-height: 108px;
@@ -725,6 +780,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   .empty-state h1 { font-size: 34px; }
   .empty-state > p { font-size: 12px; }
   .empty-state > .composer-wrap { margin-top: 23px; }
+  .suggestion-actions > span { display: none; }
+  .suggestion-carousel { grid-auto-columns: minmax(210px, 82%); }
   .suggestion-grid { grid-template-columns: 1fr; }
   .suggestion-grid button { min-height: 74px; grid-template-columns: 30px 1fr; column-gap: 9px; }
   .suggestion-grid small { margin-top: 0; }

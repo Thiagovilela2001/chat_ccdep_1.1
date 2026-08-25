@@ -6,10 +6,13 @@ import {
   Activity,
   AlertTriangle,
   ArrowUp,
+  Building2,
   Check,
   CheckCircle2,
   CircleStop,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Code2,
   Copy,
@@ -18,6 +21,7 @@ import {
   Gauge,
   History,
   Layers3,
+  MapPin,
   Menu,
   MessageSquarePlus,
   Moon,
@@ -30,6 +34,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  Users,
   X,
 } from "lucide-react";
 
@@ -45,11 +50,13 @@ import {
   isCalendarYearCitation,
   parseTabularSnippet,
 } from "./lib/numericCitations";
+import { upsertConversation, validStoredConversations } from "./lib/conversations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
 import { rotateFeaturedQuestions } from "./lib/suggestions";
 
 const STORAGE = {
   messages: "nadia.messages.v1",
+  conversations: "nadia.conversations.v1",
   theme: "nadia.theme.v1",
   endpoints: "nadia.endpoints.v1",
   apiKey: "nadia.apiKey.v1",
@@ -78,6 +85,9 @@ const SUGGESTION_ICONS = {
   labor: Activity,
   activity: Gauge,
   comparison: Layers3,
+  demography: Users,
+  investment: Building2,
+  regional: MapPin,
 };
 
 const uid = () =>
@@ -85,6 +95,15 @@ const uid = () =>
 
 function storedMessages() {
   return readStoredJson(globalThis.localStorage, STORAGE.messages, [], Array.isArray);
+}
+
+function storedConversations() {
+  return readStoredJson(
+    globalThis.localStorage,
+    STORAGE.conversations,
+    [],
+    validStoredConversations,
+  );
 }
 
 function storedTheme() {
@@ -164,12 +183,15 @@ function Sidebar({
   healthState,
   healthError,
   onRefresh,
-  messages,
+  conversations,
+  activeConversationId,
   onNewChat,
-  onHistoryPick,
+  onConversationPick,
   onOpenSettings,
 }) {
-  const questions = messages.filter((item) => item.role === "user").slice(-8).reverse();
+  const history = [...conversations].sort(
+    (left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0),
+  );
   const ready = isBackendReady(health);
 
   return (
@@ -208,13 +230,18 @@ function Sidebar({
             <History size={14} />
           </div>
           <div className="history-list">
-            {questions.length === 0 ? (
-              <p className="history-empty">Suas perguntas recentes aparecerão aqui.</p>
+            {history.length === 0 ? (
+              <p className="history-empty">Suas análises aparecerão aqui.</p>
             ) : (
-              questions.map((item) => (
-                <button key={item.id} onClick={() => onHistoryPick(item.content)}>
-                  <span>{item.content}</span>
-                  <small>{relativeTime(item.createdAt)}</small>
+              history.map((conversation) => (
+                <button
+                  className={conversation.id === activeConversationId ? "is-active" : ""}
+                  key={conversation.id}
+                  onClick={() => onConversationPick(conversation)}
+                  aria-current={conversation.id === activeConversationId ? "page" : undefined}
+                >
+                  <span>{conversation.title}</span>
+                  <small>{relativeTime(conversation.createdAt)}</small>
                 </button>
               ))
             )}
@@ -243,6 +270,16 @@ function Sidebar({
 }
 
 function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
+  const suggestionCarousel = useRef(null);
+
+  const scrollSuggestions = (direction) => {
+    const carousel = suggestionCarousel.current;
+    if (!carousel) return;
+    const card = carousel.querySelector(".suggestion-card");
+    const cardWidth = card?.getBoundingClientRect().width || carousel.clientWidth * 0.8;
+    carousel.scrollBy({ left: direction * cardWidth * 2, behavior: "smooth" });
+  };
+
   return (
     <section className="empty-state">
       <div className="welcome-mark">
@@ -263,13 +300,29 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
       />
       <div className="suggestion-label">
         <strong>Experimente perguntar</strong>
-        <span>ou escreva sua própria pergunta</span>
+        <div className="suggestion-actions">
+          <span>deslize para explorar</span>
+          <div className="suggestion-controls">
+            <button type="button" onClick={() => scrollSuggestions(-1)} aria-label="Ver perguntas anteriores">
+              <ChevronLeft size={16} />
+            </button>
+            <button type="button" onClick={() => scrollSuggestions(1)} aria-label="Ver próximas perguntas">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="suggestion-grid">
+      <div className="suggestion-carousel" ref={suggestionCarousel} aria-label="Perguntas sugeridas">
         {suggestions.map(({ id, eyebrow, title }) => {
-          const Icon = SUGGESTION_ICONS[id] || Sparkles;
+          const isDemography = id.startsWith("demography");
+          const Icon = SUGGESTION_ICONS[id] || (isDemography ? Users : Sparkles);
           return (
-            <button key={id} onClick={() => onPick(title)}>
+            <button
+              type="button"
+              className={`suggestion-card ${isDemography ? "is-demography" : ""}`}
+              key={id}
+              onClick={() => onPick(title)}
+            >
               <span className="suggestion-icon"><Icon size={18} /></span>
               <small>{eyebrow}</small>
               <strong>{title}</strong>
@@ -904,6 +957,7 @@ function SettingsDialog({ open, onClose, endpoints, setEndpoints, apiKey, setApi
 
 export default function App() {
   const [messages, setMessages] = useState(storedMessages);
+  const [conversations, setConversations] = useState(storedConversations);
   const [featuredQuestions] = useState(
     () => rotateFeaturedQuestions(globalThis.localStorage),
   );
@@ -942,6 +996,12 @@ export default function App() {
   useEffect(() => writeStorage(globalThis.sessionStorage, STORAGE.apiKey, apiKey), [apiKey]);
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.conversationId, conversationId), [conversationId]);
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.messages, JSON.stringify(messages.slice(-40))), [messages]);
+  useEffect(() => {
+    setConversations((current) => upsertConversation(current, conversationId, messages));
+  }, [conversationId, messages]);
+  useEffect(() => {
+    writeStorage(globalThis.localStorage, STORAGE.conversations, JSON.stringify(conversations));
+  }, [conversations]);
   useEffect(() => {
     const container = messageScroll.current;
     if (!container) return undefined;
@@ -1017,6 +1077,19 @@ export default function App() {
     setConversationId(uid());
   }
 
+  function openConversation(conversation) {
+    activeController.current?.abort();
+    const restoredMessages = Array.isArray(conversation?.messages) ? conversation.messages : [];
+    const lastAnswer = [...restoredMessages].reverse().find((message) => message?.meta);
+    setConversationId(conversation.id);
+    setMessages(restoredMessages);
+    setSelectedMeta(lastAnswer?.meta || null);
+    setSourceRequest(null);
+    setInput("");
+    setLoading(false);
+    setSidebarOpen(false);
+  }
+
   async function submitQuestion(value) {
     const question = value.trim();
     if (!question || loading) return;
@@ -1077,9 +1150,10 @@ export default function App() {
         healthState={healthState}
         healthError={healthError}
         onRefresh={refreshHealth}
-        messages={messages}
+        conversations={conversations}
+        activeConversationId={conversationId}
         onNewChat={newConversation}
-        onHistoryPick={(value) => { setInput(value); setSidebarOpen(false); }}
+        onConversationPick={openConversation}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 

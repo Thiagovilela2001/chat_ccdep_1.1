@@ -39,6 +39,90 @@ export const FEATURED_QUESTION_POOLS = [
       "Como emprego e atividade econômica evoluíram em conjunto em São Paulo?",
     ],
   },
+  {
+    id: "demography",
+    eyebrow: "Dinâmica populacional",
+    questions: [
+      "Como a população paulista evoluiu nos censos mais recentes?",
+      "Quais regiões de São Paulo mais cresceram em população?",
+      "O crescimento populacional foi maior na capital, na região metropolitana ou no interior?",
+      "Quais municípios paulistas perderam população no período mais recente?",
+    ],
+  },
+  {
+    id: "demography-aging",
+    eyebrow: "Envelhecimento",
+    questions: [
+      "Como avançou o envelhecimento da população paulista?",
+      "Quais regiões paulistas apresentam maior proporção de idosos?",
+      "Como mudou a estrutura etária de São Paulo nas últimas décadas?",
+      "Onde o índice de envelhecimento cresceu mais rapidamente?",
+    ],
+  },
+  {
+    id: "demography-fertility",
+    eyebrow: "Fecundidade e natalidade",
+    questions: [
+      "Como evoluiu a fecundidade no Estado de São Paulo?",
+      "Quais regiões paulistas registraram maior queda da natalidade?",
+      "Como mudou a idade média das mães paulistas?",
+      "Quais diferenças regionais aparecem nos níveis de fecundidade?",
+    ],
+  },
+  {
+    id: "demography-longevity",
+    eyebrow: "Mortalidade e longevidade",
+    questions: [
+      "Como evoluiu a esperança de vida da população paulista?",
+      "Quais diferenças de longevidade aparecem entre as regiões de São Paulo?",
+      "Como a mortalidade infantil mudou no estado?",
+      "Quais grupos etários tiveram maior mudança nos níveis de mortalidade?",
+    ],
+  },
+  {
+    id: "demography-migration",
+    eyebrow: "Migração e urbanização",
+    questions: [
+      "Como a migração influenciou o crescimento populacional paulista?",
+      "Quais regiões mais ganharam população por migração?",
+      "Como os fluxos migratórios se distribuem entre capital e interior?",
+      "Quais mudanças ocorreram na urbanização do Estado de São Paulo?",
+    ],
+  },
+  {
+    id: "demography-projections",
+    eyebrow: "Projeções demográficas",
+    questions: [
+      "O que as projeções indicam para a população paulista nos próximos anos?",
+      "Quando a população do estado deve parar de crescer?",
+      "Como deve evoluir a razão de dependência em São Paulo?",
+      "Quais regiões devem envelhecer mais rapidamente nas próximas décadas?",
+    ],
+  },
+  {
+    id: "investment",
+    eyebrow: "Investimentos",
+    questions: [
+      "Quais setores concentraram mais investimentos anunciados em São Paulo?",
+      "Quais regiões paulistas receberam mais projetos de investimento?",
+      "Como os investimentos anunciados evoluíram nos períodos mais recentes?",
+      "Quais foram os maiores projetos de investimento anunciados no estado?",
+      "Como os investimentos se distribuíram entre indústria, serviços e infraestrutura?",
+      "Quais municípios se destacaram na atração de novos investimentos?",
+    ],
+  },
+  {
+    id: "regional",
+    eyebrow: "Análise regional",
+    questions: [
+      "Quais regiões paulistas apresentaram maior dinamismo econômico?",
+      "Como a atividade econômica se distribui entre capital e interior?",
+      "Quais setores se destacam nas diferentes regiões de São Paulo?",
+      "Onde aparecem as maiores diferenças regionais de crescimento?",
+      "Quais regiões mostram maior especialização industrial?",
+      "Como emprego, população e investimentos se relacionam regionalmente?",
+    ],
+  },
 ];
 
 function validPreviousSelection(value) {

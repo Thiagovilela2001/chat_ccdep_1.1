@@ -55,6 +55,42 @@ describe("inicialização da interface", () => {
     );
   });
 
+  it("agrupa perguntas da mesma análise em uma única entrada do histórico", async () => {
+    localStorage.setItem("nadia.conversationId.v1", "conversation-1");
+    localStorage.setItem("nadia.messages.v1", JSON.stringify([
+      {
+        id: "user-1",
+        role: "user",
+        content: "Quais municípios paulistas perderam população?",
+        createdAt: "2026-08-24T10:38:00.000Z",
+      },
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: "Resposta inicial.",
+        createdAt: "2026-08-24T10:38:30.000Z",
+      },
+      {
+        id: "user-2",
+        role: "user",
+        content: "E quais ganharam população?",
+        createdAt: "2026-08-24T10:39:00.000Z",
+      },
+    ]));
+
+    await act(async () => root.render(<App />));
+
+    const historyButtons = container.querySelectorAll(".history-list button");
+    expect(historyButtons).toHaveLength(1);
+    expect(historyButtons[0].textContent).toContain(
+      "Quais municípios paulistas perderam população?",
+    );
+    expect(historyButtons[0].textContent).not.toContain("E quais ganharam população?");
+
+    await act(async () => container.querySelector(".new-chat").click());
+    expect(container.querySelectorAll(".history-list button")).toHaveLength(1);
+  });
+
   it("expande e recolhe o trecho recuperado ao clicar na fonte", async () => {
     localStorage.setItem("nadia.messages.v1", JSON.stringify([{
       id: "assistant-1",
