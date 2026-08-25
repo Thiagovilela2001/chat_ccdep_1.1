@@ -41,7 +41,10 @@ O container lê os dados e persiste índices nestes caminhos:
 docker compose up --build
 ```
 
-A primeira execução pode demorar porque instala dependências Python, inicializa quatro motores e pode baixar o modelo local de embeddings.
+A primeira execução baixa o índice padrão já processado para Principal, Agentic
+e Self-RAG. Cada engine mantém cópia isolada para evitar acesso concorrente ao
+mesmo ChromaDB. RAPTOR mantém índice hierárquico próprio e pode demorar na
+primeira construção.
 
 ## 5. Acesse
 

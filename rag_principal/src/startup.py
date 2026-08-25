@@ -5,28 +5,16 @@ Usado tanto pela API (FastAPI lifespan) quanto pelo CLI interativo.
 Centraliza: detecção de mudanças, indexação, criação de LLMs e retrievers.
 """
 import os
-from pathlib import Path
 
 from llama_index.core import Settings
 from llama_index.core.postprocessor import LLMRerank
 
 from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
-from rag_core.index_manifest import (
-    data_snapshot,
-    detect_changes,
-    load_manifest,
-    resolve_data_dir,
-    resolve_db_dir,
-)
+from rag_core.index_bootstrap import ensure_portable_index
+from rag_core.index_manifest import resolve_data_dir, resolve_db_dir
 from rag_core.index_sync import sync_standard_index
 from rag_core.indexing import load_nodes_cache
-from scripts.index_artifact import (
-    DEFAULT_RELEASE_ASSET,
-    DEFAULT_RELEASE_REPO,
-    DEFAULT_RELEASE_TAG,
-    ensure_release_index,
-)
 from rag_core.text_retriever import (
     build_hybrid_retriever,
     llm_reranking_enabled,
@@ -49,57 +37,9 @@ def graph_enabled_by_env() -> bool:
     return os.getenv("RAG_USE_GRAPH", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _env_enabled(name: str, default: str = "1") -> bool:
-    return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
-
-
 def ensure_principal_index(db_path: str, data_dir: str | None = None) -> None:
-    """Baixa o índice portátil e escolhe entre carga imutável e sincronização.
-
-    Um corpus local explicitamente disponível deve poder complementar o índice
-    da Release. Antes, o bootstrap sempre ligava ``RAG_INDEX_READ_ONLY`` e
-    ignorava silenciosamente qualquer documento adicionado depois do artefato.
-    Uma configuração explícita da variável continua tendo precedência.
-    """
-    if not _env_enabled("RAG_INDEX_AUTO_DOWNLOAD"):
-        return
-
-    repo = os.getenv("RAG_INDEX_REPO", DEFAULT_RELEASE_REPO)
-    tag = os.getenv("RAG_INDEX_TAG", DEFAULT_RELEASE_TAG)
-    asset = os.getenv("RAG_INDEX_ASSET", DEFAULT_RELEASE_ASSET)
-    token = os.getenv("GITHUB_TOKEN") or None
-    try:
-        timeout = float(os.getenv("RAG_INDEX_DOWNLOAD_TIMEOUT", "600"))
-    except ValueError as exc:
-        raise RuntimeError("RAG_INDEX_DOWNLOAD_TIMEOUT deve ser numérico.") from exc
-
-    log.info("[0] Verificando índice vetorial portátil")
-    count, downloaded = ensure_release_index(
-        target=Path(db_path),
-        repo=repo,
-        tag=tag,
-        asset=asset,
-        token=token,
-        timeout=timeout,
-    )
-    if downloaded:
-        log.info("[0] Índice baixado e validado (%d vetores)", count)
-    else:
-        log.info("[0] Índice local válido (%d vetores); download dispensado", count)
-
-    if "RAG_INDEX_READ_ONLY" in os.environ:
-        return
-
-    snapshot = data_snapshot(data_dir) if data_dir else {}
-    changed = detect_changes(snapshot, load_manifest(db_path)) if snapshot else []
-    if changed:
-        os.environ["RAG_INDEX_READ_ONLY"] = "0"
-        log.info(
-            "[0] Corpus local contém %d diferença(s); sincronização habilitada",
-            len(changed),
-        )
-    else:
-        os.environ["RAG_INDEX_READ_ONLY"] = "1"
+    """Compatibilidade para chamadores da engine Principal."""
+    ensure_portable_index(db_path, data_dir, log)
 
 
 # ── Detecção de mudanças ──────────────────────────────────────────────────────

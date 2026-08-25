@@ -28,6 +28,7 @@ Orquestrador :8010 ── health + circuit breaker + failover
 RAG_LLM_PROVIDER=maritaca
 MARITACA_API_KEY=...
 RAG_POPUP_MODEL=sabiazinho-4
+RAG_INDEX_READ_ONLY=1
 
 # Recomendado em ambientes compartilhados
 RAG_API_KEY=chave-da-interface
@@ -58,10 +59,11 @@ O reranking das consultas também preserva diretamente o score híbrido Vector+B
 por padrão. `RAG_LLM_RERANK=1` reativa o reranker por LLM, caso o Ollama esteja
 configurado com janela de contexto e timeout suficientes.
 
-2. Coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`. Após a primeira carga,
-   Principal, Agentic e Self-RAG processam somente arquivos novos, modificados
-   ou removidos. RAPTOR e o grafo opcional da Principal reconstroem suas
-   estruturas globais quando o corpus muda.
+2. Principal, Agentic e Self-RAG baixam o índice portátil publicado quando seus
+   bancos estão ausentes ou vazios, sem reprocessar o corpus. Para complementar
+   o índice, coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`; essas três engines
+   processam somente arquivos novos, modificados ou removidos. RAPTOR mantém
+   índice hierárquico próprio e ainda o constrói quando necessário.
 3. Suba o ambiente:
 
 ```bash
@@ -107,11 +109,13 @@ python scripts/index_artifact.py publish `
   --tag vector-index-v4
 ```
 
-Em outra máquina, basta clonar e iniciar a engine Principal. No primeiro start,
-se `rag_principal/chroma_db` estiver ausente ou vazio, o sistema baixa
+Em outra máquina, basta clonar e iniciar Principal, Agentic ou Self-RAG. No
+primeiro start, se o `chroma_db` da engine estiver ausente ou vazio, ela baixa
 automaticamente a Release `vector-index-v4`, confere o SHA-256, valida as versões
-e a contagem de 57.112 vetores e instala o banco. Nos starts seguintes, o banco
-local válido é reutilizado sem download e sem reindexação.
+e a contagem de 57.112 vetores e instala uma cópia isolada do banco. Nos starts
+seguintes, o banco local válido é reutilizado sem download e sem reindexação.
+RAPTOR não usa esse artefato porque sua coleção contém uma árvore hierárquica
+própria.
 
 O comando manual equivalente é:
 
@@ -128,7 +132,8 @@ feita. Banco parcial ou corrompido nunca é sobrescrito automaticamente: o start
 para com erro claro. O bootstrap usa HTTPS e não exige GitHub CLI. Para
 repositório privado, defina `GITHUB_TOKEN`.
 
-Download e modo somente leitura ficam ativos por padrão na engine Principal.
+Download e modo somente leitura ficam ativos por padrão nas engines Principal,
+Agentic e Self-RAG.
 Para desativar a automação e permitir a sincronização local do corpus:
 
 ```dotenv
@@ -194,7 +199,7 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_USE_GRAPH` | `0` | habilita grafo na engine principal |
 | `RAG_DATA_DIR` | `<engine>/data` ou `../data` | seleciona o corpus documental |
 | `RAG_DB_DIR` | `<engine>/chroma_db` | usa um índice ChromaDB separado |
-| `RAG_INDEX_AUTO_DOWNLOAD` | `1` na Principal | baixa Release somente quando banco está ausente ou vazio |
+| `RAG_INDEX_AUTO_DOWNLOAD` | `1` nas engines padrão | baixa Release somente quando banco está ausente ou vazio |
 | `RAG_INDEX_REPO` | `Thiagovilela2001/chat_ccdep_1.1` | repositório da Release do índice |
 | `RAG_INDEX_TAG` | `vector-index-v4` | tag imutável da Release |
 | `RAG_INDEX_ASSET` | `rag-principal-index-v4.tar.gz` | asset do banco pré-indexado |

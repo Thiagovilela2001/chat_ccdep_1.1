@@ -11,6 +11,7 @@ from llama_index.core.postprocessor import LLMRerank
 
 from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
+from rag_core.index_bootstrap import ensure_portable_index
 from rag_core.index_manifest import (
     resolve_data_dir,
     resolve_db_dir,
@@ -45,6 +46,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
 
     log.info("Inicializando Agentic RAG")
 
+    ensure_portable_index(db_path, data_dir, log)
     index, _changed = sync_standard_index(data_dir, db_path, log)
 
     log.info("[3] Carregando modelos de linguagem")

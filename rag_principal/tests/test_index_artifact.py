@@ -1,9 +1,11 @@
 """Testes do artefato portátil usado em GitHub Releases."""
+
 import shutil
 from pathlib import Path
 
 import pytest
 
+from rag_core import index_bootstrap
 from scripts import index_artifact
 
 
@@ -92,11 +94,7 @@ def test_bootstrap_baixa_valida_e_instala_uma_vez(tmp_path, monkeypatch):
 
     def fake_download(url, destination, **_kwargs):
         downloads.append(url)
-        source = (
-            Path(str(archive) + ".sha256")
-            if url.endswith(".sha256")
-            else archive
-        )
+        source = Path(str(archive) + ".sha256") if url.endswith(".sha256") else archive
         shutil.copy2(source, destination)
 
     monkeypatch.setattr(index_artifact, "_download_file", fake_download)
@@ -150,7 +148,7 @@ def test_startup_principal_ativa_bootstrap_somente_leitura_sem_corpus(tmp_path, 
         return 16_237, True
 
     monkeypatch.delenv("RAG_INDEX_READ_ONLY", raising=False)
-    monkeypatch.setattr(startup, "ensure_release_index", fake_ensure)
+    monkeypatch.setattr(index_bootstrap, "ensure_release_index", fake_ensure)
 
     startup.ensure_principal_index(str(tmp_path / "chroma_db"))
 
@@ -175,7 +173,7 @@ def test_startup_principal_sincroniza_corpus_local_mais_recente(tmp_path, monkey
         return 16_237, False
 
     monkeypatch.delenv("RAG_INDEX_READ_ONLY", raising=False)
-    monkeypatch.setattr(startup, "ensure_release_index", fake_ensure)
+    monkeypatch.setattr(index_bootstrap, "ensure_release_index", fake_ensure)
 
     startup.ensure_principal_index(str(db_dir), str(data_dir))
 
@@ -191,7 +189,9 @@ def test_startup_principal_respeita_modo_somente_leitura_explicito(tmp_path, mon
     (data_dir / "novo.pdf").write_bytes(b"pdf")
 
     monkeypatch.setenv("RAG_INDEX_READ_ONLY", "1")
-    monkeypatch.setattr(startup, "ensure_release_index", lambda **_kwargs: (1, False))
+    monkeypatch.setattr(
+        index_bootstrap, "ensure_release_index", lambda **_kwargs: (1, False)
+    )
 
     startup.ensure_principal_index(str(tmp_path / "chroma_db"), str(data_dir))
 
@@ -206,6 +206,47 @@ def test_startup_principal_permite_desativar_bootstrap(tmp_path, monkeypatch):
     def unexpected_bootstrap(**_kwargs):
         raise AssertionError("bootstrap deveria estar desativado")
 
-    monkeypatch.setattr(startup, "ensure_release_index", unexpected_bootstrap)
+    monkeypatch.setattr(index_bootstrap, "ensure_release_index", unexpected_bootstrap)
 
     startup.ensure_principal_index(str(tmp_path / "chroma_db"))
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    ["rag_agentic.src.startup", "rag_selfrag.src.startup"],
+)
+def test_engines_padrao_fazem_bootstrap_antes_da_sincronizacao(
+    module_name,
+    monkeypatch,
+):
+    import importlib
+
+    startup = importlib.import_module(module_name)
+    calls = []
+
+    monkeypatch.setattr(startup, "require_api_key", lambda: None)
+    monkeypatch.setattr(startup, "setup_logging", lambda: None)
+    monkeypatch.setattr(startup, "resolve_data_dir", lambda *_args: "data")
+    monkeypatch.setattr(startup, "resolve_db_dir", lambda *_args: "db")
+    monkeypatch.setattr(
+        startup,
+        "ensure_portable_index",
+        lambda db_path, data_dir, _log: calls.append(("bootstrap", db_path, data_dir)),
+    )
+
+    class SyncReached(RuntimeError):
+        pass
+
+    def stop_at_sync(data_dir, db_path, _log):
+        calls.append(("sync", db_path, data_dir))
+        raise SyncReached
+
+    monkeypatch.setattr(startup, "sync_standard_index", stop_at_sync)
+
+    with pytest.raises(SyncReached):
+        startup.initialize("engine")
+
+    assert calls == [
+        ("bootstrap", "db", "data"),
+        ("sync", "db", "data"),
+    ]
