@@ -418,7 +418,14 @@ def _installed_vector_count(
     if not any(target.iterdir()):
         return None
 
-    _db_files(target)
+    try:
+        _db_files(target)
+    except ArtifactError as exc:
+        # Um diretório parcialmente criado (por exemplo, só chroma.sqlite3)
+        # deve acionar o bootstrap da Release em vez de bloquear o startup.
+        if "arquivo(s) ausente(s)" in str(exc):
+            return None
+        raise
     count = _collection_count(target, collection_name)
     if count <= 0:
         raise ArtifactError(f"Índice existente está vazio ou inválido: {target}")
