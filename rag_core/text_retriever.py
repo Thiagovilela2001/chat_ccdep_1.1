@@ -56,6 +56,19 @@ def max_chunks_per_document() -> int:
     return bounded_int("RAG_MAX_CHUNKS_PER_DOCUMENT", 3, 1, 10)
 
 
+def complete_coverage_chunks_per_document() -> int:
+    return bounded_int("RAG_COMPLETE_COVERAGE_CHUNKS_PER_DOCUMENT", 8, 3, 20)
+
+
+def llm_reranking_enabled() -> bool:
+    """Define se os candidatos devem ser reranqueados por um LLM.
+
+    No Ollama local, o lote de candidatos excede facilmente a janela ativa do
+    modelo e o processamento em CPU adiciona dezenas de segundos à consulta.
+    O ranking híbrido Vector+BM25 é usado por padrão nesse caso.
+    """
+
+
 def llm_reranking_enabled() -> bool:
     """Define se os candidatos devem ser reranqueados por um LLM.
 
@@ -94,10 +107,39 @@ def _nodes_by_type(nodes, node_type: str | None) -> list:
     ]
 
 
-def _diversify_by_document(nodes, limit: int | None = None) -> list:
+def deduplicate_nodes(nodes: list) -> list:
+    """Remove nodes duplicados preservando ordem de relevância."""
+    seen_ids = set()
+    seen_texts = set()
+    deduped = []
+    for node in nodes or []:
+        node_obj = getattr(node, "node", node)
+        node_id = getattr(node_obj, "node_id", None) or getattr(node, "id_", None)
+        text = str(getattr(node_obj, "text", "") or getattr(node, "text", "") or "").strip()
+        text_key = re.sub(r"\s+", " ", text)[:300]
+
+        if node_id and node_id in seen_ids:
+            continue
+        if text_key and text_key in seen_texts:
+            continue
+
+        if node_id:
+            seen_ids.add(node_id)
+        if text_key:
+            seen_texts.add(text_key)
+        deduped.append(node)
+    return deduped
+
+
+def _diversify_by_document(
+    nodes,
+    limit: int | None = None,
+    per_document: int | None = None,
+) -> list:
     """Prioriza variedade documental sem descartar resultados relevantes."""
     limit = limit or text_top_n()
-    per_document = max_chunks_per_document()
+    per_document = per_document or max_chunks_per_document()
+    nodes = deduplicate_nodes(nodes)
     selected, overflow = [], []
     counts: dict[str, int] = defaultdict(int)
 
@@ -158,7 +200,7 @@ class TextRetriever:
     """
     Recupera chunks de texto narrativo relevantes para a query.
 
-    Fluxo: retrieve (top-K configurável) → filtra texto → rerank → diversidade.
+    Fluxo: retrieve (top-K configurável) → filtra texto → deduplica → rerank → diversidade.
     Fallback: se o reranker falhar ou retornar vazio, preserva o ranking híbrido.
     """
 
@@ -170,8 +212,8 @@ class TextRetriever:
         """Retorna nodes de texto reranqueados. Lista vazia se sem resultados."""
         nodes = self._retriever.retrieve(question)
 
-        # Filtra apenas chunks narrativos (não tabelas)
-        text_nodes = [n for n in nodes if n.metadata.get("type") != "table"]
+        # Filtra apenas chunks narrativos (não tabelas) e deduplica
+        text_nodes = deduplicate_nodes([n for n in nodes if n.metadata.get("type") != "table"])
         if not text_nodes:
             return []
 
@@ -194,11 +236,21 @@ class TextRetriever:
             reranked = []
 
         # Fallback: reranker vazio → top-N por score de recuperação
+        per_document = (
+            complete_coverage_chunks_per_document()
+            if "todos os periodos disponiveis" in question.lower()
+            else None
+        )
+
         if not reranked:
             log.warning(
                 "Reranker retornou vazio — usando fallback top-%d", text_top_n(),
                 extra={"fallback": True},
             )
-            return _diversify_by_document(text_nodes, text_top_n())
+            return _diversify_by_document(
+                text_nodes, text_top_n(), per_document=per_document
+            )
 
-        return _diversify_by_document(reranked, text_top_n())
+        return _diversify_by_document(
+            reranked, text_top_n(), per_document=per_document
+        )

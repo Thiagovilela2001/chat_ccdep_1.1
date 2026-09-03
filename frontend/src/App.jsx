@@ -17,6 +17,7 @@ import {
   Code2,
   Copy,
   Database,
+  Download,
   FileText,
   Gauge,
   History,
@@ -53,6 +54,11 @@ import {
 import { upsertConversation, validStoredConversations } from "./lib/conversations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
 import { rotateFeaturedQuestions } from "./lib/suggestions";
+
+import { ProgressStepper } from "./components/ProgressStepper";
+import { DataChart } from "./components/DataChart";
+import { SourcesDrawer } from "./components/SourcesDrawer";
+import { ExportModal } from "./components/ExportModal";
 
 const STORAGE = {
   messages: "nadia.messages.v1",
@@ -165,24 +171,12 @@ function MetricChip({ icon: Icon, children, tone = "neutral" }) {
   );
 }
 
-function ValidationBadge({ validation, label = "números" }) {
-  const total = Number(validation?.total || 0);
-  const verified = Number(validation?.verified || 0);
-  if (!total) return null;
-  const complete = total === verified;
-  return (
-    <MetricChip icon={complete ? CheckCircle2 : AlertTriangle} tone={complete ? "ok" : "warn"}>
-      {verified}/{total} {label}
-    </MetricChip>
-  );
-}
-
 function AnswerMetrics({ meta }) {
   const elapsed = meta?.timings?.total_ms ?? meta?._client_roundtrip_ms;
+  if (elapsed == null) return null;
   return (
     <div className="answer-metrics">
-      <ValidationBadge validation={meta?.validation} />
-      {elapsed != null && <MetricChip icon={Clock3}>{formatMs(elapsed)}</MetricChip>}
+      <MetricChip icon={Clock3}>{formatMs(elapsed)}</MetricChip>
     </div>
   );
 }
@@ -528,6 +522,7 @@ function NumericCitation({ citation, children, onOpenSource }) {
         ref={buttonRef}
         type="button"
         className={`numeric-citation ${pinned ? "is-pinned" : ""}`}
+        data-citation-value={citation.value}
         aria-describedby={visible ? tooltipId : undefined}
         aria-expanded={pinned}
         aria-label={`Ver fonte do valor ${citation.value}`}
@@ -671,7 +666,7 @@ function NumericCitation({ citation, children, onOpenSource }) {
   );
 }
 
-function Message({ message, onInspect }) {
+function Message({ message, onInspect, onExport, onOpenDrawer }) {
   const isUser = message.role === "user";
   const numericCitations = (message.meta?.numeric_citations || [])
     .filter((citation) => !isCalendarYearCitation(citation?.value));
@@ -718,11 +713,19 @@ function Message({ message, onInspect }) {
           <>
             <AnswerMetrics meta={message.meta} />
             <div className="answer-actions">
-              <button onClick={() => navigator.clipboard.writeText(message.content)}>
+              <button type="button" onClick={() => navigator.clipboard.writeText(message.content)}>
                 <Copy size={14} /> Copiar
               </button>
-              <button onClick={() => onInspect(message.meta)}>
+              <button type="button" onClick={() => onInspect(message.meta)}>
                 <PanelRightOpen size={14} /> Ver evidências
+              </button>
+              {message.meta.sources && message.meta.sources.length > 0 && (
+                <button type="button" onClick={() => onOpenDrawer?.(message.meta)}>
+                  <Database size={14} /> Fontes ({message.meta.sources.length})
+                </button>
+              )}
+              <button type="button" onClick={() => onExport?.(message)}>
+                <Download size={14} /> Exportar
               </button>
             </div>
           </>
@@ -738,6 +741,7 @@ function LoadingMessage() {
       <div className="message-avatar"><BrandMark /></div>
       <div className="message-content">
         <div className="message-heading"><strong>Nadia</strong><span>Analisando</span></div>
+        <ProgressStepper active={true} />
         <div className="thinking-card">
           <span className="thinking-mark"><Search size={17} /></span>
           <div>
@@ -999,7 +1003,6 @@ function SettingsDialog({ open, onClose, endpoints, setEndpoints, apiKey, setApi
     </div>
   );
 }
-
 export default function App() {
   const [messages, setMessages] = useState(storedMessages);
   const [conversations, setConversations] = useState(storedConversations);
@@ -1024,10 +1027,47 @@ export default function App() {
   const [inspectorTab, setInspectorTab] = useState("sources");
   const [selectedMeta, setSelectedMeta] = useState(null);
   const [sourceRequest, setSourceRequest] = useState(null);
+  const [exportModalState, setExportModalState] = useState(null);
+  const [sourcesDrawerState, setSourcesDrawerState] = useState(null);
   const activeController = useRef(null);
   const messageScroll = useRef(null);
   const endpoints = useMemo(() => apiUrls(endpointOverrides), [endpointOverrides]);
   const activeUrl = endpoints[ACTIVE_RAG_TYPE];
+
+  function handleExport(message) {
+    const messageIndex = messages.indexOf(message);
+    const userMsg = messages.slice(0, messageIndex).reverse().find((m) => m.role === "user");
+    setExportModalState({
+      isOpen: true,
+      question: userMsg?.content || "Consulta Documental",
+      answer: message.content,
+      sources: message.meta?.sources || [],
+      numericCitations: message.meta?.numeric_citations || [],
+    });
+  }
+
+  function handleOpenDrawer(meta) {
+    setSourcesDrawerState({
+      isOpen: true,
+      sources: meta?.sources || [],
+      numericCitations: meta?.numeric_citations || [],
+    });
+  }
+
+  function handleJumpToCitation(citation) {
+    setSourcesDrawerState(null);
+    setInspectorOpen(false);
+    setTimeout(() => {
+      const el =
+        document.querySelector(`[data-citation-value="${citation.value}"]`) ||
+        document.querySelector(`[aria-label="Ver fonte do valor ${citation.value}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("citation-target-highlight");
+        setTimeout(() => el.classList.remove("citation-target-highlight"), 2400);
+      }
+    }, 120);
+  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1224,7 +1264,6 @@ export default function App() {
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="Alternar tema">
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-
           </div>
         </header>
 
@@ -1240,7 +1279,15 @@ export default function App() {
                   suggestions={featuredQuestions}
                 />
               ) : (
-                messages.map((message) => <Message key={message.id} message={message} onInspect={inspect} />)
+                messages.map((message) => (
+                  <Message
+                    key={message.id}
+                    message={message}
+                    onInspect={inspect}
+                    onExport={handleExport}
+                    onOpenDrawer={handleOpenDrawer}
+                  />
+                ))
               )}
               {loading && <LoadingMessage />}
             </div>
@@ -1252,6 +1299,23 @@ export default function App() {
       </main>
 
       <Inspector open={inspectorOpen} onClose={() => setInspectorOpen(false)} meta={selectedMeta} tab={inspectorTab} setTab={setInspectorTab} developerMode={developerMode} sourceRequest={sourceRequest} />
+
+      <SourcesDrawer
+        isOpen={Boolean(sourcesDrawerState?.isOpen)}
+        onClose={() => setSourcesDrawerState(null)}
+        sources={sourcesDrawerState?.sources || []}
+        numericCitations={sourcesDrawerState?.numericCitations || []}
+        onJumpToCitation={handleJumpToCitation}
+      />
+
+      <ExportModal
+        isOpen={Boolean(exportModalState?.isOpen)}
+        onClose={() => setExportModalState(null)}
+        question={exportModalState?.question || ""}
+        answer={exportModalState?.answer || ""}
+        sources={exportModalState?.sources || []}
+        numericCitations={exportModalState?.numericCitations || []}
+      />
 
       <SettingsDialog
         key={`${ACTIVE_RAG_TYPE}-${endpoints[ACTIVE_RAG_TYPE]}-${settingsOpen}`}

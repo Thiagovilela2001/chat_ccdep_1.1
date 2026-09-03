@@ -9,7 +9,7 @@ import re
 
 from .logger import get_logger
 from .runtime import limit_context
-from .text_retriever import rerank_candidate_limit, structured_top_n
+from .text_retriever import deduplicate_nodes, rerank_candidate_limit, structured_top_n
 from .structured_output import (
     StructuredOutputError,
     parse_json_object,
@@ -46,6 +46,9 @@ Regras:
 - Use apenas strings, números, booleanos ou null nas células.
 - Não inclua código, comentários ou campos adicionais.
 - Use nomes de colunas em português quando possível.
+- Para perguntas amplas, regionais ou comparativas, extraia todas as regiões e
+  todos os períodos disponíveis nos trechos. Não pare na primeira linha ou no
+  primeiro período e não resuma os registros antes do cálculo.
 
 Trechos:
 {context}
@@ -60,6 +63,8 @@ Regras:
 - Não inclua código ou explicações fora do campo `resultado`.
 - Formate números com separador de milhar e 2 casas decimais quando aplicável.
 - Se a pergunta exigir uma conta, apresente a operação no texto final.
+- Cubra do primeiro ao último período disponível e identifique os resultados
+  regionais relevantes em cada período, sem substituir nomes por uma contagem total.
 
 Pergunta: {question}
 
@@ -83,7 +88,7 @@ class TablesRetriever:
     """
     Recupera chunks de tabelas estáticas e extrai dados estruturados via pandas.
 
-    Fluxo: pool tabular top-K → filtra tabelas estáticas → rerank → extração estruturada
+    Fluxo: pool tabular top-K → filtra tabelas estáticas → deduplica → rerank → extração estruturada
     Retorna (structured_data: str, nodes: list) ou None se sem tabelas relevantes.
     """
 
@@ -95,7 +100,7 @@ class TablesRetriever:
     def retrieve(self, question: str) -> tuple[str, list] | None:
         nodes = self._retriever.retrieve(question)
 
-        table_nodes = [n for n in nodes if _is_static_table(n)]
+        table_nodes = deduplicate_nodes([n for n in nodes if _is_static_table(n)])
         if not table_nodes:
             return None
 
@@ -133,7 +138,7 @@ class TablesRetriever:
             return "[Sem dados estruturados extraídos da tabela]"
 
         if df is not None:
-            data_preview = df.to_string(max_rows=20)
+            data_preview = df.to_string(max_rows=200)
         elif data is not None:
             data_preview = str(data)
         else:

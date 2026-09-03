@@ -22,7 +22,7 @@ def test_resumo_nao_exige_citacoes_inline():
     assert "citation_coverage" not in quality
 
 
-def test_nova_mensagem_de_evidencia_insuficiente_e_recusa():
+def test_nova_mensagem_de_limite_de_evidencia_e_recusa():
     assert is_refusal(
-        "Os documentos disponíveis não fornecem evidência suficiente para responder."
+        "Não é possível determinar com segurança o resultado solicitado."
     )

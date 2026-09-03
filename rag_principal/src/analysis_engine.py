@@ -14,6 +14,7 @@ from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.logger import get_logger
 from rag_core.runtime import limit_context, request_timeout_seconds
 from rag_core.provenance import format_source_context, source_labels
+from rag_core.text_retriever import deduplicate_nodes
 
 log = get_logger(__name__)
 
@@ -92,18 +93,20 @@ def _build_context_block(
     if not ts_data and ts_nodes:
         # Timeseries não produziu dados estruturados — usa conteúdo bruto como narrativa
         narrative_parts.extend(format_source_context(n) for n in ts_nodes)
-    if narrative_parts:
-        sections.append(
-            "[Contexto Narrativo dos Documentos]\n" + "\n\n---\n\n".join(narrative_parts)
-        )
+    # Dados temporais e tabulares vêm primeiro para não serem truncados depois
+    # de um bloco narrativo extenso. A síntese ainda usa a narrativa para contexto.
+    if ts_data:
+        labels = source_labels(ts_nodes or [])
+        sections.append(f"[Dados de Séries Temporais]\n{labels}\n{ts_data}")
 
     if tables_data:
         labels = source_labels(tables_nodes or [])
         sections.append(f"[Dados Estruturados de Tabelas]\n{labels}\n{tables_data}")
 
-    if ts_data:
-        labels = source_labels(ts_nodes or [])
-        sections.append(f"[Dados de Séries Temporais]\n{labels}\n{ts_data}")
+    if narrative_parts:
+        sections.append(
+            "[Contexto Narrativo dos Documentos]\n" + "\n\n---\n\n".join(narrative_parts)
+        )
 
     return "\n\n" + "\n\n".join(sections) if sections else ""
 
@@ -199,7 +202,9 @@ class AnalysisEngine:
             except Exception as exc:
                 log.warning("GraphRetriever falhou; continuando sem grafo: %s", exc)
 
-        all_source_nodes = text_nodes + tables_nodes + ts_nodes + graph_nodes
+        all_source_nodes = deduplicate_nodes(
+            text_nodes + tables_nodes + ts_nodes + graph_nodes
+        )
 
         # Síntese: único LLM call com contexto unificado
         context_block = limit_context(

@@ -80,11 +80,29 @@ def _validate_data_mapping(data: Any) -> dict[str, Any]:
 
 def tabular_payload(payload: dict[str, Any]) -> tuple[pd.DataFrame | None, dict | None]:
     """Converte JSON validado em DataFrame ou dicionário simples."""
-    if "rows" not in payload:
-        return None, _validate_data_mapping(payload.get("data"))
+    # Normaliza variações frequentes de chaves geradas por LLMs em português
+    normalized_payload = dict(payload)
+    if "rows" not in normalized_payload:
+        for alias in ("linhas", "registros", "series"):
+            if alias in normalized_payload:
+                normalized_payload["rows"] = normalized_payload.pop(alias)
+                break
+    if "columns" not in normalized_payload:
+        for alias in ("colunas", "cabecalho", "headers"):
+            if alias in normalized_payload:
+                normalized_payload["columns"] = normalized_payload.pop(alias)
+                break
+    if "data" not in normalized_payload:
+        for alias in ("dados", "valores"):
+            if alias in normalized_payload:
+                normalized_payload["data"] = normalized_payload.pop(alias)
+                break
 
-    rows = payload.get("rows")
-    columns = payload.get("columns")
+    if "rows" not in normalized_payload:
+        return None, _validate_data_mapping(normalized_payload.get("data"))
+
+    rows = normalized_payload.get("rows")
+    columns = normalized_payload.get("columns")
     if not isinstance(rows, list) or not rows:
         raise StructuredOutputError("O campo 'rows' deve ser uma lista não vazia.")
     if len(rows) > MAX_ROWS:

@@ -3,7 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from rag_core.domain_skills import DomainSkillRegistry, build_domain_prompt_block
-from rag_principal.src.analysis_engine import AnalysisEngine
+from rag_principal.src.analysis_engine import AnalysisEngine, _build_context_block
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -61,6 +61,19 @@ def test_registry_combines_investment_with_sector_question(monkeypatch):
 
     assert [skill.domain for skill in matches] == [
         "investment_trade",
+        "sectoral_regional",
+    ]
+
+
+def test_registry_combina_conjuntura_e_regioes_em_dinamismo_economico(monkeypatch):
+    registry = _registry(monkeypatch)
+
+    matches = registry.match(
+        "Quais regiões paulistas apresentaram maior dinamismo econômico?"
+    )
+
+    assert [skill.domain for skill in matches] == [
+        "economic_conjuncture",
         "sectoral_regional",
     ]
 
@@ -176,3 +189,25 @@ def test_analysis_engine_injects_registry_context():
 
     assert answer == "Resposta."
     assert "[DOMÍNIO ECONÔMICO]" in llm.prompt
+
+
+def test_contexto_prioriza_series_e_tabelas_antes_da_narrativa():
+    node = SimpleNamespace(
+        metadata={"source_file": "fonte.pdf", "page": 1},
+        get_content=lambda: "Narrativa extensa.",
+    )
+
+    block = _build_context_block(
+        [node],
+        "Tabela regional completa",
+        [node],
+        "Série temporal completa",
+        [node],
+    )
+
+    assert block.index("[Dados de Séries Temporais]") < block.index(
+        "[Dados Estruturados de Tabelas]"
+    )
+    assert block.index("[Dados Estruturados de Tabelas]") < block.index(
+        "[Contexto Narrativo dos Documentos]"
+    )

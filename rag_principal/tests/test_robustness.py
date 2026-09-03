@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from rag_principal.src.analysis_engine import AnalysisEngine
 from rag_agentic.src.agent_engine import _critic_rounds, _max_iterations, _max_tool_calls
 from rag_selfrag.src.self_rag_engine import _max_retries
+from rag_core.answer_policy import REFUSAL_TEXT
 from rag_core.query_service import execute_engine_query
 
 
@@ -94,7 +95,7 @@ def test_servico_compartilhado_preserva_contrato_http(monkeypatch):
     assert diagnostics.chunks == 1
 
 
-def test_servico_compartilhado_bloqueia_resposta_com_numero_nao_verificado(monkeypatch):
+def test_servico_preserva_numeros_validados_e_nao_validados(monkeypatch):
     node = SimpleNamespace(
         metadata={"source_file": "boletim.pdf", "page": 2},
         score=0.9,
@@ -104,8 +105,10 @@ def test_servico_compartilhado_bloqueia_resposta_com_numero_nao_verificado(monke
     class Engine:
         calls = 0
 
-        async def answer(self, **_kwargs):
+        async def answer(self, **kwargs):
             self.calls += 1
+            if "ORIENTAÇÃO OBRIGATÓRIA" in kwargs["question"]:
+                return "A taxa foi 7,9%.", [node]
             return "A taxa foi 7,9%, mas o saldo chegou a 99.", [node]
 
     def interpreter(question, _llm):
@@ -131,15 +134,173 @@ def test_servico_compartilhado_bloqueia_resposta_com_numero_nao_verificado(monke
         rag_label="Test RAG",
     ))
 
-    assert "evidência suficiente" in response.answer
+    assert response.answer == "A taxa foi 7,9%, mas o saldo chegou a 99."
     assert response.validation.verified == 1
     assert response.validation.total == 2
     assert response.validation.unverified == ["99"]
-    assert response.numeric_citations == []
-    assert not popup_called
+    assert [citation.value for citation in response.numeric_citations] == ["7,9%"]
+    assert popup_called
     assert response.sources_used == ["text"]
     assert diagnostics.verified == 1
     assert diagnostics.total == 2
+    assert diagnostics.unverified == ["99"]
+
+
+def test_servico_responde_regioes_qualitativamente_quando_valores_falham(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "trabalho.pdf", "page": 5},
+        score=0.9,
+        get_content=lambda: (
+            "Campinas e Baixada Santista apresentaram maior dinamismo "
+            "no mercado de trabalho."
+        ),
+    )
+
+    class Engine:
+        async def answer(self, **kwargs):
+            if "ORIENTAÇÃO OBRIGATÓRIA" in kwargs["question"]:
+                return (
+                    "Campinas e Baixada Santista apresentaram maior dinamismo "
+                    "no mercado de trabalho.",
+                    [node],
+                )
+            return "Campinas liderou com saldo de 9 mil postos.", [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": True}
+
+    async def popup_explanations(_citations):
+        return {}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        popup_explanations,
+    )
+    response, _ = asyncio.run(execute_engine_query(
+        question="Quais regiões paulistas apresentaram maior dinamismo no mercado de trabalho?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert response.answer == "Campinas liderou com saldo de 9 mil postos."
+    assert response.validation.total == 1
+    assert response.validation.unverified == ["9"]
+
+
+def test_servico_preserva_resultado_qualitativo_mesmo_com_parafrase_lexical(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "trabalho.pdf", "page": 6},
+        score=0.9,
+        get_content=lambda: (
+            "Campinas e Sorocaba aparecem entre as areas com maiores saldos."
+        ),
+    )
+
+    class Engine:
+        async def answer(self, **kwargs):
+            if "ORIENTAÇÃO OBRIGATÓRIA" in kwargs["question"]:
+                return (
+                    "Campinas e Sorocaba se destacaram como polos de expansao.",
+                    [node],
+                )
+            return "Campinas e Sorocaba criaram 99 mil postos.", [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": True}
+
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Quais regioes apresentaram maior dinamismo?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert response.answer == "Campinas e Sorocaba criaram 99 mil postos."
+    assert response.validation.total == 1
+    assert response.validation.unverified == ["99"]
+    assert diagnostics.unsupported_arguments
+
+
+def test_servico_recupera_resultado_sem_numeros_quando_retry_recusa(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "trabalho.pdf", "page": 8},
+        score=0.9,
+        get_content=lambda: (
+            "Campinas e Sorocaba aparecem entre as areas com maiores saldos."
+        ),
+    )
+
+    class Engine:
+        async def answer(self, **kwargs):
+            if "ORIENTAÇÃO OBRIGATÓRIA" in kwargs["question"]:
+                return REFUSAL_TEXT, [node]
+            return (
+                "O saldo informado foi de 99 mil postos. "
+                "Campinas e Sorocaba aparecem entre as areas de maior destaque.",
+                [node],
+            )
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": True}
+
+    response, _ = asyncio.run(execute_engine_query(
+        question="Quais regioes apresentaram maior dinamismo?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert response.answer == (
+        "O saldo informado foi de 99 mil postos. "
+        "Campinas e Sorocaba aparecem entre as areas de maior destaque."
+    )
+    assert response.validation.unverified == ["99"]
+    assert response.answer != REFUSAL_TEXT
+
+
+def test_servico_compartilhado_preserva_resposta_parcial_verificada(monkeypatch):
+    node = SimpleNamespace(
+        metadata={"source_file": "boletim.pdf", "page": 2},
+        score=0.9,
+        get_content=lambda: "A taxa foi 7,9%. O indice foi 12,5%.",
+    )
+
+    class Engine:
+        async def answer(self, **_kwargs):
+            return "A taxa foi 7,9%. O indice foi 12,5%. O saldo chegou a 99.", [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    async def popup_explanations(_citations):
+        return {}
+
+    monkeypatch.setattr(
+        "rag_core.query_service.generate_popup_explanations",
+        popup_explanations,
+    )
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Quais foram os indicadores?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert response.answer == "A taxa foi 7,9%. O indice foi 12,5%. O saldo chegou a 99."
+    assert response.validation.verified == 2
+    assert response.validation.total == 3
+    assert response.validation.unverified == ["99"]
+    assert [citation.value for citation in response.numeric_citations] == ["7,9%", "12,5%"]
+    assert diagnostics.unsupported_arguments == []
 
 
 def test_servico_compartilhado_recupera_numeros_com_busca_ampliada(monkeypatch):
@@ -192,6 +353,41 @@ def test_servico_compartilhado_recupera_numeros_com_busca_ampliada(monkeypatch):
     assert diagnostics.verified == 2
 
 
+def test_servico_compartilhado_recupera_quando_resposta_inicial_recusa():
+    node = SimpleNamespace(
+        metadata={"source_file": "boletim.pdf", "page": 2},
+        score=0.9,
+        get_content=lambda: "A taxa foi 7,9%.",
+    )
+
+    class Engine:
+        calls = 0
+
+        async def answer(self, **kwargs):
+            self.calls += 1
+            if "graph" in kwargs["sources"]:
+                return "A taxa foi 7,9%.", [node]
+            return REFUSAL_TEXT, [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    engine = Engine()
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Qual foi a taxa?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert engine.calls == 2
+    assert response.answer == "A taxa foi 7,9%."
+    assert response.sources_used == ["text", "tables", "timeseries", "graph"]
+    assert diagnostics.verified == 1
+
+
 def test_servico_compartilhado_bloqueia_argumento_textual_sem_suporte():
     node = SimpleNamespace(
         metadata={"source_file": "boletim.pdf", "page": 4},
@@ -223,7 +419,101 @@ def test_servico_compartilhado_bloqueia_argumento_textual_sem_suporte():
         rag_label="Test RAG",
     ))
 
-    assert engine.calls == 2
-    assert "evidência suficiente" in response.answer
+    assert engine.calls == 3
+    assert response.answer == REFUSAL_TEXT
     assert diagnostics.unsupported_arguments
     assert response.numeric_citations == []
+
+
+def test_servico_preserva_parafrase_com_numeros_totalmente_verificados():
+    node = SimpleNamespace(
+        metadata={"source_file": "demografia.pdf", "page": 11},
+        score=0.9,
+        get_content=lambda: (
+            "Em 2015, a razao de dependencia foi de 39,8 pessoas "
+            "para cada 100 individuos."
+        ),
+    )
+
+    class Engine:
+        calls = 0
+
+        async def answer(self, **_kwargs):
+            self.calls += 1
+            return (
+                "A reconfiguracao estrutural culminou em 2015, com 39,8 "
+                "dependentes para cada 100 ativos.",
+                [node],
+            )
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    engine = Engine()
+    response, diagnostics = asyncio.run(execute_engine_query(
+        question="Como evoluiu a razao de dependencia?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert engine.calls == 2
+    assert response.answer == (
+        "A reconfiguracao estrutural culminou em 2015, com 39,8 "
+        "dependentes para cada 100 ativos."
+    )
+    assert response.validation.verified == response.validation.total == 3
+    assert diagnostics.unsupported_arguments
+    assert len(response.numeric_citations) == 3
+
+
+def test_pergunta_regional_ampla_exige_todos_os_periodos_disponiveis():
+    node = SimpleNamespace(
+        metadata={"source_file": "economia_regional.pdf", "page": 3},
+        score=0.9,
+        get_content=lambda: (
+            "No primeiro trimestre, houve avanço em 14 das 20 regiões. "
+            "No segundo trimestre, houve avanço em 16 das 20 regiões."
+        ),
+    )
+
+    class Engine:
+        calls = 0
+        seen_sources = []
+        seen_queries = []
+
+        async def answer(self, **kwargs):
+            self.calls += 1
+            self.seen_sources.append(kwargs["sources"])
+            self.seen_queries.append(kwargs["rewritten_query"])
+            if "resposta anterior ficou incompleta" in kwargs["question"]:
+                return (
+                    "No primeiro trimestre, houve avanço em 14 das 20 regiões. "
+                    "No segundo trimestre, houve avanço em 16 das 20 regiões.",
+                    [node],
+                )
+            return "No primeiro trimestre, houve avanço em 14 das 20 regiões.", [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    engine = Engine()
+    response, _ = asyncio.run(execute_engine_query(
+        question="Quais regiões paulistas apresentaram maior dinamismo econômico?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert engine.calls == 2
+    assert all(sources == ["text", "tables", "timeseries", "graph"] for sources in engine.seen_sources)
+    assert all(
+        "todos os periodos disponiveis" in query for query in engine.seen_queries
+    ), engine.seen_queries
+    assert "primeiro trimestre" in response.answer.lower()
+    assert "segundo trimestre" in response.answer.lower()
+    assert response.validation.verified == response.validation.total == 4

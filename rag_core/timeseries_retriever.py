@@ -10,7 +10,7 @@ import pandas as pd
 
 from .logger import get_logger
 from .runtime import limit_context
-from .text_retriever import rerank_candidate_limit, structured_top_n
+from .text_retriever import deduplicate_nodes, rerank_candidate_limit, structured_top_n
 from .structured_output import (
     StructuredOutputError,
     parse_json_object,
@@ -78,16 +78,17 @@ _EXTRACT_PROMPT = """\
 Você é um extrator de séries temporais. Leia os trechos abaixo e extraia os dados \
 em formato de série temporal para responder à pergunta.
 
-Retorne SOMENTE um objeto JSON válido, sem markdown ou texto adicional.
-Para uma série tabular, use:
+Retorne SOMENTE um objeto JSON válido, sem markdown ou texto adicional, no formato:
 {{"columns": ["Período", "Valor"], "rows": [["2023", 1.2], ["2024", 1.4]]}}
-Para uma série simples, use:
-{{"data": {{"2023": 1.2, "2024": 1.4}}}}
+
 Regras:
 - Use apenas strings, números, booleanos ou null nas células.
 - Ordene os dados cronologicamente quando possível.
 - Use nomes de colunas em português (ex: "Período", "Valor", "Variação").
 - Não inclua código, comentários ou campos adicionais.
+- Extraia a série completa, do primeiro ao último período presente nos
+  trechos, preservando todas as regiões ou indicadores comparados. Não selecione
+  apenas o período mais recente ou a primeira linha.
 
 Trechos:
 {context}
@@ -102,6 +103,8 @@ Regras:
 - Não inclua código ou explicações fora do campo `resultado`.
 - Calcule variações, tendências e estatísticas relevantes para a pergunta.
 - Formate números com separador de milhar e 2 casas decimais.
+- Analise todo o intervalo disponível. Informe os resultados de cada período,
+  destaque mudanças de liderança/direção e conclua sobre o conjunto da série.
 
 Pergunta: {question}
 
@@ -125,7 +128,7 @@ class TimeSeriesRetriever:
     """
     Recupera chunks de séries temporais e extrai dados estruturados via pandas.
 
-    Fluxo: pool tabular top-K → filtra séries temporais → rerank → extração + análise
+    Fluxo: pool tabular top-K → filtra séries temporais → deduplica → rerank → extração + análise
     Retorna (structured_data: str, nodes: list) ou None se sem dados temporais relevantes.
     """
 
@@ -137,7 +140,7 @@ class TimeSeriesRetriever:
     def retrieve(self, question: str) -> tuple[str, list] | None:
         nodes = self._retriever.retrieve(question)
 
-        ts_nodes = [n for n in nodes if _is_temporal_table(n)]
+        ts_nodes = deduplicate_nodes([n for n in nodes if _is_temporal_table(n)])
         if not ts_nodes:
             return None
 
@@ -173,12 +176,13 @@ class TimeSeriesRetriever:
             # DataFrame inválido na extração — narrativa como fallback
             log.warning(
                 "Extracao retornou estrutura invalida — revertendo para narrativa",
-                extra={"event": "ts_extraction_fallback"},
+                extra={"event": "ts_invalid_df_fallback"},
             )
             return None, reranked
+
         return structured, reranked
 
-    def _extract_and_analyze(self, question: str, context: str) -> str:
+    def _extract_and_analyze(self, question: str, context: str) -> str | None:
         # Fase 1: extração estruturada em JSON (nenhum código do LLM é executado)
         extract_resp = self._llm.complete(
             _EXTRACT_PROMPT.format(context=context, question=question)
@@ -186,31 +190,26 @@ class TimeSeriesRetriever:
         try:
             payload = parse_json_object(extract_resp.text)
             df, data = tabular_payload(payload)
+            if df is None and data:
+                df = pd.DataFrame(
+                    list(data.items()),
+                    columns=["Período", "Valor"]
+                )
         except StructuredOutputError as exc:
-            log.warning("Extracao estruturada de serie temporal falhou: %s", exc)
+            log.warning("Extracao estruturada de timeseries falhou: %s", exc)
             return None
 
-        if df is not None:
-            if not _df_is_valid_timeseries(df):
-                log.warning(
-                    "DataFrame extraido sem estrutura de serie temporal valida "
-                    "(colunas: %s, shape: %s) — abortando analise",
-                    list(df.columns), df.shape,
-                    extra={"event": "ts_invalid_df"},
-                )
-                return None  # retrieve() usará fallback narrativo
-            data_preview = df.to_string(max_rows=40)
-        elif data is not None:
-            data_preview = str(data)
-        else:
-            return "[Sem dados de série temporal extraídos]"
+        if not _df_is_valid_timeseries(df):
+            return None
 
-        # Fase 2: análise pelo LLM com saída JSON estrita, sem execução de Python
-        analyze_resp = self._llm.complete(
+        data_preview = df.to_string(max_rows=200)
+
+        # Fase 2: cálculo/análise pelo LLM com saída JSON estrita, sem execução de Python
+        calc_resp = self._llm.complete(
             _ANALYZE_PROMPT.format(question=question, data_preview=data_preview)
         )
         try:
-            return result_text(parse_json_object(analyze_resp.text))
+            return result_text(parse_json_object(calc_resp.text))
         except StructuredOutputError as exc:
-            log.warning("Analise estruturada de serie temporal falhou: %s", exc)
+            log.warning("Analise estruturada de timeseries falhou: %s", exc)
             return data_preview

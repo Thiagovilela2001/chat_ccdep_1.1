@@ -11,6 +11,7 @@ from __future__ import annotations
 REFUSAL_MARKERS = (
     "não consta nos documentos",
     "não fornecem evidência suficiente",
+    "não é possível determinar com segurança",
 )
 
 

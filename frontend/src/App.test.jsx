@@ -116,6 +116,26 @@ describe("inicialização da interface", () => {
     expect(container.textContent).not.toContain("Este e o trecho documental recuperado.");
   });
 
+  it("nao exibe o placar de validacao numerica junto da resposta", async () => {
+    localStorage.setItem("nadia.messages.v1", JSON.stringify([{
+      id: "assistant-validation-hidden",
+      role: "assistant",
+      content: "Resposta com resultados numericos.",
+      createdAt: "2026-08-26T14:00:00.000Z",
+      meta: {
+        validation: { verified: 28, total: 40, unverified: ["9", "11"] },
+        timings: { total_ms: 67800 },
+      },
+    }]));
+
+    await act(async () => root.render(<App />));
+
+    expect(container.textContent).not.toContain("28/40");
+    expect(container.textContent).not.toContain("28 de 40");
+    expect(container.querySelector(".answer-metrics .metric-chip--warn")).toBeNull();
+    expect(container.querySelector(".answer-metrics").textContent).toContain("67.8 s");
+  });
+
   it("torna um dado numérico verificável e fixa sua fonte ao clicar", async () => {
     const content = "O PIB paulista cresceu 12,5%.";
     const start = Array.from(content).indexOf("1");

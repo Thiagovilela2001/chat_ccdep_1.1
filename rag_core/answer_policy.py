@@ -4,8 +4,8 @@ from __future__ import annotations
 import re
 
 REFUSAL_TEXT = (
-    "Os documentos disponíveis não fornecem evidência suficiente para responder "
-    "ao ponto solicitado."
+    "Não é possível determinar com segurança o resultado solicitado. "
+    "As evidências disponíveis não sustentam uma conclusão comparável."
 )
 
 _REFUSAL_RE = re.compile(re.escape(REFUSAL_TEXT), re.IGNORECASE)

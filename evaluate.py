@@ -65,6 +65,7 @@ REFUSAL_KEYWORDS = [
     "não está nos documentos",
     "informação não consta",
     "não fornecem evidência suficiente",
+    "não é possível determinar com segurança",
 ]
 
 _RUN_METADATA: dict = {}

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from rag_core.argument_validator import validate_arguments
 from rag_core.citation_validator import validate_citations
 from rag_core.numerical_validator import validate_numbers
-from rag_core.provenance import format_source_context
+from rag_core.provenance import format_source_context, source_file
 
 
 def _node(text: str, *, file="regional/boletim.pdf", page=3, score=0.9):
@@ -102,6 +102,77 @@ def test_numero_curto_nao_valida_por_substring_em_ano():
     )
 
     assert checks[0].value == "16"
+    assert not checks[0].verified
+
+
+def test_inteiro_de_um_digito_em_valor_e_obrigatoriamente_validado():
+    checks = validate_numbers(
+        "Santos registrou saldo de 9 mil postos.",
+        [_node("Santos passou a integrar o grupo de maior destaque.")],
+    )
+
+    assert len(checks) == 1
+    assert checks[0].value == "9"
+    assert not checks[0].verified
+
+
+def test_inteiro_de_um_digito_e_aceito_quando_consta_na_fonte():
+    checks = validate_numbers(
+        "Santos registrou saldo de 9 mil postos.",
+        [_node("Santos registrou saldo de 9 mil postos.")],
+    )
+
+    assert len(checks) == 1
+    assert checks[0].value == "9"
+    assert checks[0].verified
+
+
+def test_marcadores_estruturais_de_um_digito_nao_viram_dados():
+    checks = validate_numbers(
+        "1. Campinas liderou. Veja a fonte [2], p. 3.",
+        [_node("Campinas liderou.")],
+    )
+
+    assert checks == []
+
+
+def test_valores_repetidos_sao_validados_por_ocorrencia_e_contexto():
+    response = (
+        "Sorocaba registrou 11 mil postos. "
+        "Sao Jose dos Campos registrou 11 mil postos."
+    )
+    checks = validate_numbers(
+        response,
+        [
+            _node("Sorocaba registrou 11 mil postos.", page=4),
+            _node("Sao Jose dos Campos registrou 11 mil postos.", page=7),
+        ],
+    )
+
+    assert len(checks) == 2
+    assert all(check.verified for check in checks)
+    assert [check.source_index for check in checks] == [0, 1]
+    assert checks[0].response_start != checks[1].response_start
+
+
+def test_valor_repetido_nao_empresta_validacao_a_outro_contexto():
+    checks = validate_numbers(
+        "Sorocaba registrou 11 mil postos. Campinas registrou 11 mil postos.",
+        [_node("Sorocaba registrou 11 mil postos.")],
+    )
+
+    assert len(checks) == 2
+    assert checks[0].verified
+    assert not checks[1].verified
+
+
+def test_mesmo_numero_com_unidade_diferente_nao_valida():
+    checks = validate_numbers(
+        "O saldo foi de 11 mil postos.",
+        [_node("A taxa foi de 11%.")],
+    )
+
+    assert len(checks) == 1
     assert not checks[0].verified
 
 

@@ -12,6 +12,8 @@ def source_file(node) -> str:
         or metadata.get("file_name")
         or "?"
     )
+    if isinstance(value, (list, tuple)):
+        value = value[0] if value else "?"
     return str(value)
 
 
