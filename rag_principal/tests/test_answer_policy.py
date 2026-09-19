@@ -122,3 +122,59 @@ def test_variantes_de_pedido_explicito_de_fontes():
     assert asks_for_sources("Qual documento afirma isso?")
     assert asks_for_sources("De onde veio essa informação?")
     assert asks_for_sources("Mostre as referências.")
+
+
+def test_colapsa_folga_no_separador_de_milhar():
+    assert sanitize_answer(
+        "O rendimento médio foi de R$ 4. 038.", question="Qual o rendimento?"
+    ) == "O rendimento médio foi de R$ 4.038."
+    assert sanitize_answer(
+        "O rendimento médio foi de R$ 4 . 038.", question="Qual o rendimento?"
+    ) == "O rendimento médio foi de R$ 4.038."
+    assert sanitize_answer(
+        "A população era de 44. 400. 000 habitantes.", question="Qual a população?"
+    ) == "A população era de 44.400.000 habitantes."
+    assert sanitize_answer(
+        "O grupo de 90 a 99 anos saltou de 83. 421 para 170. 679 pessoas.",
+        question="Como evoluiu o grupo?",
+    ) == "O grupo de 90 a 99 anos saltou de 83.421 para 170.679 pessoas."
+
+
+def test_preserva_fim_de_frase_e_decimal_com_virgula():
+    answer = "O PIB cresceu 1,5% em 2024. Em 2025, subiu 0,6%."
+    assert sanitize_answer(answer, question="Como evoluiu o PIB?") == answer
+    answer = "O déficit foi de US$ 12,41 bilhões."
+    assert sanitize_answer(answer, question="Qual o saldo?") == answer
+
+
+def test_colapsa_ponto_percentual_espacado():
+    assert sanitize_answer(
+        "A taxa recuou 2,6 p. p. no trimestre.", question="Como evoluiu a taxa?"
+    ) == "A taxa recuou 2,6 p.p. no trimestre."
+
+
+def test_remove_conectivo_orfao_apos_frase_interna_removida():
+    answer = (
+        "Os trechos recuperados não informam a taxa mais recente. "
+        "Ainda assim, os documentos permitem traçar o quadro anterior."
+    )
+    assert sanitize_answer(answer, question="Qual a taxa?") == (
+        "Os documentos permitem traçar o quadro anterior."
+    )
+    answer = (
+        "Os documentos recuperados mostram deterioração. "
+        "Em contrapartida, o saldo comercial caiu."
+    )
+    assert sanitize_answer(answer, question="Qual o saldo?") == (
+        "O saldo comercial caiu."
+    )
+
+
+def test_conectivo_preservado_no_meio_da_resposta():
+    answer = "O PIB caiu. Ainda assim, o emprego subiu."
+    assert sanitize_answer(answer, question="Como evoluiu a economia?") == answer
+
+
+def test_conectivo_legitimo_no_inicio_nao_e_removido():
+    answer = "Assim, o nível de atividade avançou."
+    assert sanitize_answer(answer, question="Como evoluiu a atividade?") == answer

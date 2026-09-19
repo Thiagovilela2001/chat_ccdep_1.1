@@ -101,6 +101,19 @@ _SOURCE_SENTENCE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# O modelo escreve separador de milhar com folga ("R$ 4. 038"), o que faz o
+# validador numérico ler "4" e "038" como dois números e acusar falso negativo.
+_NUMBER_GAP_RE = re.compile(r"(?<=\d)\.\s+(?=\d{3}(?!\d))")
+_PERCENT_POINT_GAP_RE = re.compile(r"(?<![A-Za-zÀ-ÿ])p\.\s+p\.", re.IGNORECASE)
+
+# Conectivo adversativo não abre texto: quando a primeira frase é removida por
+# expor mecanismo interno, sobra um conectivo órfão no início da resposta.
+_ORPHAN_CONNECTIVE_RE = re.compile(
+    r"^\s*(?:ainda assim|em contrapartida|em compensa[cç][aã]o|no entanto|por[ée]m|"
+    r"contudo|entretanto|todavia|n[aã]o obstante|por outro lado)\s*[,:]\s*",
+    re.IGNORECASE,
+)
+
 
 def asks_for_sources(question: str) -> bool:
     """Detecta pedido explícito por fonte, referência ou documento de origem."""
@@ -168,9 +181,13 @@ def sanitize_answer(answer: str, *, question: str = "") -> str:
 
     cleaned = re.sub(r"\(\s*[,;:-]?\s*\)", "", cleaned)
     cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
+    cleaned = _NUMBER_GAP_RE.sub(".", cleaned)
+    cleaned = _PERCENT_POINT_GAP_RE.sub("p.p.", cleaned)
     cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
     cleaned = re.sub(r"\n[ \t]+", "\n", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = cleaned.lstrip(" \t\n")
+    cleaned = _ORPHAN_CONNECTIVE_RE.sub("", cleaned)
     cleaned = cleaned.strip(" \t\n,;:-")
     if cleaned:
         cleaned = cleaned[0].upper() + cleaned[1:]
