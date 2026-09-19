@@ -1,13 +1,20 @@
+import pytest
+from llama_index.core.llms.mock import MockLLM
 from llama_index.core.schema import NodeWithScore, TextNode
 
 from rag_core.text_retriever import (
+    _diagnosing_parser,
     _diversify_by_document,
     _nodes_by_type,
+    _RerankDiagnosis,
+    build_llm_reranker,
     deduplicate_nodes,
     llm_reranking_enabled,
     query_fusion_queries,
+    rerank_top_n,
     retrieval_top_k,
     ScoreReranker,
+    TolerantLLMReranker,
     complete_coverage_chunks_per_document,
 )
 
@@ -80,4 +87,124 @@ def test_deduplicate_nodes_removes_duplicate_ids_and_texts():
     deduped = deduplicate_nodes([n1, n2, n3, n4])
     assert len(deduped) == 2
     assert [n.node.id_ for n in deduped] == ["id1", "id3"]
+
+
+class _ScriptedReranker:
+    """Reranker de teste que registra a janela recebida e devolve o roteiro."""
+
+    def __init__(self, script):
+        self.script = script
+        self.windows: list[int] = []
+
+    def postprocess_nodes(self, nodes, query_str=None):
+        self.windows.append(len(nodes))
+        return self.script(nodes)
+
+
+def _scored(count):
+    return [
+        NodeWithScore(node=TextNode(text=f"Trecho {index}"), score=float(count - index))
+        for index in range(count)
+    ]
+
+
+def test_lote_recusado_volta_na_ordem_hibrida():
+    nodes = _scored(40)
+    aceitos = [nodes[2], nodes[5]]
+    primary = _ScriptedReranker(
+        lambda batch: aceitos if len(batch) > 10 else []
+    )
+
+    result = TolerantLLMReranker(primary, top_n=24).postprocess_nodes(nodes)
+
+    assert result[:2] == aceitos
+    assert [node.node.text for node in result[2:]] == [
+        node.node.text for node in nodes if node not in aceitos
+    ]
+    assert len(result) == 40
+
+
+def test_aceitos_sao_ordenados_por_nota_e_cortados_em_top_n():
+    nodes = _scored(12)
+    primary = _ScriptedReranker(lambda batch: [nodes[7], nodes[3]])
+
+    result = TolerantLLMReranker(primary, top_n=1).postprocess_nodes(nodes)
+
+    # _scored dá nota maior ao índice menor: nodes[3] tem score 9, nodes[7] tem 5
+    assert result[0] is nodes[3]
+    assert len(result) == 12
+
+
+def test_repeticao_em_janela_menor_quando_nenhum_lote_tem_veredito():
+    nodes = _scored(40)
+    aceitos = [nodes[1]]
+    primary = _ScriptedReranker(lambda batch: [])
+    retry = _ScriptedReranker(lambda batch: aceitos)
+
+    result = TolerantLLMReranker(primary, retry, top_n=24).postprocess_nodes(nodes)
+
+    assert result[0] is aceitos[0]
+    assert primary.windows == [30, 10]
+    # a repetição reexamina os 20 primeiros em dois lotes de 10
+    assert retry.windows == [10, 10]
+
+
+def test_sem_repeticao_quando_nao_ha_janela_menor():
+    nodes = _scored(18)
+    primary = _ScriptedReranker(lambda batch: [])
+    retry = _ScriptedReranker(lambda batch: [nodes[0]])
+
+    result = TolerantLLMReranker(primary, retry, top_n=24).postprocess_nodes(nodes)
+
+    assert result == nodes
+    assert retry.windows == []
+
+
+def test_falha_em_um_lote_nao_derruba_os_outros():
+    nodes = _scored(40)
+
+    def script(batch):
+        if len(batch) > 10:
+            raise TimeoutError("LLM nao respondeu")
+        return [nodes[35]]
+
+    result = TolerantLLMReranker(_ScriptedReranker(script), top_n=24).postprocess_nodes(nodes)
+
+    assert result[0] is nodes[35]
+    assert len(result) == 40
+
+
+def test_sem_veredito_algum_preserva_todos_os_candidatos():
+    nodes = _scored(40)
+    primary = _ScriptedReranker(lambda batch: [])
+
+    result = TolerantLLMReranker(primary, primary, top_n=24).postprocess_nodes(nodes)
+
+    assert result == nodes
+
+
+def test_parser_registra_resposta_sem_escolhas():
+    diagnosis = _RerankDiagnosis()
+    parse = _diagnosing_parser(diagnosis)
+
+    choices, _ = parse("Doc: 4, Relevance: 8\n\nApenas o Documento 4 trata do tema.", 40)
+    assert choices == [4]
+
+    prosa = (
+        "None of the provided documents are relevant to answering the question. "
+        "Relevance: 0 for all documents."
+    )
+    choices, relevances = parse(prosa, 40)
+    assert choices == [] and relevances == []
+    assert diagnosis.raw == prosa
+
+
+def test_factory_configura_lote_maior_e_repeticao_menor():
+    reranker = build_llm_reranker(MockLLM(), batch_size=30)
+
+    assert isinstance(reranker, TolerantLLMReranker)
+    assert reranker._batch_size == 30
+    assert reranker._top_n == rerank_top_n()
+    assert reranker._batch_reranker.choice_batch_size == 30
+    assert reranker._retry_reranker.choice_batch_size == 10
 

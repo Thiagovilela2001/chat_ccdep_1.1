@@ -7,7 +7,6 @@ AgenticEngine em vez de AnalysisEngine.
 import os
 
 from llama_index.core import Settings
-from llama_index.core.postprocessor import LLMRerank
 
 from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
@@ -18,7 +17,7 @@ from rag_core.index_manifest import (
 )
 from rag_core.index_sync import sync_standard_index
 from rag_core.indexing import load_nodes_cache
-from rag_core.text_retriever import build_hybrid_retriever, rerank_top_n, TextRetriever
+from rag_core.text_retriever import build_hybrid_retriever, build_llm_reranker, TextRetriever
 from rag_core.tables_retriever import TablesRetriever
 from rag_core.timeseries_retriever import TimeSeriesRetriever
 from .agent_engine import AgenticEngine
@@ -62,7 +61,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
     table_retriever = build_hybrid_retriever(
         index, bm25_nodes, node_type="table", llm=interp_llm
     )
-    reranker = LLMRerank(top_n=rerank_top_n(), choice_batch_size=30, llm=interp_llm)
+    reranker = build_llm_reranker(interp_llm)
 
     text_ret   = TextRetriever(text_retriever, reranker)
     tables_ret = TablesRetriever(table_retriever, reranker, llm)

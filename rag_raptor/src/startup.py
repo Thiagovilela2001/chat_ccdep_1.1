@@ -17,7 +17,6 @@ import os
 
 import chromadb
 from llama_index.core import Settings
-from llama_index.core.postprocessor import LLMRerank
 from rag_core.index_manifest import (
     data_snapshot,
     detect_changes,
@@ -40,7 +39,7 @@ from rag_core.processing import process_documents
 from .raptor_engine import RaptorEngine
 from .raptor_indexing import build_raptor_tree
 from rag_core.tables_retriever import TablesRetriever
-from rag_core.text_retriever import TextRetriever, build_hybrid_retriever, rerank_top_n
+from rag_core.text_retriever import TextRetriever, build_hybrid_retriever, build_llm_reranker
 from rag_core.timeseries_retriever import TimeSeriesRetriever
 
 log = get_logger(__name__)
@@ -154,7 +153,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     table_retriever = build_hybrid_retriever(
         index, all_nodes, node_type="table", llm=interp_llm
     )
-    reranker = LLMRerank(top_n=rerank_top_n(), choice_batch_size=30, llm=interp_llm)
+    reranker = build_llm_reranker(interp_llm)
 
     text_ret   = TextRetriever(text_retriever, reranker)
     tables_ret = TablesRetriever(table_retriever, reranker, llm)

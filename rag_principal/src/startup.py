@@ -7,7 +7,6 @@ Centraliza: detecção de mudanças, indexação, criação de LLMs e retrievers
 import os
 
 from llama_index.core import Settings
-from llama_index.core.postprocessor import LLMRerank
 
 from rag_core.llm import make_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
@@ -17,6 +16,7 @@ from rag_core.index_sync import sync_standard_index
 from rag_core.indexing import load_nodes_cache
 from rag_core.text_retriever import (
     build_hybrid_retriever,
+    build_llm_reranker,
     llm_reranking_enabled,
     rerank_top_n,
     ScoreReranker,
@@ -101,7 +101,7 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     if llm_reranking_enabled():
         # Em provedores com janela/latência adequadas, o LLM refina os
         # candidatos híbridos em lotes controlados.
-        reranker = LLMRerank(top_n=rerank_top_n(), choice_batch_size=30, llm=interp_llm)
+        reranker = build_llm_reranker(interp_llm)
     else:
         # Ollama local: preserva o score híbrido e evita prompts maiores que a
         # janela ativa do modelo, além de eliminar uma chamada lenta por busca.
