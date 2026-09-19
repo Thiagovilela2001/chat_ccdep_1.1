@@ -28,6 +28,7 @@ from rag_core.api_security import (
 )
 from rag_core.api_models import QueryRequest
 from rag_core.conversation_memory import conversation_memory
+from rag_core.provider_errors import provider_http_error
 from rag_core.runtime import request_timeout_seconds
 from rag_core.metrics import MetricsMiddleware, render_prometheus
 from .orchestrator import Orchestrator
@@ -104,6 +105,12 @@ async def query(
         )
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc
+    except Exception as exc:
+        provider_error = provider_http_error(exc)
+        if provider_error is None:
+            raise
+        status, detail = provider_error
+        raise HTTPException(status_code=status, detail=detail) from exc
     if result.get("error"):
         raise HTTPException(
             status_code=502,
@@ -141,3 +148,9 @@ async def route_only(
         return result
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc
+    except Exception as exc:
+        provider_error = provider_http_error(exc)
+        if provider_error is None:
+            raise
+        status, detail = provider_error
+        raise HTTPException(status_code=status, detail=detail) from exc

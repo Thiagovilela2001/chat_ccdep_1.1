@@ -30,6 +30,7 @@ from rag_core.api_security import (
 )
 from rag_core.logger import get_logger, setup_logging
 from rag_core.api_models import QueryRequest, QueryResponse
+from rag_core.provider_errors import provider_http_error
 from rag_core.query_service import execute_engine_query
 from rag_core.metrics import MetricsMiddleware, render_prometheus
 from .query_interpreter import interpret_query
@@ -181,6 +182,14 @@ async def query(
         log.warning("Timeout global ao processar requisicao", extra={"question": question[:120]})
         raise HTTPException(status_code=504, detail="Tempo limite da requisição excedido.") from exc
     except Exception as exc:
+        provider_error = provider_http_error(exc)
+        if provider_error is not None:
+            status, detail = provider_error
+            log.warning(
+                "Provedor de LLM indisponivel",
+                extra={"question": question[:120], "provider_error": type(exc).__name__},
+            )
+            raise HTTPException(status_code=status, detail=detail) from exc
         latency_ms = round((time.monotonic() - t0) * 1000)
         log.error(
             "Erro ao processar requisicao",
