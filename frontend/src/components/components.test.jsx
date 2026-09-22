@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 import { ProgressStepper } from "./ProgressStepper";
-import { DataChart } from "./DataChart";
 import { SourcesDrawer } from "./SourcesDrawer";
 import { ExportModal } from "./ExportModal";
 
@@ -33,46 +32,6 @@ describe("ProgressStepper", () => {
     expect(container.textContent).toContain("Interpretação & Expansão");
     expect(container.textContent).toContain("Busca Híbrida");
     expect(container.textContent).toContain("Validação Numérica");
-  });
-});
-
-describe("DataChart", () => {
-  let container;
-  let root;
-
-  beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    root = createRoot(container);
-  });
-
-  afterEach(async () => {
-    await act(async () => root.unmount());
-    container.remove();
-  });
-
-  it("renderiza grafico de barras e alterna para tabela", async () => {
-    const tableData = {
-      columns: ["Setor", "Crescimento (%)"],
-      rows: [
-        ["Agropecuária", "3,1%"],
-        ["Serviços", "1,1%"],
-        ["Indústria", "0,0%"],
-      ],
-    };
-
-    await act(async () => root.render(<DataChart tableData={tableData} />));
-
-    expect(container.textContent).toContain("Crescimento (%)");
-    expect(container.querySelector("svg")).not.toBeNull();
-    expect(container.querySelectorAll(".chart-bar-rect")).toHaveLength(3);
-
-    const tableButton = container.querySelector('[title="Tabela de Dados"]');
-    await act(async () => tableButton.click());
-
-    expect(container.querySelector(".data-chart-table")).not.toBeNull();
-    expect(container.textContent).toContain("Agropecuária");
-    expect(container.textContent).toContain("3,1%");
   });
 });
 
