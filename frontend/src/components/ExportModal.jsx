@@ -8,7 +8,6 @@ export function ExportModal({
   answer = "",
   sources = [],
   numericCitations = [],
-  conversationHistory = [],
 }) {
   const [copied, setCopied] = useState(false);
 

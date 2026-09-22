@@ -6,7 +6,6 @@ export function SourcesDrawer({
   onClose,
   sources = [],
   numericCitations = [],
-  highlightValues = [],
   onJumpToCitation,
 }) {
   const [searchQuery, setSearchQuery] = useState("");

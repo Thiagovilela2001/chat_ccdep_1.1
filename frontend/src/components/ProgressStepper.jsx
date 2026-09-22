@@ -10,12 +10,19 @@ const STEPS = [
 
 export function ProgressStepper({ active = true }) {
   const [seconds, setSeconds] = useState(0);
+  const [wasActive, setWasActive] = useState(active);
 
-  useEffect(() => {
+  // Ajuste de estado por mudança de prop, feito durante a renderização:
+  // dentro de um efeito isso dispararia um render em cascata.
+  if (wasActive !== active) {
+    setWasActive(active);
     if (!active) {
       setSeconds(0);
-      return;
     }
+  }
+
+  useEffect(() => {
+    if (!active) return undefined;
     const timer = setInterval(() => {
       setSeconds((prev) => prev + 1);
     }, 1000);

@@ -56,7 +56,6 @@ import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
 import { rotateFeaturedQuestions } from "./lib/suggestions";
 
 import { ProgressStepper } from "./components/ProgressStepper";
-import { DataChart } from "./components/DataChart";
 import { SourcesDrawer } from "./components/SourcesDrawer";
 import { ExportModal } from "./components/ExportModal";
 
