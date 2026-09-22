@@ -111,18 +111,41 @@ def test_bootstrap_baixa_valida_e_instala_uma_vez(tmp_path, monkeypatch):
     assert (target / index_artifact.INSTALLED_MANIFEST).is_file()
 
 
-def test_bootstrap_nao_sobrescreve_banco_parcial(tmp_path, monkeypatch):
-    target = tmp_path / "chroma_db"
-    target.mkdir()
+def test_bootstrap_instala_banco_parcial_preservando_backup(tmp_path, monkeypatch):
+    """Banco parcial aciona o bootstrap: o diretório anterior vai para backup, não é perdido."""
+    source_db = _fake_db(tmp_path / "origem")
+    archive = tmp_path / "release" / index_artifact.DEFAULT_RELEASE_ASSET
+    monkeypatch.setattr(index_artifact, "_collection_count", lambda *_args: 16_237)
+    monkeypatch.setattr(index_artifact, "_git_commit", lambda: "abc123")
+    # O backup padrão cai em ROOT/chroma_backups_*: redireciona para o tmp_path do teste.
+    monkeypatch.setattr(index_artifact, "ROOT", tmp_path)
+    index_artifact.build_artifact(archive, db_dir=source_db)
+
+    downloads = []
+
+    def fake_download(url, destination, **_kwargs):
+        downloads.append(url)
+        source = Path(str(archive) + ".sha256") if url.endswith(".sha256") else archive
+        shutil.copy2(source, destination)
+
+    monkeypatch.setattr(index_artifact, "_download_file", fake_download)
+
+    target = tmp_path / "destino" / "chroma_db"
+    target.mkdir(parents=True)
     (target / "chroma.sqlite3").write_bytes(b"incompleto")
 
-    def unexpected_download(*_args, **_kwargs):
-        raise AssertionError("banco parcial não deve ser sobrescrito")
+    count, downloaded = index_artifact.ensure_release_index(target=target)
+    second_count, second_downloaded = index_artifact.ensure_release_index(target=target)
 
-    monkeypatch.setattr(index_artifact, "_download_file", unexpected_download)
+    assert count == second_count == 16_237
+    assert downloaded is True
+    assert second_downloaded is False
+    assert len(downloads) == 2
+    assert (target / index_artifact.INSTALLED_MANIFEST).is_file()
 
-    with pytest.raises(index_artifact.ArtifactError, match="Banco incompleto"):
-        index_artifact.ensure_release_index(target=target)
+    backups = sorted(tmp_path.glob("chroma_backups_*/chroma_db"))
+    assert len(backups) == 1
+    assert (backups[0] / "chroma.sqlite3").read_bytes() == b"incompleto"
 
 
 def test_url_da_release_escapa_tag_e_asset():
