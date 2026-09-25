@@ -188,6 +188,35 @@ function BrandMark() {
   );
 }
 
+function ClearHistoryButton({ onClearHistory }) {
+  const [confirming, setConfirming] = useState(false);
+  const timerRef = useRef(null);
+
+  function handleClick() {
+    if (!confirming) {
+      setConfirming(true);
+      timerRef.current = setTimeout(() => setConfirming(false), 3000);
+    } else {
+      clearTimeout(timerRef.current);
+      setConfirming(false);
+      onClearHistory();
+    }
+  }
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return (
+    <button
+      className={`clear-history-btn ${confirming ? "is-confirming" : ""}`}
+      onClick={handleClick}
+      aria-label={confirming ? "Confirmar limpeza do histórico" : "Limpar histórico de conversas"}
+    >
+      <X size={13} />
+      {confirming ? "Confirmar limpeza" : "Limpar histórico"}
+    </button>
+  );
+}
+
 function Sidebar({
   open,
   onClose,
@@ -200,6 +229,7 @@ function Sidebar({
   onNewChat,
   onConversationPick,
   onOpenSettings,
+  onClearHistory,
 }) {
   const history = [...conversations].sort(
     (left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0),
@@ -258,6 +288,9 @@ function Sidebar({
               ))
             )}
           </div>
+          {history.length > 0 && (
+            <ClearHistoryButton onClearHistory={onClearHistory} />
+          )}
         </section>
 
         <div className="sidebar-foot">
@@ -1172,6 +1205,18 @@ export default function App() {
     setSidebarOpen(false);
   }
 
+  function clearHistory() {
+    activeController.current?.abort();
+    setConversations([]);
+    setMessages([]);
+    setSelectedMeta(null);
+    setInspectorOpen(false);
+    setSourceRequest(null);
+    setInput("");
+    setLoading(false);
+    setConversationId(uid());
+  }
+
   async function submitQuestion(value) {
     const question = value.trim();
     if (!question || loading) return;
@@ -1238,6 +1283,7 @@ export default function App() {
         onNewChat={newConversation}
         onConversationPick={openConversation}
         onOpenSettings={() => setSettingsOpen(true)}
+        onClearHistory={clearHistory}
       />
 
       <main className="main-area">

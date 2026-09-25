@@ -172,14 +172,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .new-chat:hover { background: #1559d8; transform: translateY(-1px); box-shadow: 0 7px 18px rgba(0, 36, 110, .24); }
 .sidebar-section { margin-top: 22px; }
 .sidebar-label { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 8px; color: rgba(232, 240, 235, .46); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
-.history-section { min-height: 0; flex: 1; }
-.history-list { display: grid; gap: 3px; max-height: 100%; overflow: auto; scrollbar-width: thin; }
+.history-section { min-height: 0; flex: 1; display: flex; flex-direction: column; }
+.history-list { display: grid; gap: 3px; flex: 1; min-height: 0; max-height: 100%; overflow: auto; scrollbar-width: thin; }
 .history-list button { display: grid; gap: 3px; width: 100%; padding: 8px; color: rgba(235,243,238,.67); text-align: left; cursor: pointer; background: transparent; border: 0; border-radius: 9px; }
 .history-list button:hover { color: white; background: rgba(255,255,255,.05); }
 .history-list button.is-active { color: white; background: rgba(255,255,255,.08); }
 .history-list button span { overflow: hidden; font-size: 11px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .history-list button small { color: rgba(235,243,238,.32); font-size: 9px; }
 .history-empty { padding: 6px 8px; color: rgba(235,243,238,.35); font-size: 10px; line-height: 1.5; }
+.clear-history-btn { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 5px 8px; width: 100%; background: transparent; border: 0; border-radius: 8px; color: rgba(235,243,238,.38); font-size: 10px; cursor: pointer; transition: color .15s, background .15s; }
+.clear-history-btn:hover { color: rgba(235,243,238,.75); background: rgba(255,255,255,.05); }
+.clear-history-btn.is-confirming { color: #df776e; background: rgba(223,119,110,.1); }
+.clear-history-btn.is-confirming:hover { background: rgba(223,119,110,.18); }
 .sidebar-foot { display: grid; gap: 5px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08); }
 .connection-card, .settings-button { width: 100%; color: rgba(235,243,238,.75); cursor: pointer; background: transparent; border: 0; border-radius: 10px; }
 .connection-card { display: grid; grid-template-columns: 10px 1fr 16px; align-items: center; gap: 9px; padding: 8px; text-align: left; }
@@ -577,6 +581,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .history-list button:hover { color: var(--ink); background: var(--surface); }
 .history-list button.is-active { color: var(--brand); background: var(--brand-soft); }
 .history-list button small, .history-empty { color: var(--ink-faint); }
+.clear-history-btn { color: var(--ink-faint); }
+.clear-history-btn:hover { color: var(--ink-soft); background: var(--surface); }
+.clear-history-btn.is-confirming { color: var(--danger, #c0392b); background: color-mix(in srgb, var(--danger, #c0392b) 10%, transparent); }
 .sidebar-foot { border-color: var(--line); }
 .connection-card, .settings-button { color: var(--ink-soft); }
 .connection-card:hover, .settings-button:hover { color: var(--ink); background: var(--surface); }
