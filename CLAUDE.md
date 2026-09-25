@@ -1,5 +1,8 @@
 # RAG Estatístico SP — Instruções para Claude Code
 
+> Diretrizes de comportamento, escada Ponytail e roteamento de agentes: ver [@AGENTS.md](AGENTS.md).
+
+
 ## Skill automática: Mercado de Trabalho
 
 Sempre que o usuário fizer uma pergunta ou pedir uma tarefa relacionada a
