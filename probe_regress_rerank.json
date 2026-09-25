@@ -1,0 +1,579 @@
+[
+  {
+    "domain": "labor_market",
+    "question": "Qual foi a taxa de desocupacao e o rendimento medio real no estado de Sao Paulo no trimestre mais recente divulgado pela PNAD Continua?",
+    "latency_s": 56.5,
+    "error": null,
+    "payload": {
+      "answer": "No trimestre mais recente divulgado, a PNAD Contínua aponta relativa estabilidade da ocupação acompanhada de aumento da desocupação no Estado de São Paulo. O rendimento médio real do trabalho principal, deflacionado pelo IPCA a preços da média dos três meses do período, foi de R$ 4.109 no segundo trimestre de 2025, com variação interanual de 1,7%. Já o rendimento médio real está claramente informado para o segundo trimestre de 2025, quando registrou R$ 4.109, ritmo inferior ao observado no segundo semestre de 2024 (5,7%), em um cenário de desaceleração do crescimento real dos rendimentos apesar do desempenho positivo do mercado de trabalho.",
+      "sources_used": [
+        "timeseries",
+        "text"
+      ],
+      "rewritten_query": "Qual foi a taxa de desocupação (desemprego) e o rendimento médio real dos trabalhadores no estado de São Paulo no trimestre mais recente divulgado pela Pesquisa Nacional por Amostra de Domicílios Contínua (PNAD Contínua) do IBGE?",
+      "sources": [
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-relativa-estabilidade-ocupacao-desocupacao-terceiro-trimestre-2025.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "3o trim.2025\n1\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo\nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2021-3o trim.2025\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2021-3o trim.2025, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nNota: As estimativas populacionais das séries históricas foram reponderadas, considerando-se os totais populacionais das Projeções de Populações que incorporam os resultados do Censo Demográfico 2022.\n(1) Pessoas desocupadas + subocupadas por insuficiência de horas trabalhadas + força de trabalho potencial, dividida pela soma da força de \ntrabalho e da força de trabalho potencial. \nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2021-3o trim.2025, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nRelativa estabilidade da ocupação e da desocupação"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-aumenta-ocupacao-diminui-rendimento-segundo-trimestre-2025.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "2o trim.2025\n1\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo\nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2021-2o trim.2025\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2021-2o trim.2025, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nNota: As estimativas populacionais das séries históricas foram reponderadas, considerando-se os totais populacionais das Projeções de Populações que incorporam os resultados do Censo Demográfico 2022.\n(1) Pessoas desocupadas + subocupadas por insuficiência de horas trabalhadas + força de trabalho potencial, dividida pela soma da força de \ntrabalho e da força de trabalho potencial. \nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2021-2o trim.2025, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nAumenta a ocupação e diminui a desocupação\nFORÇA DE TRABALHO"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.8,
+          "page": 26,
+          "excerpt": "26\n2o trim.2025\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia do Estado de São Paulo\nGráfico 15 - Variação interanual do rendimento real efetivo dos ocupados\nEstado de São Paulo, 2o trim.2022-2o trim.2025, em %\nFonte: IBGE; Ministério da Cidadania; Fundação Seade.\nEsse descompasso entre a oferta de trabalhadores \ne a geração de vagas contribuiu para manter a \ntendência de queda do desemprego no Estado.\nCom o mercado de trabalho apresentando \ndesempenho positivo, os rendimentos efetivos do \ntrabalho da população empregada no Estado de São \nPaulo mantiveram trajetória de crescimento, porém em \nritmo mais moderado do que o observado em 2024. \nSegundo a PNAD Contínua, o rendimento médio real \nefetivo da população ocupada em São Paulo ficou em \nR$ 4.109 no segundo trimestre de 2025, registrando \naumento de 1,7% em relação ao mesmo período de \n2024. Apesar do avanço, o resultado foi inferior à \nmédia verificada no segundo semestre de 2024 (5,7%). \nEsse arrefecimento decorre, de um lado, do impacto"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-relativa-estabilidade-ocupacao-aumento-desocupacao.pdf",
+          "score": 0.8,
+          "page": 1,
+          "excerpt": "1o trim.2026\n1\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo\nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2022-1o trim.2026\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2022-1o trim.2026, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nNota: As estimativas populacionais das séries históricas foram reponderadas, considerando-se os totais populacionais das Projeções de Populações que incorporam os resultados do Censo Demográfico 2022.\n(1) Pessoas desocupadas + subocupadas por insuficiência de horas trabalhadas + força de trabalho potencial, dividida pela soma da força de \ntrabalho e da força de trabalho potencial. \nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2022-1o trim.2026, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nRelativa estabilidade da ocupação e aumento da desocupação"
+        },
+        {
+          "file": "seade_social/trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf",
+          "score": 0.7,
+          "page": 3,
+          "excerpt": "2o trim.2024\n3\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo exceto Região Metropolitana de São Paulo (Interior e Litoral) \nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2020-2o trim.2024\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2020-2o trim.2024, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nAumenta a ocupação e diminui a desocupação no trimestre\nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2020-2o trim.2024, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 125 mil pessoas\nA força de trabalho foi estimada  \nem 13,6 milhões de pessoas no  \n2o trimestre de 2024, com aumento \nde 0,9% em relação ao trimestre \nanterior. Na comparação com o \nmesmo período de 2023, esse \ncontingente elevou-se em 1,3% \n(mais 173 mil pessoas).\nOCUPAÇÃO\nMais 267 mil ocupados"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-permanece-estavel-desocupacao.pdf",
+          "score": 0.6,
+          "page": 3,
+          "excerpt": "4o trim.2024\n3\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo exceto Região Metropolitana de São Paulo (Interior e Litoral) \nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2021-4o trim.2024\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2021-4o trim.2024, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nCresce a ocupação e diminui a desocupação no trimestre\nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2021-4o trim.2024, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 24 mil pessoas\nA força de trabalho foi estimada em 13,7 \nmilhões de pessoas no 4o trimestre de 2024, \npermanecendo relativamente estável em \nrelação ao trimestre anterior (0,2%). Na \ncomparação com o mesmo período de 2023, \nesse contingente cresceu 1,1% (mais 149 mil \npessoas).\nOCUPAÇÃO"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-permanece-estavel-desocupacao.pdf",
+          "score": 0.9,
+          "page": "2",
+          "excerpt": "1: Fonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nFonte: seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-permanece-estavel-desocupacao.pdf"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-aumenta-emprego-formal-estado-sao-paulo-segundo-trimestre-2025.pdf",
+          "score": 0.7,
+          "page": "6",
+          "excerpt": "0: Agricultura,\n1: Indústria\n2: Construção\n5: Comércio\n6: Serviços\nFonte: seade_social/trabalho/seade-trabalho-aumenta-emprego-formal-estado-sao-paulo-segundo-trimestre-2025.pdf"
+        },
+        {
+          "file": "seade_social/trabalho/seadetrabalho-ocupacao-rendimento-primeiro-trimestre-2021.pdf",
+          "score": 0.6,
+          "page": "4",
+          "excerpt": "0: Com a redução de 2,9%, a taxa de\n1: Rendimento médio real (1) do trabalho principal, efetivamente recebido por mês\nFonte: seade_social/trabalho/seadetrabalho-ocupacao-rendimento-primeiro-trimestre-2021.pdf"
+        },
+        {
+          "file": "seade_social/trabalho/seadetrabalho-ocupacao-rendimento-quarto-trimestre-2022.pdf",
+          "score": 0.5,
+          "page": "1",
+          "excerpt": "0: 8,6% para 7,7% e a taxa composta\n1: Rendimento médio real (1) do trabalho principal, efetivamente recebido por mês\nFonte: seade_social/trabalho/seadetrabalho-ocupacao-rendimento-quarto-trimestre-2022.pdf"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-diminui-emprego-formal-estado-sao-paulo-quarto-trimestre-2025.pdf",
+          "score": 0.4,
+          "page": "17",
+          "excerpt": "0: pecuária e\n1: -1,6\n2: 0,5\n5: 0,7\n6: -2,3\nFonte: seade_social/trabalho/seade-trabalho-diminui-emprego-formal-estado-sao-paulo-quarto-trimestre-2025.pdf"
+        }
+      ],
+      "validation": {
+        "verified": 6,
+        "total": 7,
+        "unverified": [
+          "4.109"
+        ]
+      },
+      "citation_validation": {
+        "verified": 0,
+        "total": 0,
+        "unverified": []
+      },
+      "numeric_citations": [
+        {
+          "value": "4.109",
+          "start": 281,
+          "end": 286,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.8,
+          "page": 26,
+          "snippet": "...erado do que o observado em 2024. \nSegundo a PNAD Contínua, o rendimento médio real \nefetivo da população ocupada em São Paulo ficou em \nR$ 4.109 no segundo trimestre de 2025, registrando \naumento de 1,7% em relação ao mesmo período de \n2024. Apesar do avanço, o resultado foi inferior...",
+          "content_type": "text",
+          "claim": "...de São Paulo. O rendimento médio real do trabalho principal, deflacionado pelo IPCA a preços da média dos três meses do período, foi de R$ 4.109 no segundo trimestre de 2025, com variação interanual de 1,7%. Já o rendimento médio real está claramente informado para o segundo trimestr...",
+          "explanation": "O valor R$ 4.109 representa o rendimento médio real efetivo da população ocupada em São Paulo no segundo trimestre de 2025."
+        },
+        {
+          "value": "2025",
+          "start": 311,
+          "end": 315,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.8,
+          "page": 26,
+          "snippet": "...24. \nSegundo a PNAD Contínua, o rendimento médio real \nefetivo da população ocupada em São Paulo ficou em \nR$ 4.109 no segundo trimestre de 2025, registrando \naumento de 1,7% em relação ao mesmo período de \n2024. Apesar do avanço, o resultado foi inferior à \nmédia verificada no segun...",
+          "content_type": "text",
+          "claim": "...dio real do trabalho principal, deflacionado pelo IPCA a preços da média dos três meses do período, foi de R$ 4.109 no segundo trimestre de 2025, com variação interanual de 1,7%. Já o rendimento médio real está claramente informado para o segundo trimestre de 2025, quando registrou R...",
+          "explanation": "O ano 2025 refere-se ao período do segundo trimestre em que foi registrado o rendimento médio real de R$ 4.109."
+        },
+        {
+          "value": "1,7%",
+          "start": 344,
+          "end": 348,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.8,
+          "page": 26,
+          "snippet": "...o rendimento médio real \nefetivo da população ocupada em São Paulo ficou em \nR$ 4.109 no segundo trimestre de 2025, registrando \naumento de 1,7% em relação ao mesmo período de \n2024. Apesar do avanço, o resultado foi inferior à \nmédia verificada no segundo semestre de 2024 (5,7%). \nE...",
+          "content_type": "text",
+          "claim": "...eflacionado pelo IPCA a preços da média dos três meses do período, foi de R$ 4.109 no segundo trimestre de 2025, com variação interanual de 1,7%. Já o rendimento médio real está claramente informado para o segundo trimestre de 2025, quando registrou R$ 4.109, ritmo inferior ao observ...",
+          "explanation": "O valor 1,7% indica o aumento interanual do rendimento médio real em relação ao mesmo período de 2024."
+        },
+        {
+          "value": "2025",
+          "start": 431,
+          "end": 435,
+          "source_index": 7,
+          "file": "seade_social/trabalho/seade-trabalho-aumenta-emprego-formal-estado-sao-paulo-segundo-trimestre-2025.pdf",
+          "score": 0.7,
+          "page": "6",
+          "snippet": "0: Agricultura,\n1: Indústria\n2: Construção\n5: Comércio\n6: Serviços",
+          "content_type": "table",
+          "claim": "...egundo trimestre de 2025, com variação interanual de 1,7%. Já o rendimento médio real está claramente informado para o segundo trimestre de 2025, quando registrou R$ 4.109, ritmo inferior ao observado no segundo semestre de 2024 (5,7%), em um cenário de desaceleração do crescimento r...",
+          "explanation": "O ano 2025 refere-se ao segundo trimestre cujo rendimento médio real foi R$ 4.109."
+        },
+        {
+          "value": "2024",
+          "start": 515,
+          "end": 519,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.8,
+          "page": 26,
+          "snippet": "...ho da população empregada no Estado de São \nPaulo mantiveram trajetória de crescimento, porém em \nritmo mais moderado do que o observado em 2024. \nSegundo a PNAD Contínua, o rendimento médio real \nefetivo da população ocupada em São Paulo ficou em \nR$ 4.109 no segundo trimestre de 20...",
+          "content_type": "text",
+          "claim": "...l está claramente informado para o segundo trimestre de 2025, quando registrou R$ 4.109, ritmo inferior ao observado no segundo semestre de 2024 (5,7%), em um cenário de desaceleração do crescimento real dos rendimentos apesar do desempenho positivo do mercado de trabalho....",
+          "explanation": "O ano 2024 refere-se ao período anterior comparado, quando o crescimento foi de 5,7%."
+        },
+        {
+          "value": "5,7%",
+          "start": 521,
+          "end": 525,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.8,
+          "page": 26,
+          "snippet": "...o de 1,7% em relação ao mesmo período de \n2024. Apesar do avanço, o resultado foi inferior à \nmédia verificada no segundo semestre de 2024 (5,7%). \nEsse arrefecimento decorre, de um lado, do impacto...",
+          "content_type": "text",
+          "claim": "...claramente informado para o segundo trimestre de 2025, quando registrou R$ 4.109, ritmo inferior ao observado no segundo semestre de 2024 (5,7%), em um cenário de desaceleração do crescimento real dos rendimentos apesar do desempenho positivo do mercado de trabalho....",
+          "explanation": "O valor 5,7% corresponde ao crescimento real do rendimento no segundo semestre de 2024, superior ao 1,7% registrado em 2025."
+        }
+      ],
+      "rag_type": "principal",
+      "rag_label": "RAG Principal",
+      "conversation_id": "1ffe00a58b4e4ea2b4b0ff00c556ee71",
+      "memory_turns": 0
+    }
+  },
+  {
+    "domain": "economic_conjuncture",
+    "question": "Como o PIB do estado de Sao Paulo variou nos ultimos trimestres divulgados?",
+    "latency_s": 48.8,
+    "error": null,
+    "payload": {
+      "answer": "O PIB do Estado de São Paulo registrou trajetória consistentemente ascendente ao longo dos cinco trimestres mais recentes, embora com uma clara desaceleração entre o meio e o final de 2025, seguida de uma retomada de ritmo no primeiro trimestre de 2026. A economia paulista transitou de um padrão de expansão mais forte para um crescimento mais modesto e difuso ao longo de 2025, com serviços e comércio sustentando o avanço enquanto a indústria perdia tração, até recuperar dinamismo no início de 2026. Na métrica trimestral contra o período imediatamente anterior, com ajuste sazonal, o PIB paulista avançou +4,87% no 2º tri. 2025, +4,09% no 3º tri. 2025 e desacelerou para +1,47% no 4º tri. 2025, antes de acelerar novamente para +4,88% no 1º tri. 2026. Em termos absolutos, a série alcançou um piso de R$ 921.617 milhões no 1º tri. 2025 e um teto de R$ 1.020.809 milhões no 4º tri. 2025, com média trimestral de R$ 978.739 milhões em 2025 e acumulado de R$ 3.914.955 milhões no ano. Na comparação interanual, o 1º tri. 2026 cresceu +5,32% frente ao 1º tri. 2025. Contudo, a leitura setorial e de demanda explica a moderação observada ao longo de 2025: a indústria de transformação e a extrativa mineral tiveram contribuição negativa para o crescimento no período, reflexo da menor tração da demanda interna e de condições financeiras restritivas. No 2º tri. 2025, por exemplo, o PIB paulista avançou 1,1% na comparação trimestral e apenas 0,5% na margem do consumo das famílias, enquanto a formação bruta de capital fixo recuou -2,2%, sinalizando menor fôlego da construção civil e da aquisição de bens de capital. A perda de tração gradual de 2025 também se evidencia na comparação em doze meses: no 3º tri. 2025, a variação do PIB paulista em quatro trimestres foi de 1,8%, abaixo dos 2,7% registrados para a média do Brasil. No acumulado até o 3º tri. 2025, o PIB do Estado cresceu 1,4% frente ao mesmo período do ano anterior, resultado inferior ao PIB nacional (2,4%) e ao próprio desempenho paulista em 2024 (3,4%). Esse quadro é atribuído, à combinação de política monetária restritiva e de um cenário internacional menos favorável para a indústria exportadora. A recuperação do ritmo no 1º tri. 2026 aparece tanto na aceleração trimestral (+4,88% sobre o 4º tri. 2025) quanto na comparação interanual, com o PIB crescendo 1,8% no trimestre e o valor adicionado subindo 0,8% na mesma base. Entre os setores, a agropecuária avançou 1,5%, os serviços cresceram 1,8% e a indústria recuou -2,4% no 1º tri. 2026, indicando que a retomada recente foi puxada sobretudo pelos serviços, enquanto a indústria ainda não lidera a expansão. 2025, antes de recuperar aceleração no 1º tri. 2026. A desaceleração de 2025 refletiu a perda de dinamismo da indústria e do investimento, enquanto a recuperação recente foi sustentada pelo setor de serviços e pelo comércio, sem que a indústria retomasse papel de liderança.",
+      "sources_used": [
+        "text",
+        "timeseries"
+      ],
+      "rewritten_query": "Como o Produto Interno Bruto (PIB) do estado de São Paulo variou nos últimos trimestres divulgados?",
+      "sources": [
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "1o trim.2026\npib.seade.gov.br\nPIB\nTRIMESTRAL\nS A\nE DE\nEstado de São Paulo\nNo acumulado do trimestre em relação ao mesmo trimestre do ano anterior, o PIB cresceu 1,3%\nResultados do 1o trim.2026, em %\n1\nTrimestre/trimestre imediatamente anterior\nCom ajuste sazonal\nTrimestre/mesmo trimestre do ano anterior\nAcumulado ao longo do ano/mesmo período do\nano anterior\nÚltimos quatro trimestres/quatro trimestres imediatamente \nanteriores\nAcumulado dos últimos quatro trimestres\n0,6%\nPIB\n0,8%\nValor Adicionado\n1,5%\nAgropecuária\n-2,4%\nIndústria\n1,8%\nServiços\nPIB avançou 1,8% no 1o trimestre de 2026\n1\n2\n3\n4\n1\n2025\n2026\n1,1\n1,8\n-1,0\n0,0\n1,0\n2,0\n3,0\n4,0\n1\n2\n3\n4\n1\n2025\n2026\n3,0\n1,3\n-1,0\n0,0\n1,0\n2,0\n3,0\n4,0\n1\n2\n3\n4\n1\n2025\n2026\n3,0\n1,3\n0,0\n1,0\n2,0\n3,0\n4,0\n1\n2\n3\n4\n1\n2025\n2026\n3,6\n0,6\n0,0\n1,0\n2,0\n3,0\n4,0"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.9,
+          "page": 8,
+          "excerpt": "8\n2o trim.2025\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia brasileira\nSe considerada a taxa anual, o PIB apresentou alta de \n3,2%, com crescimento em todos os setores: 5,8% na \nagropecuária, 2,4% na indústria e 2,9% nos serviços \n(Gráfico 2).\nNa demanda interna, o consumo das famílias manteve \ntrajetória positiva (0,5%) entre o primeiro e o segundo \ntrimestres de 2025, excluída a sazonalidade, mas com \nritmo menor, ainda estimulado pela resiliência do \nmercado de trabalho e pelas transferências de renda \ndos programas sociais. \nO consumo do governo registrou queda de 0,6%, \nrefletindo o contexto de ajuste nas contas públicas.  \nA formação bruta de capital fixo apresentou redução na \nmargem (-2,2%), indicando menor fôlego da construção \ncivil e da aquisição de bens de capital pelas indústrias.\nDo lado da demanda externa, houve contribuição \npositiva para o crescimento do PIB entre o primeiro e \nsegundo trimestres devido à expansão das exportações \n(0,7%) e à redução de 2,9% das importações."
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.8,
+          "page": 4,
+          "excerpt": "2. Atividade econômica: Estado de São Paulo \nNo acumulado até o terceiro trimestre de 2025, o PIB do Estado \nde São Paulo cresceu 1,4% em relação ao mesmo período do ano \nanterior, resultado abaixo tanto do PIB do Brasil (2,4%), como do \npróprio PIB paulista em 2024 (3,4%) (Gráfico 4). O impacto do menor \nnível de atividade econômica no país é amplificado pela estrutura \nprodutiva do Estado. A desaceleração do investimento e do consumo \ndas famílias reduz a demanda para a indústria. \nAo ser mais diversificada e com maior presença da indústria de \ntransformação, que exporta bens e produtos para o exterior e para \nos demais estados da federação, a economia paulista sofre de forma \nmais intensa os efeitos da política monetária restritiva e do quadro de \nincerteza do cenário internacional. \nA leitura setorial indica que a indústria de transformação e a extrativa \nmineral tiveram contribuição negativa para o crescimento no período, \nem um contexto de menor tração da demanda interna, estoques"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_3trim2023.pdf",
+          "score": 0.8,
+          "page": 15,
+          "excerpt": "14\n3o trim.2023\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia do Estado de São Paulo\nNo terceiro trimestre, a atividade econômica \npaulista registrou variação de -0,2%, considerando a \ncomparação com o trimestre anterior e com ajuste \nsazonal. Influenciada pelo fraco desempenho dos \nserviços e da indústria, a taxa anual apresentou \ndesaceleração mais acentuada do que no segundo \ntrimestre. Com isso, as projeções para o PIB do Estado \nde São Paulo em 2023 têm sido revistas para baixo, \nficando em patamares inferiores às realizadas ao \nlongo do segundo trimestre. \nEsse desempenho pode ser visualizado no Gráfico \n7, que mostra a evolução das taxas trimestre contra \ntrimestre e anualizadas do PIB do Estado de São \nPaulo desde o primeiro trimestre de 2020. Observa-se \nque o PIB paulista recuou 0,2% entre o segundo e o \nterceiro trimestres de 2023, com a taxa anual ficando \nem 1,6%.\nDentre os fatores que explicam esses resultados, \nmerecem destaque a desaceleração do setor de"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.7,
+          "page": 14,
+          "excerpt": "14\n2o trim.2025\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia do Estado de São Paulo\nGráfico 6 - Taxas de crescimento do VA, por setor de atividade, e do PIB, no trimestre \nem relação ao trimestre anterior (com ajuste sazonal) e acumuladas nos últimos quatro \ntrimestres em relação aos quatro trimestres imediatamente anteriores\nEstado de São Paulo, 2o trim. 2025, em %\nFonte: Fundação Seade.\nAcumulado em 12 meses\nTrimestre/trimestre anterior (com ajuste sazonal)\nPIB\nImpostos líquidos de subsídios\nValor adicionado\nDemais serviços\nTransportes, armazenagem e correio\nComércio e serviços de manutenção\ne reparação\nServiços\nProdução e distribuição de eletricidade e\ngás, água, esgoto e limpeza urbana\nConstrução civil\nTransformação\nExtrativa mineral\nIndústria\nAgropecuária\n-0,2\n-0,7\n0,0\n0,5\n1,5\n-0,5\n0,4\n-1,2\n-0,5\n-1,9\n-10,5\n-2,1\n-5,4\n2,5\n2,9\n2,4\n3,6\n1,3\n3,7\n3,5\n-0,8\n3,5\n0,1\n-17,4\n-0,7\n-2,2\n-20,0\n-15,0\n-10,0\n-5,0\n0,0\n5,0\nPIB paulista\nO Produto Interno Bruto paulista teve avanço de 1,1%"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_3trim2024.pdf",
+          "score": 0.6,
+          "page": 9,
+          "excerpt": "9\n3o trim.2024\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia brasileira\nPor último, um destaque deve ser dado para a alta \ndas importações, cuja taxa anual subiu de 4,1% para \n10,3%, em sintonia com a recuperação da atividade \nindustrial e da formação bruta de capital fixo, que \npode indicar a constituição de uma base para a \nsustentação do crescimento no próximo ano. \nPIB trimestral\nDe acordo com o IBGE, no terceiro trimestre de \n2024, o PIB brasileiro cresceu 0,9% em comparação \nao trimestre anterior, considerando o ajuste sazonal, \nquinto resultado positivo consecutivo nessa base de \ncomparação. \nCom relação aos grandes setores, foi registrado \ncrescimento na indústria (0,6%) e nos serviços (0,9%), \nao mesmo tempo que a agropecuária recuou 0,9%. \nQuando considerada a taxa anual, o PIB cresceu \n3,1%, com expansão de 3,4% tanto na indústria \ncomo nos serviços, enquanto a agropecuária \napresentou queda (-2,9%). \nGráfico 3 - Taxas de crescimento do PIB nos últimos quatro trimestres em relação aos"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_3trim2021.pdf",
+          "score": 0.6,
+          "page": 19,
+          "excerpt": "18\n3o trim.2021\nCONJUNTURA DA ECONOMIA PAULISTA\nEconomia do Estado de São Paulo\nS A\nE DE\nGráfico 8 - Taxas de crescimento do VA, por setor de atividade, e do PIB, trimestre contra \ntrimestre anterior (com ajuste sazonal) e acumuladas nos últimos quatro trimestres em \nrelação aos quatro trimestres imediatamente anteriores\nEstado de São Paulo, 3o trim.2021, em %\nFonte: Fundação Seade.\nPIB paulista\nA queda de 0,6% do PIB paulista na comparação \nentre o terceiro e o segundo trimestres, excluída \na sazonalidade, resulta dos recuos de 0,9% na \nagropecuária, 1,3% na indústria e 0,5% nos serviços. \nEm particular, chama a atenção, na comparação \ninteranual, a retração de 5,3% da indústria de \ntransformação, repetindo o movimento observado no \nsegundo trimestre (-5,5%), quando foi interrompida \na sequência de recuperação desse importante setor, \nobservada entre o terceiro trimestre de 2020 e o \nprimeiro de 2021. \nComo mencionado, o quadro se altera quando \nanalisada a taxa anual de crescimento, com o PIB"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.5,
+          "page": 7,
+          "excerpt": "Fonte: Fundação Seade.\nEsta composição reforça que o Estado de São Paulo transita de um \npadrão de crescimento em 2025, sustentado principalmente por \nserviços e comércio, para um cenário de expansão mais modesta \ne difusa, com alguma recuperação pontual da indústria, mas sem \ncapacidade de liderar trajetória mais positiva do PIB paulista. \nO comportamento em 12 meses, no entanto, confirma que a \neconomia paulista perdeu tração de forma gradual em 2025, reflexo \nda combinação de condições financeiras ainda restritivas e uma \nconjuntura internacional que se tornou menos favorável para a \nindústria exportadora, em particular na relação com os Estados \nUnidos. No terceiro trimestre, a variação do PIB paulista em 12 meses \nfoi de 1,8%, enquanto na média do Brasil esse resultado foi de 2,7% \n(Gráfico 7).\nGráfico 7 – Taxas de crescimento trimestrais do PIB em quatro trimestres em relação ao \nmesmo período do ano anterior\nBrasil e Estado de São Paulo, 1o trim.2022-3o trim.2025, em %"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": "2",
+          "excerpt": "5: 2025\n6: 2026\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n1: 1o trim.\n2: 2o trim.\n3: 3o trim.\n4: 4o trim.\n5: Total\n6: 1o trim.\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n0: PIB\n1: 921.617\n2: 966.500\n3: 1.006.028\n4: 1.020.809\n5: 3.914.955\n6: 970.653\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n0: Impostos Líquidos de Subsídios\n1: 143.224\n2: 146.419\n3: 151.256\n4: 164.064\n5: 604.963\n6: 149.427\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n0: Valor Adicionado\n1: 778.393\n2: 820.081\n3: 854.772\n4: 856.746\n5: 3.309.992\n6: 821.226\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n0: Agropecuária\n1: 18.612\n2: 20.881\n3: 24.439\n4: 15.475\n5: 79.407\n6: 17.574\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n0: Indústria\n1: 166.913\n2: 180.048\n3: 196.440\n4: 174.241\n5: 717.642\n6: 166.509\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf\n---\n0: Serviços\n1: 592.867\n2: 619.153\n3: 633.893\n4: 667.029\n5: 2.512.943\n6: 637.143\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": "1",
+          "excerpt": "0: 1\n1: 1\n2: 4\n3: 1\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        },
+        {
+          "file": "pib/pib-regional-sao-paulo-cresceu-maioria-regioes.pdf",
+          "score": 0.8,
+          "page": "2",
+          "excerpt": "0: Estado de São Paulo\n1: 921.617\n2: 966.500\n3: 1.006.028\n4: 1.020.809\n5: 3.914.955\n6: 970.653\nFonte: pib/pib-regional-sao-paulo-cresceu-maioria-regioes.pdf"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.8,
+          "page": "1",
+          "excerpt": "0: Com ajuste sazonal\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.7,
+          "page": "1",
+          "excerpt": "0: Trimestre/trimestre imediatamente anterior\n1: Trimestre/mesmo trimestre do ano anterior\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.7,
+          "page": "1",
+          "excerpt": "0: Resultados do 1o trim.2026, em %\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        },
+        {
+          "file": "pib/pib-mensal-sao-paulo-abril-2026.pdf",
+          "score": 0.6,
+          "page": "1",
+          "excerpt": "0: Abr.2026/mar.2026\n1: Agropecuária\n2: Indústria\n3: Serviços\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: (com ajuste sazonal)\n1: 1,3\n2: -2,8\n3: -0,8\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: Acumulado nos últimos\n1: 0,4\n2: -2,0\n3: 1,7\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: 12 meses em relação aos\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: 12 meses imediatamente\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: anteriores\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: Abr.2026/abr.2025\n1: -2,3\n2: 0,7\n3: 2,3\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: Acumulado no ano em\n1: -5,9\n2: -0,5\n3: 2,4\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: relação a igual período\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf\n---\n0: do ano anterior\nFonte: pib/pib-mensal-sao-paulo-abril-2026.pdf"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.6,
+          "page": "1",
+          "excerpt": "0: 4,0\n1: 4,0\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        },
+        {
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.5,
+          "page": "1",
+          "excerpt": "0: 1,0\n1: 1,0\nFonte: pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+        }
+      ],
+      "validation": {
+        "verified": 18,
+        "total": 48,
+        "unverified": [
+          "2026",
+          "4,87%",
+          "2025",
+          "4,09%",
+          "2025",
+          "1,47%",
+          "2025",
+          "4,88%",
+          "2026",
+          "921.617",
+          "2025",
+          "1.020.809",
+          "2025",
+          "978.739",
+          "2025",
+          "3.914.955",
+          "2026",
+          "5,32%",
+          "2025",
+          "2025",
+          "2025",
+          "2025",
+          "4,88%",
+          "2025",
+          "1,8%",
+          "1,8%",
+          "2026",
+          "2025",
+          "2026",
+          "2025"
+        ]
+      },
+      "citation_validation": {
+        "verified": 0,
+        "total": 0,
+        "unverified": []
+      },
+      "numeric_citations": [
+        {
+          "value": "2025",
+          "start": 184,
+          "end": 188,
+          "source_index": 1,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.9,
+          "page": 8,
+          "snippet": "...os \n(Gráfico 2).\nNa demanda interna, o consumo das famílias manteve \ntrajetória positiva (0,5%) entre o primeiro e o segundo \ntrimestres de 2025, excluída a sazonalidade, mas com \nritmo menor, ainda estimulado pela resiliência do \nmercado de trabalho e pelas transferências de renda...",
+          "content_type": "text",
+          "claim": "...tória consistentemente ascendente ao longo dos cinco trimestres mais recentes, embora com uma clara desaceleração entre o meio e o final de 2025, seguida de uma retomada de ritmo no primeiro trimestre de 2026. A economia paulista transitou de um padrão de expansão mais forte para um...",
+          "explanation": "O ano de 2025 apresentou crescimento econômico paulista com desaceleração no meio e final do ano, seguido por retomada no início de 2026."
+        },
+        {
+          "value": "2026",
+          "start": 248,
+          "end": 252,
+          "source_index": 8,
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": "2",
+          "snippet": "5: 2025\n6: 2026",
+          "content_type": "table",
+          "claim": "...mais recentes, embora com uma clara desaceleração entre o meio e o final de 2025, seguida de uma retomada de ritmo no primeiro trimestre de 2026. A economia paulista transitou de um padrão de expansão mais forte para um crescimento mais modesto e difuso ao longo de 2025, com serviços...",
+          "explanation": "Os anos 2025 e 2026 marcam o período analisado para a transição do padrão de expansão paulista."
+        },
+        {
+          "value": "2025",
+          "start": 374,
+          "end": 378,
+          "source_index": 7,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.5,
+          "page": 7,
+          "snippet": "...Fonte: Fundação Seade.\nEsta composição reforça que o Estado de São Paulo transita de um \npadrão de crescimento em 2025, sustentado principalmente por \nserviços e comércio, para um cenário de expansão mais modesta \ne difusa, com alguma recuperação pontual da...",
+          "content_type": "text",
+          "claim": "...trimestre de 2026. A economia paulista transitou de um padrão de expansão mais forte para um crescimento mais modesto e difuso ao longo de 2025, com serviços e comércio sustentando o avanço enquanto a indústria perdia tração, até recuperar dinamismo no início de 2026. Na métrica tri...",
+          "explanation": "Em 2025, o crescimento paulista foi mais modesto e difuso, com serviços e comércio sustentando o avanço enquanto a indústria perdeu força."
+        },
+        {
+          "value": "2025",
+          "start": 1362,
+          "end": 1366,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.8,
+          "page": 4,
+          "snippet": "...2. Atividade econômica: Estado de São Paulo \nNo acumulado até o terceiro trimestre de 2025, o PIB do Estado \nde São Paulo cresceu 1,4% em relação ao mesmo período do ano \nanterior, resultado abaixo tanto do PIB do Brasil (2,4%), c...",
+          "content_type": "text",
+          "claim": "...uição negativa para o crescimento no período, reflexo da menor tração da demanda interna e de condições financeiras restritivas. No 2º tri. 2025, por exemplo, o PIB paulista avançou 1,1% na comparação trimestral e apenas 0,5% na margem do consumo das famílias, enquanto a formação bru...",
+          "explanation": "Até o terceiro trimestre de 2025, o PIB paulista cresceu 1,4% em relação ao mesmo período do ano anterior."
+        },
+        {
+          "value": "1,1%",
+          "start": 1404,
+          "end": 1408,
+          "source_index": 4,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.7,
+          "page": 14,
+          "snippet": "...,4\n3,6\n1,3\n3,7\n3,5\n-0,8\n3,5\n0,1\n-17,4\n-0,7\n-2,2\n-20,0\n-15,0\n-10,0\n-5,0\n0,0\n5,0\nPIB paulista\nO Produto Interno Bruto paulista teve avanço de 1,1%...",
+          "content_type": "text",
+          "claim": "...do, reflexo da menor tração da demanda interna e de condições financeiras restritivas. No 2º tri. 2025, por exemplo, o PIB paulista avançou 1,1% na comparação trimestral e apenas 0,5% na margem do consumo das famílias, enquanto a formação bruta de capital fixo recuou -2,2%, sinalizan...",
+          "explanation": "No segundo trimestre de 2025, o PIB paulista avançou 1,1% na comparação entre trimestres."
+        },
+        {
+          "value": "0,5%",
+          "start": 1443,
+          "end": 1447,
+          "source_index": 1,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.9,
+          "page": 8,
+          "snippet": "...agropecuária, 2,4% na indústria e 2,9% nos serviços \n(Gráfico 2).\nNa demanda interna, o consumo das famílias manteve \ntrajetória positiva (0,5%) entre o primeiro e o segundo \ntrimestres de 2025, excluída a sazonalidade, mas com \nritmo menor, ainda estimulado pela resiliência do \nmer...",
+          "content_type": "text",
+          "claim": "...interna e de condições financeiras restritivas. No 2º tri. 2025, por exemplo, o PIB paulista avançou 1,1% na comparação trimestral e apenas 0,5% na margem do consumo das famílias, enquanto a formação bruta de capital fixo recuou -2,2%, sinalizando menor fôlego da construção civil e d...",
+          "explanation": "Entre o primeiro e o segundo trimestre de 2025, o consumo das famílias cresceu 0,5% em termos marginais."
+        },
+        {
+          "value": "-2,2%",
+          "start": 1532,
+          "end": 1537,
+          "source_index": 1,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2025.pdf",
+          "score": 0.9,
+          "page": 8,
+          "snippet": "...trou queda de 0,6%, \nrefletindo o contexto de ajuste nas contas públicas.  \nA formação bruta de capital fixo apresentou redução na \nmargem (-2,2%), indicando menor fôlego da construção \ncivil e da aquisição de bens de capital pelas indústrias.\nDo lado da demanda externa, houve contrib...",
+          "content_type": "text",
+          "claim": "...sta avançou 1,1% na comparação trimestral e apenas 0,5% na margem do consumo das famílias, enquanto a formação bruta de capital fixo recuou -2,2%, sinalizando menor fôlego da construção civil e da aquisição de bens de capital. A perda de tração gradual de 2025 também se evidencia na c...",
+          "explanation": "No segundo trimestre de 2025, a formação bruta de capital fixo recuou -2,2%, indicando menor investimento."
+        },
+        {
+          "value": "2025",
+          "start": 1648,
+          "end": 1652,
+          "source_index": 7,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.5,
+          "page": 7,
+          "snippet": "...ais positiva do PIB paulista. \nO comportamento em 12 meses, no entanto, confirma que a \neconomia paulista perdeu tração de forma gradual em 2025, reflexo \nda combinação de condições financeiras ainda restritivas e uma \nconjuntura internacional que se tornou menos favorável para a \nin...",
+          "content_type": "text",
+          "claim": "...de capital fixo recuou -2,2%, sinalizando menor fôlego da construção civil e da aquisição de bens de capital. A perda de tração gradual de 2025 também se evidencia na comparação em doze meses: no 3º tri. 2025, a variação do PIB paulista em quatro trimestres foi de 1,8%, abaixo dos 2...",
+          "explanation": "Em 2025, o PIB paulista variou 1,8% nos últimos quatro trimestres, mostrando perda gradual de tração."
+        },
+        {
+          "value": "1,8%",
+          "start": 1774,
+          "end": 1778,
+          "source_index": 0,
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...teriores\nAcumulado dos últimos quatro trimestres\n0,6%\nPIB\n0,8%\nValor Adicionado\n1,5%\nAgropecuária\n-2,4%\nIndústria\n1,8%\nServiços\nPIB avançou 1,8% no 1o trimestre de 2026\n1\n2\n3\n4\n1\n2025\n2026\n1,1\n1,8\n-1,0\n0,0\n1,0\n2,0\n3,0\n4,0\n1\n2\n3\n4\n1\n2025\n2026\n3,0\n1,3\n-1,0\n0,0\n1,0\n2,0\n3,0\n4,0\n1\n2\n3\n4\n1...",
+          "content_type": "text",
+          "claim": "...ão gradual de 2025 também se evidencia na comparação em doze meses: no 3º tri. 2025, a variação do PIB paulista em quatro trimestres foi de 1,8%, abaixo dos 2,7% registrados para a média do Brasil. No acumulado até o 3º tri. 2025, o PIB do Estado cresceu 1,4% frente ao mesmo período...",
+          "explanation": "No terceiro trimestre de 2025, o PIB paulista cresceu 1,8% em quatro trimestres na comparação interanual."
+        },
+        {
+          "value": "2,7%",
+          "start": 1791,
+          "end": 1795,
+          "source_index": 7,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.5,
+          "page": 7,
+          "snippet": "...ados \nUnidos. No terceiro trimestre, a variação do PIB paulista em 12 meses \nfoi de 1,8%, enquanto na média do Brasil esse resultado foi de 2,7% \n(Gráfico 7).\nGráfico 7 – Taxas de crescimento trimestrais do PIB em quatro trimestres em relação ao \nmesmo período do ano anterior\nBrasil...",
+          "content_type": "text",
+          "claim": "...5 também se evidencia na comparação em doze meses: no 3º tri. 2025, a variação do PIB paulista em quatro trimestres foi de 1,8%, abaixo dos 2,7% registrados para a média do Brasil. No acumulado até o 3º tri. 2025, o PIB do Estado cresceu 1,4% frente ao mesmo período do ano anterior,...",
+          "explanation": "A média do Brasil no acumulado de 2025 foi 2,7%, superando os 1,8% do PIB paulista."
+        },
+        {
+          "value": "1,4%",
+          "start": 1889,
+          "end": 1893,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.8,
+          "page": 4,
+          "snippet": "...2. Atividade econômica: Estado de São Paulo \nNo acumulado até o terceiro trimestre de 2025, o PIB do Estado \nde São Paulo cresceu 1,4% em relação ao mesmo período do ano \nanterior, resultado abaixo tanto do PIB do Brasil (2,4%), como do \npróprio PIB paulista em 2024 (3,4%)...",
+          "content_type": "text",
+          "claim": "...quatro trimestres foi de 1,8%, abaixo dos 2,7% registrados para a média do Brasil. No acumulado até o 3º tri. 2025, o PIB do Estado cresceu 1,4% frente ao mesmo período do ano anterior, resultado inferior ao PIB nacional (2,4%) e ao próprio desempenho paulista em 2024 (3,4%). Esse qu...",
+          "explanation": "No acumulado até o terceiro trimestre de 2025, o PIB paulista cresceu 1,4% em relação ao mesmo período anterior."
+        },
+        {
+          "value": "2,4%",
+          "start": 1971,
+          "end": 1975,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.8,
+          "page": 4,
+          "snippet": "...de 2025, o PIB do Estado \nde São Paulo cresceu 1,4% em relação ao mesmo período do ano \nanterior, resultado abaixo tanto do PIB do Brasil (2,4%), como do \npróprio PIB paulista em 2024 (3,4%) (Gráfico 4). O impacto do menor \nnível de atividade econômica no país é amplificado pela est...",
+          "content_type": "text",
+          "claim": "...No acumulado até o 3º tri. 2025, o PIB do Estado cresceu 1,4% frente ao mesmo período do ano anterior, resultado inferior ao PIB nacional (2,4%) e ao próprio desempenho paulista em 2024 (3,4%). Esse quadro é atribuído, à combinação de política monetária restritiva e de um cenário in...",
+          "explanation": "No mesmo período de 2025, o PIB nacional cresceu 2,4%, acima do resultado paulista."
+        },
+        {
+          "value": "2024",
+          "start": 2013,
+          "end": 2017,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.8,
+          "page": 4,
+          "snippet": "...cresceu 1,4% em relação ao mesmo período do ano \nanterior, resultado abaixo tanto do PIB do Brasil (2,4%), como do \npróprio PIB paulista em 2024 (3,4%) (Gráfico 4). O impacto do menor \nnível de atividade econômica no país é amplificado pela estrutura \nprodutiva do Estado. A desaceler...",
+          "content_type": "text",
+          "claim": "...Estado cresceu 1,4% frente ao mesmo período do ano anterior, resultado inferior ao PIB nacional (2,4%) e ao próprio desempenho paulista em 2024 (3,4%). Esse quadro é atribuído, à combinação de política monetária restritiva e de um cenário internacional menos favorável para a indústr...",
+          "explanation": "Em 2024, o PIB paulista havia crescido 3,4% no mesmo indicador comparativo."
+        },
+        {
+          "value": "3,4%",
+          "start": 2019,
+          "end": 2023,
+          "source_index": 2,
+          "file": "conjuntura/Boletim_Conjuntura_3Trim.pdf",
+          "score": 0.8,
+          "page": 4,
+          "snippet": "...u 1,4% em relação ao mesmo período do ano \nanterior, resultado abaixo tanto do PIB do Brasil (2,4%), como do \npróprio PIB paulista em 2024 (3,4%) (Gráfico 4). O impacto do menor \nnível de atividade econômica no país é amplificado pela estrutura \nprodutiva do Estado. A desaceleração d...",
+          "content_type": "text",
+          "claim": "...o cresceu 1,4% frente ao mesmo período do ano anterior, resultado inferior ao PIB nacional (2,4%) e ao próprio desempenho paulista em 2024 (3,4%). Esse quadro é atribuído, à combinação de política monetária restritiva e de um cenário internacional menos favorável para a indústria exp...",
+          "explanation": "O desempenho de 3,4% refere-se ao crescimento do PIB paulista em 2024 na mesma métrica."
+        },
+        {
+          "value": "2026",
+          "start": 2207,
+          "end": 2211,
+          "source_index": 8,
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": "2",
+          "snippet": "1: 1o trim.\n2: 2o trim.\n3: 3o trim.\n4: 4o trim.\n5: Total\n6: 1o trim.",
+          "content_type": "table",
+          "claim": "...política monetária restritiva e de um cenário internacional menos favorável para a indústria exportadora. A recuperação do ritmo no 1º tri. 2026 aparece tanto na aceleração trimestral (+4,88% sobre o 4º tri. 2025) quanto na comparação interanual, com o PIB crescendo 1,8% no trimestre...",
+          "explanation": "No primeiro trimestre de 2026 houve aceleração trimestral de +4,88% e crescimento de 1,8% na comparação interanual."
+        },
+        {
+          "value": "0,8%",
+          "start": 2381,
+          "end": 2385,
+          "source_index": 0,
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...íodo do\nano anterior\nÚltimos quatro trimestres/quatro trimestres imediatamente \nanteriores\nAcumulado dos últimos quatro trimestres\n0,6%\nPIB\n0,8%\nValor Adicionado\n1,5%\nAgropecuária\n-2,4%\nIndústria\n1,8%\nServiços\nPIB avançou 1,8% no 1o trimestre de 2026\n1\n2\n3\n4\n1\n2025\n2026\n1,1\n1,8\n-1,0...",
+          "content_type": "text",
+          "claim": "...rimestral (+4,88% sobre o 4º tri. 2025) quanto na comparação interanual, com o PIB crescendo 1,8% no trimestre e o valor adicionado subindo 0,8% na mesma base. Entre os setores, a agropecuária avançou 1,5%, os serviços cresceram 1,8% e a indústria recuou -2,4% no 1º tri. 2026, indica...",
+          "explanation": "No primeiro trimestre de 2026, o valor adicionado cresceu 0,8% na mesma base de comparação."
+        },
+        {
+          "value": "1,5%",
+          "start": 2442,
+          "end": 2446,
+          "source_index": 0,
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...ltimos quatro trimestres/quatro trimestres imediatamente \nanteriores\nAcumulado dos últimos quatro trimestres\n0,6%\nPIB\n0,8%\nValor Adicionado\n1,5%\nAgropecuária\n-2,4%\nIndústria\n1,8%\nServiços\nPIB avançou 1,8% no 1o trimestre de 2026\n1\n2\n3\n4\n1\n2025\n2026\n1,1\n1,8\n-1,0\n0,0\n1,0\n2,0\n3,0\n4,0\n1...",
+          "content_type": "text",
+          "claim": "...interanual, com o PIB crescendo 1,8% no trimestre e o valor adicionado subindo 0,8% na mesma base. Entre os setores, a agropecuária avançou 1,5%, os serviços cresceram 1,8% e a indústria recuou -2,4% no 1º tri. 2026, indicando que a retomada recente foi puxada sobretudo pelos serviço...",
+          "explanation": "No primeiro trimestre de 2026, a agropecuária cresceu 1,5%, impulsionando parte da retomada."
+        },
+        {
+          "value": "-2,4%",
+          "start": 2496,
+          "end": 2501,
+          "source_index": 0,
+          "file": "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...estres/quatro trimestres imediatamente \nanteriores\nAcumulado dos últimos quatro trimestres\n0,6%\nPIB\n0,8%\nValor Adicionado\n1,5%\nAgropecuária\n-2,4%\nIndústria\n1,8%\nServiços\nPIB avançou 1,8% no 1o trimestre de 2026\n1\n2\n3\n4\n1\n2025\n2026\n1,1\n1,8\n-1,0\n0,0\n1,0\n2,0\n3,0\n4,0\n1\n2\n3\n4\n1\n2025\n2026\n3...",
+          "content_type": "text",
+          "claim": "...valor adicionado subindo 0,8% na mesma base. Entre os setores, a agropecuária avançou 1,5%, os serviços cresceram 1,8% e a indústria recuou -2,4% no 1º tri. 2026, indicando que a retomada recente foi puxada sobretudo pelos serviços, enquanto a indústria ainda não lidera a expansão. 20...",
+          "explanation": "No primeiro trimestre de 2026, a indústria recuou -2,4%, indicando resistência ao crescimento neste setor."
+        }
+      ],
+      "rag_type": "principal",
+      "rag_label": "RAG Principal",
+      "conversation_id": "bcd3cbbc33a9481ea1afd5993f9806ca",
+      "memory_turns": 0
+    }
+  }
+]

@@ -1,0 +1,1049 @@
+[
+  {
+    "domain": "labor_market",
+    "question": "Qual foi a taxa de desocupacao e o rendimento medio real no estado de Sao Paulo no trimestre mais recente divulgado pela PNAD Continua?",
+    "latency_s": 57.6,
+    "error": null,
+    "payload": {
+      "answer": "No primeiro trimestre de 2026, as informações da PNAD Contínua indicam a manutenção de uma relativa estabilidade na ocupação, porém com aumento da desocupação. Quanto ao rendimento, o último valor numérico disponível para o rendimento médio real efetivo do trabalho principal no Estado de São Paulo é do quarto trimestre de 2024, quando atingiu R$ 4.032. Nesse período, a remuneração média real apresentou alta de 6,0% em relação ao quarto trimestre de 2023, consolidando uma trajetória de ganhos reais observada ao longo de 2024. Em síntese, o mercado de trabalho paulista encerrou 2024 com rendimentos em expansão e massa de rendimentos crescente, mas a dinâmica do início de 2026 mostra que esse quadro favorável de remuneração não foi suficiente para impedir o aumento da desocupação, sinalizando um descompasso entre a geração de renda e a absorção de trabalhadores na força de trabalho.",
+      "sources_used": [
+        "tables",
+        "timeseries",
+        "text"
+      ],
+      "rewritten_query": "Qual foi a taxa de desocupação (desemprego) e o rendimento médio real habitualmente recebido no estado de São Paulo no trimestre móvel mais recente divulgado pela Pesquisa Nacional por Amostra de Domicílios Contínua (PNAD Contínua) do IBGE?",
+      "sources": [
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-relativa-estabilidade-ocupacao-desocupacao-terceiro-trimestre-2025.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "3o trim.2025\n1\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo\nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2021-3o trim.2025\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2021-3o trim.2025, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nNota: As estimativas populacionais das séries históricas foram reponderadas, considerando-se os totais populacionais das Projeções de Populações que incorporam os resultados do Censo Demográfico 2022.\n(1) Pessoas desocupadas + subocupadas por insuficiência de horas trabalhadas + força de trabalho potencial, dividida pela soma da força de \ntrabalho e da força de trabalho potencial. \nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2021-3o trim.2025, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nRelativa estabilidade da ocupação e da desocupação"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-relativa-estabilidade-ocupacao-aumento-desocupacao.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "1o trim.2026\n1\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo\nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2022-1o trim.2026\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2022-1o trim.2026, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nNota: As estimativas populacionais das séries históricas foram reponderadas, considerando-se os totais populacionais das Projeções de Populações que incorporam os resultados do Censo Demográfico 2022.\n(1) Pessoas desocupadas + subocupadas por insuficiência de horas trabalhadas + força de trabalho potencial, dividida pela soma da força de \ntrabalho e da força de trabalho potencial. \nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2022-1o trim.2026, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nRelativa estabilidade da ocupação e aumento da desocupação"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-diminui-desocupacao-terceiro-trimestre-2024.pdf",
+          "score": 0.8,
+          "page": 3,
+          "excerpt": "3o trim.2024\n3\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo exceto Região Metropolitana de São Paulo (Interior e Litoral) \nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2020-3o trim.2024\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2020-3o trim.2024\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nOcupação praticamente estável e aumento da desocupação no trimestre\nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2020-3o trim.2024\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 63 mil pessoas\nA força de trabalho foi estimada em 13,7 \nmilhões de pessoas no 3o trimestre de 2024, \ncom aumento de 0,5% em relação ao trimestre \nanterior. Na comparação com o mesmo período \nde 2023, esse contingente cresceu 1,8% (mais \n239 mil pessoas).\nOCUPAÇÃO\nMais 20 mil ocupados"
+        },
+        {
+          "file": "seade_social/trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf",
+          "score": 0.8,
+          "page": 3,
+          "excerpt": "2o trim.2024\n3\nTRABALHO\nOCUPAÇÃO E RENDIMENTO\nS A\nE DE\nS A\nE DE\nEstado de São Paulo exceto Região Metropolitana de São Paulo (Interior e Litoral) \nÍndice dos ocupados, segundo contribuição à previdência\n1o trim.2020-2o trim.2024\nTaxas de desocupação e taxas compostas de subutilização da força de trabalho (1)\n1o trim.2020-2o trim.2024, em %\nFonte: IBGE. Pesquisa Nacional por Amostra de Domicílios Contínua; Fundação Seade.\nAumenta a ocupação e diminui a desocupação no trimestre\nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2020-2o trim.2024, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 125 mil pessoas\nA força de trabalho foi estimada  \nem 13,6 milhões de pessoas no  \n2o trimestre de 2024, com aumento \nde 0,9% em relação ao trimestre \nanterior. Na comparação com o \nmesmo período de 2023, esse \ncontingente elevou-se em 1,3% \n(mais 173 mil pessoas).\nOCUPAÇÃO\nMais 267 mil ocupados"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_4trim2024.pdf",
+          "score": 0.7,
+          "page": 28,
+          "excerpt": "28\n4o trim.2024\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia do Estado de São Paulo\nCom o quadro ainda positivo da ocupação, os \nrendimentos efetivos do trabalho da população \nempregada no Estado de São Paulo se mantiveram \nem elevação. Segundo a PNAD Contínua do IBGE, o \nrendimento médio real efetivo atingiu R$ 4.032, no \nquarto trimestre, alta de 6,0% em relação ao mesmo \nperíodo de 2023. \nUm fator que tem impulsionado o rendimento dos \ntrabalhadores é a evolução das negociações salariais. \nSegundo dados do Dieese para a região Sudeste, em \n2024, em média, 87,6% dos acordos entre empregados \ne empregadores resultaram em reajustes superiores \nà variação do INPC em 12 meses, evidenciando o bom \nmomento do mercado de trabalho no Estado. Todavia, \nnota-se que, no quarto trimestre, as negociações \nsalariais analisadas pelo Dieese mostraram queda no \npercentual de acordos com ganhos reais, reflexo da \naceleração da inflação, que vem impondo percentuais \nmaiores para superar as variações de preços"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_3trim2024.pdf",
+          "score": 0.6,
+          "page": 28,
+          "excerpt": "28\n3o trim.2024\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia do Estado de São Paulo\nOs rendimentos efetivos do trabalho da população \nempregada no Estado de São Paulo continuaram se \nelevando. Segundo a PNAD Contínua, o rendimento \nmédio real efetivo atingiu R$ 4.038 no terceiro \ntrimestre, cresceu 5,7% em comparação ao mesmo \nperíodo de 2023. \nUm elemento que vem contribuindo para o aumento \ndo rendimento dos trabalhadores é a trajetória das \nnegociações salariais. As informações do Dieese para \na região Sudeste indicam que, no terceiro trimestre, na \nmédia, 89,2% dos acordos firmados entre empregados \ne empregadores obtiveram reajustes acima da variação \ndo INPC em 12 meses, refletindo o bom momento para \no mercado de trabalho paulista. \nJá a massa de rendimento real no Estado alcançou \nR$ 99,6 bilhões no terceiro trimestre, 8,5% acima da \nregistrada no mesmo período do ano passado, conforme \nas informações do IBGE (Gráfico 17). Adicionalmente, \nno terceiro trimestre, o desembolso do bolsa família,"
+        },
+        {
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_2trim2024.pdf",
+          "score": 0.5,
+          "page": 29,
+          "excerpt": "28\n2o trim.2024\nCONJUNTURA DA ECONOMIA PAULISTA\nS A\nE DE\nEconomia do Estado de São Paulo\nOs rendimentos do trabalho da população empregada no Estado de São Paulo também \ncontinuam apresentando evolução positiva. Segundo a PNAD Contínua do IBGE, o \nrendimento médio real efetivo chegou a R$ 3.941 no segundo trimestre, expansão de \n5,4%, comparando-se ao mesmo período de 2023. \nUm fator que tem ajudado a manter em alta o rendimento dos trabalhadores é a \nevolução das negociações salariais. Além do reajuste do salário mínimo acima da inflação, \ninformações do Dieese para a Região Sudeste indicam que 89,1% dos acordos resultaram \nem reajustes acima da variação do INPC em 12 meses, reforçando o quadro positivo no \nmercado de trabalho paulista.   \nNesse contexto, a massa de rendimentos reais no Estado de São Paulo atingiu, no \nsegundo trimestre de 2024, R$ 96,3 bilhões, 8,5% acima da registrada no mesmo período \nde 2023, conforme as informações da PNAD Contínua do IBGE."
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-diminui-desocupacao-terceiro-trimestre-2024.pdf",
+          "score": 0.8,
+          "page": "3",
+          "excerpt": "0: RENDIMENTO\n1: Rendimento médio real (1) do trabalho principal, efetivamente recebido por mês\nFonte: seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-diminui-desocupacao-terceiro-trimestre-2024.pdf"
+        },
+        {
+          "file": "seade_social/trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf",
+          "score": 0.6,
+          "page": "2",
+          "excerpt": "0: desocupação diminuiu de 8,5%\n1: Rendimento médio real (1) do trabalho principal, efetivamente recebido por mês\nFonte: seade_social/trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf"
+        },
+        {
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-diminui-ocupacao-aumenta-desocupacao-primeiro-trimestre-2024.pdf",
+          "score": 0.5,
+          "page": "2",
+          "excerpt": "0: para 8,5% e a taxa composta de\n1: Rendimento médio real (1) do trabalho principal, efetivamente recebido por mês\nFonte: seade_social/trabalho/seade-trabalho-ocupacao-rendimento-diminui-ocupacao-aumenta-desocupacao-primeiro-trimestre-2024.pdf"
+        }
+      ],
+      "validation": {
+        "verified": 6,
+        "total": 8,
+        "unverified": [
+          "2026",
+          "2026"
+        ]
+      },
+      "citation_validation": {
+        "verified": 0,
+        "total": 0,
+        "unverified": []
+      },
+      "numeric_citations": [
+        {
+          "value": "2024",
+          "start": 324,
+          "end": 328,
+          "source_index": 2,
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-diminui-desocupacao-terceiro-trimestre-2024.pdf",
+          "score": 0.8,
+          "page": 3,
+          "snippet": "...flacionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 63 mil pessoas\nA força de trabalho foi estimada em 13,7 \nmilhões de pessoas no 3o trimestre de 2024, \ncom aumento de 0,5% em relação ao trimestre \nanterior. Na comparação com o mesmo período \nde 2023, esse contingente cresceu 1,8% (mais \n2...",
+          "content_type": "text",
+          "claim": "...último valor numérico disponível para o rendimento médio real efetivo do trabalho principal no Estado de São Paulo é do quarto trimestre de 2024, quando atingiu R$ 4.032. Nesse período, a remuneração média real apresentou alta de 6,0% em relação ao quarto trimestre de 2023, consolida...",
+          "explanation": "O valor 2024 refere-se ao período do quarto trimestre analisado para o rendimento médio real efetivo no Estado de São Paulo."
+        },
+        {
+          "value": "4.032",
+          "start": 348,
+          "end": 353,
+          "source_index": 4,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_4trim2024.pdf",
+          "score": 0.7,
+          "page": 28,
+          "snippet": "...empregada no Estado de São Paulo se mantiveram \nem elevação. Segundo a PNAD Contínua do IBGE, o \nrendimento médio real efetivo atingiu R$ 4.032, no \nquarto trimestre, alta de 6,0% em relação ao mesmo \nperíodo de 2023. \nUm fator que tem impulsionado o rendimento dos \ntrabalhadores é...",
+          "content_type": "text",
+          "claim": "...sponível para o rendimento médio real efetivo do trabalho principal no Estado de São Paulo é do quarto trimestre de 2024, quando atingiu R$ 4.032. Nesse período, a remuneração média real apresentou alta de 6,0% em relação ao quarto trimestre de 2023, consolidando uma trajetória de gan...",
+          "explanation": "O valor R$ 4.032 corresponde ao rendimento médio real efetivo do trabalho principal no Estado de São Paulo no quarto trimestre de 2024."
+        },
+        {
+          "value": "6,0%",
+          "start": 414,
+          "end": 418,
+          "source_index": 4,
+          "file": "conjuntura/Boletim_Conjuntura_Paulista_4trim2024.pdf",
+          "score": 0.7,
+          "page": 28,
+          "snippet": "...mantiveram \nem elevação. Segundo a PNAD Contínua do IBGE, o \nrendimento médio real efetivo atingiu R$ 4.032, no \nquarto trimestre, alta de 6,0% em relação ao mesmo \nperíodo de 2023. \nUm fator que tem impulsionado o rendimento dos \ntrabalhadores é a evolução das negociações salariais...",
+          "content_type": "text",
+          "claim": "...l no Estado de São Paulo é do quarto trimestre de 2024, quando atingiu R$ 4.032. Nesse período, a remuneração média real apresentou alta de 6,0% em relação ao quarto trimestre de 2023, consolidando uma trajetória de ganhos reais observada ao longo de 2024. Em síntese, o mercado de tr...",
+          "explanation": "O valor 6,0% representa a alta do rendimento médio real em relação ao quarto trimestre de 2023 no Estado de São Paulo."
+        },
+        {
+          "value": "2023",
+          "start": 453,
+          "end": 457,
+          "source_index": 2,
+          "file": "seade_social/trabalho/seade-trabalho-ocupacao-rendimento-aumenta-ocupacao-diminui-desocupacao-terceiro-trimestre-2024.pdf",
+          "score": 0.8,
+          "page": 3,
+          "snippet": "...milhões de pessoas no 3o trimestre de 2024, \ncom aumento de 0,5% em relação ao trimestre \nanterior. Na comparação com o mesmo período \nde 2023, esse contingente cresceu 1,8% (mais \n239 mil pessoas).\nOCUPAÇÃO\nMais 20 mil ocupados...",
+          "content_type": "text",
+          "claim": "...imestre de 2024, quando atingiu R$ 4.032. Nesse período, a remuneração média real apresentou alta de 6,0% em relação ao quarto trimestre de 2023, consolidando uma trajetória de ganhos reais observada ao longo de 2024. Em síntese, o mercado de trabalho paulista encerrou 2024 com rendi...",
+          "explanation": "O valor 2023 indica o período comparado, referente ao quarto trimestre usado como base para a evolução do rendimento em 2024."
+        },
+        {
+          "value": "2024",
+          "start": 525,
+          "end": 529,
+          "source_index": 3,
+          "file": "seade_social/trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf",
+          "score": 0.8,
+          "page": 3,
+          "snippet": "...o e diminui a desocupação no trimestre\nRendimento médio real (1) do trabalho principal, efetivamente recebido por mês \n1o trim.2020-2o trim.2024, em reais\n(1) A preços da média dos três meses do trimestre que está sendo divulgado. Deflacionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 125 mi...",
+          "content_type": "text",
+          "claim": "...édia real apresentou alta de 6,0% em relação ao quarto trimestre de 2023, consolidando uma trajetória de ganhos reais observada ao longo de 2024. Em síntese, o mercado de trabalho paulista encerrou 2024 com rendimentos em expansão e massa de rendimentos crescente, mas a dinâmica do i...",
+          "explanation": "O valor 2024 indica o ano em que ocorreu a trajetória de ganhos reais observada no rendimento médio do trabalho paulista."
+        },
+        {
+          "value": "2024",
+          "start": 583,
+          "end": 587,
+          "source_index": 3,
+          "file": "seade_social/trabalho/seade_trabalho_ocupacao_-rendimento-_2trim_2024.pdf",
+          "score": 0.8,
+          "page": 3,
+          "snippet": "...ionado pelo IPCA.\nFORÇA DE TRABALHO\nMais 125 mil pessoas\nA força de trabalho foi estimada  \nem 13,6 milhões de pessoas no  \n2o trimestre de 2024, com aumento \nde 0,9% em relação ao trimestre \nanterior. Na comparação com o \nmesmo período de 2023, esse \ncontingente elevou-se em 1,3% \n(...",
+          "content_type": "text",
+          "claim": "...mestre de 2023, consolidando uma trajetória de ganhos reais observada ao longo de 2024. Em síntese, o mercado de trabalho paulista encerrou 2024 com rendimentos em expansão e massa de rendimentos crescente, mas a dinâmica do início de 2026 mostra que esse quadro favorável de remunera...",
+          "explanation": "O valor 2024 refere-se ao ano do segundo trimestre analisado para a estimativa da força de trabalho no Estado de São Paulo."
+        }
+      ],
+      "rag_type": "principal",
+      "rag_label": "RAG Principal",
+      "conversation_id": "44ebfe6409f348e4a441d5847cacdca4",
+      "memory_turns": 0
+    }
+  },
+  {
+    "domain": "demography",
+    "question": "Qual e a populacao do estado de Sao Paulo e como esta o envelhecimento populacional?",
+    "latency_s": 80.5,
+    "error": null,
+    "payload": {
+      "answer": "A população do Estado de São Paulo atingiu 44,4 milhões de habitantes em 2022, confirmando sua posição de unidade federativa mais populosa do país. O envelhecimento populacional é a transformação demográfica mais marcante no território paulista nas últimas décadas, caracterizado por uma forte redução da base jovem e um expressivo alargamento do topo da pirâmide etária. Entre 2000 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção, os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por 17,2% da população estadual em 2022, contra 7,7% em 1991. A despeito desse avanço, São Paulo não detém a maior participação de idosos entre os estados brasileiros, ficando abaixo do Rio Grande do Sul (20,2%) e do Rio de Janeiro. Internamente, o processo é heterogêneo: o envelhecimento está mais adiantado nas regiões a oeste do estado, onde em 91 municípios o número de idosos já superou o de crianças de 0 a 14 anos em 2022, enquanto as localidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com concentração de municípios com índices superiores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade mediana, que subiu de 27,9 anos em 2001 para 35,7 anos em 2021, sinalizando que a população paulista está progressivamente mais envelhecida. As projeções indicam que o contingente de menores de 15 anos e o de maiores de 65 anos deverão se igualar numericamente em 2034, consolidando a inversão da pirâmide etária no médio prazo.",
+      "sources_used": [
+        "tables",
+        "timeseries",
+        "text"
+      ],
+      "rewritten_query": "Qual é a população atual do estado de São Paulo e qual é a tendência do envelhecimento populacional (evolução da pirâmide etária, taxa de envelhecimento e proporção de idosos) nos últimos anos?",
+      "sources": [
+        {
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "S A\nE DE\nseade.gov.br | Av. Prof. Lineu Prestes, 913 - Cidade Universitária - São Paulo/ SP - Brasil | 3324-7200 - faleconosco@seade.gov.br\nFevereiro.2021\nINFORMA\nDEMOGRAFIA\nEstado de São Paulo\nÍndice de envelhecimento (1), 2021\nPopulação municipal por classes de tamanho, 2021\nFonte: Fundação Seade. Sistema de Projeções Populacionais.\nPirâmide etária da população paulista, por sexo, 2001-2021, em %\nAs projeções do Seade indicam que o Estado de São Paulo atingirá o \npatamar de 44,9 milhões de habitantes em 2021. A população cresceu \n20% em 20 anos, com um acréscimo de 7,4 milhões de pessoas, \nreafirmando São Paulo como o estado mais populoso do Brasil. Esse \ncrescimento foi acompanhado de relevantes modificações na composição \netária da população, representada na forma da pirâmide, com forte \nestreitamento da base correspondente aos mais jovens e alargamento \nnas faixas etárias mais avançadas. A redução da fecundidade influenciou \na diminuição da proporção de jovens, enquanto as gerações antigas e"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-idade-media-populacao-paulista-aumenta.pdf",
+          "score": 0.9,
+          "page": 1,
+          "excerpt": "aumento da longevidade.\nA distribuição municipal revela tendência inequívoca de aumento da \nidade média da população residente em todo o Estado de São Paulo. \nEssa média para as populações municipais alterou-se bastante entre \n2010 e 2022, acompanhando a elevação apontada por esse indicador \nestadual. As áreas mais ao sul permaneceram com as menores idades \nmédias nesse período, enquanto a noroeste encontram-se as localidades \ncom as maiores médias. Em 2022, as menores idades médias foram \nregistradas em Canitar (32,6 anos) e Pirapora do Bom Jesus (32,8), ao \npasso que em 2010 correspondiam a Nova Campina e Bom Sucesso  \nIdade média da população paulista aumenta\nPopulação, por grandes grupos etários\nEstado de São Paulo, 2000-2022, em milhares\nFonte: Fundação Seade; IBGE.\nÉ nítida a transformação na composição etária da população no século \nXXI. Enquanto o grupo de 0 a 29 anos despontava como o mais numeroso \nem 2000, observam-se no período contínua redução das faixas mais"
+        },
+        {
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": 8,
+          "excerpt": "Maio.2025\nAno 25\nno 1\n8\nSP DEMOGRÁFICO\nPOPULAÇÃO\nS A\nE DE\nA combinação de baixa fecundidade e aumento da longevidade alterou \nprofundamente a estrutura etária da população. A proporção de idosos \n(definidos no Estatuto do Idoso como pessoas de 60 anos ou mais) \ncresceu rapidamente, respondendo por 17,2% da população estadual \nem 2022, segundo o Censo, enquanto em 1991 essa proporção era de \n7,7%. O envelhecimento tornou-se a característica demográfica mais \nmarcante do período.\nO Gráfico 2, que traz a participação dos grandes grupos de idade da \npopulação paulista, mostra a mudança ocorrida na estrutura etária \nentre 1991 e 2022, sinalizando o expressivo aumento relativo da \npopulação idosa.\nGráfico 2 − Participação dos grandes grupos etários na população\nEstado de São Paulo, 1991-2022, em %\nFonte: IBGE; Fundação Seade.\nVale destacar, todavia, que São Paulo não é o estado com a maior participação \nde população idosa, ficando abaixo do Rio Grande do Sul (20,2%), Rio de Janeiro"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "excerpt": "S A\nE DE INFORMA\nDEMOGRAFIA\nEstado de São Paulo\nwww.seade.gov.br - @fundacaoseade - faleconosco@seade.gov.br | Av. Prof. Lineu Prestes, 913 - 05508-000 - São Paulo/SP - 11 3324-7200\nNov.2023\ninforma.seade.gov.br\nÍndices de envelhecimento da população (1)\nMunicípios do Estado de São Paulo, 2010-2022\nDistribuição etária da população e índice de envelhecimento (1)\nEstado de São Paulo, 2000-2022\nO processo de envelhecimento da população, resultado da redução do \nnúmero de filhos por mulher e do aumento da longevidade, vem alterando \nsua composição etária. Enquanto a população total cresceu 20% entre \n2000 e 2022, o grupo com 65 anos ou mais aumentou 133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice de \nenvelhecimento quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de"
+        },
+        {
+          "file": "seade_demografia/populacao/padrao_etario_populacao_paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "excerpt": "paulista representa instrumento valioso para planejar políticas públicas. \nNa primeira metade do século XXI, o Estado de São Paulo passa por \nrelevante mudança no padrão etário de sua população residente. A \ntendência esperada pelas projeções populacionais do Seade indica que \na queda do número de menores de 15 anos e o aumento dos maiores \nde 65 anos farão com que o contingente desses dois grupos se iguale \nnumericamente em 2034. A população entre 15 e 64 anos atinge um platô \naproximadamente em 2020, que deverá se estender até 2040.\nEstado de São Paulo"
+        },
+        {
+          "file": "seade_demografia/fecundidade/spdemografico-envelhecimento-dinamica-populacional-distritos-paulistanos.pdf",
+          "score": 0.8,
+          "page": 9,
+          "excerpt": "SEADE 9 \n \nter decréscimo populacional, enquanto 56 apresentarão incrementos \npositivos. Vários distritos registrarão taxas muito próximas de zero.  \nO processo de envelhecimento é nítido em todas as áreas da cidade de \nSão Paulo. Hoje, 20% da população paulistana é formada por jovens, \nmas, em 2030, esta participação corresponderá àqueles com mais de \n60 anos. Entre os distritos este fenômeno acontece de maneira \ndiferenciada.  \nO Mapa 1 mostra a distribuição dos distritos segundo o índice de \nenvelhecimento, em 2010 e 2030, revelando com nitidez o rápido \nprocesso de envelhecimento esperado para a população residente nas \ndiversas áreas da capital. Em 2010 este índice variou de 2 pessoas com \nmais de 60 anos para cada 10 pessoas com até 15 anos, em Cidade \nTiradentes, até 23 por 10, na Consolação, já para a população \nprojetada em 2030 ele deverá variar de 7 idosos para cada 10 jovens, \nem Parelheiros, até 37 por 10, em Alto de Pinheiros."
+        },
+        {
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "excerpt": "nas faixas etárias mais avançadas. A redução da fecundidade influenciou \na diminuição da proporção de jovens, enquanto as gerações antigas e \nmais numerosas se deslocaram em direção ao topo da pirâmide. A idade \nmediana, que divide a população em duas parcelas iguais, passou de \n27,9 anos, em 2001, para 35,7 anos, em 2021, mostrando que, em duas \ndécadas, essa idade aumentou quase oito anos e deverá se expandir ainda \nmais no futuro. Tal processo de “envelhecimento populacional” impacta \ndiretamente na definição da agenda de políticas públicas em áreas como \neducação, saúde, previdência social, transportes públicos, entre outras.\nEm 2021, o índice de envelhecimento no Estado de São Paulo é de 83 \npessoas de 60 anos e mais para cada 100 menores de 15 anos. Na análise \nregional observa-se que há maior concentração de municípios com \níndices superiores a 100 ao norte e oeste do estado, enquanto a leste e ao \nsul aparecem os índices inferiores a 100. Em 281 municípios, o número"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "excerpt": "para cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de \nenvelhecimento, embora esse processo venha ocorrendo de modo \ndiferenciado entre essas localidades. O índice mostra que o intervalo de \nvariação entre os municípios é amplo. Em 2010, o número de pessoas \nde 65 anos ou mais para cada 100 de 0 a 14 anos variou de 13,3 em \nItaquaquecetuba a 116,4 em Águas de São Pedro. Já em 2022, esse \níndice oscilou entre 31,8 em Itapevi e 205,4 em Turmalina. O processo de \nAcelera o processo de envelhecimento da população paulista \nPopulação com 65 anos ou mais, por faixas etárias quinquenais\nEstado de São Paulo, 2010-2022, em milhares\nFonte: Fundação Seade; IBGE.\nEntre 2010 e 2022, observa-se crescimento populacional expressivo nas \nfaixas quinquenais superiores a 65 anos, cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo"
+        },
+        {
+          "file": "seade_demografia/populacao/spdemografico-mudancas-componentes-dinamica-demografica-paulista.pdf",
+          "score": 0.7,
+          "page": 9,
+          "excerpt": "SEADE 9\nEntre 2005 e 2010, 788 mil pessoas saíram de São Paulo para outros Es-\ntados brasileiros, enquanto no período 1995 a 2000, este número foi de \n884 mil pessoas, indicando redução de 10,8% no volume de emigrantes \ndo Estado. \nO Nordeste mostrou-se como a principal área de destino destes fluxos, \nrespondendo por 36,1% dos emigrantes. Os estados preferenciais foram \nBahia, Pernambuco e Ceará, que absorveram, em conjunto, 23,3% dos \nemigrantes de São Paulo. No Sudeste sobressaiu Minas Gerais (19,7%) \ne, no Sul, o Paraná (15,2%). \nAlterações na estrutura etária \nAs pirâmides etárias permitem visualizar as intensas transformações que \nvêm ocorrendo na estrutura por idade e sexo da população paulista entre \n1980 e 2010. Em 2010, 21,5% da população tinha entre 0 e 14 anos de \nidade, enquanto em 1980 este grupo concentrava 33,0%. Observa-se \nclaramente o envelhecimento da população no Estado, processo que se \nintensificou nos últimos anos. A população idosa, representada pelo con-"
+        },
+        {
+          "file": "seade_demografia/populacao/spdemografico-envelhecimento-dinamica-populacional-distritos-paulistanos.pdf",
+          "score": 0.6,
+          "page": 5,
+          "excerpt": "SEADE 5 \n \ndas informações provenientes dos Cartórios de Registro Civil, e as \npopulações recenseadas pelo IBGE. \nImportante resultado das projeções é a constatação do inexorável \nprocesso de envelhecimento da população da cidade de São Paulo. O \níndice de envelhecimento, que relaciona o total de pessoas com mais \nde 60 anos de idade com a população que tem menos de 15 anos, \ndeverá dobrar em 20 anos, ao passar de 6 idosos para cada 10 jovens, \nem 2010, para 12 idosos para cada 10 jovens, em 2030, e novamente \nquase dobrar em 2050, ao atingir o índice de 21 idosos para cada 10 \njovens. Isso significa que o contingente de pessoas com idades mais \navançadas será sucessivamente superior ao de crianças e jovens \nmenores de 15 anos, a partir de 2027. \nAs taxas de fecundidade abaixo do nível de reposição geram volume \nde nascimentos cada vez menor. Por outro lado, a população mais \nenvelhecida provoca volume de óbitos crescente, apesar da diminuição"
+        },
+        {
+          "file": "seade_demografia/populacao/spdemografico-envelhecimento-dinamica-populacional-distritos-paulistanos.pdf",
+          "score": 0.6,
+          "page": 1,
+          "excerpt": "SEADE 1 \n \n461 ANOS DE SÃO PAULO  \nO envelhecimento e a dinâmica populacional  \ndos distritos paulistanos \nO envelhecimento populacional é um processo progressivo na capital \npaulista e, segundo as projeções populacionais realizadas pela \nFundação Seade, o número passará de 6 idosos para cada 10 jovens, \nem 2010, a 12 idosos para cada 10 jovens em 2030, chegando a 21 \nidosos para cada 10 jovens em 2050. Os distritos mais envelhecidos \nlocalizam-se no centro e no centro expandido de São Paulo onde há \ncondições propícias para a vigência de um novo regime demográfico \nque se caracteriza pelo decréscimo populacional. \nIntrodução \nO processo de transição demográfica da população do Estado e do \nmunicípio de São Paulo, que contemplou acentuada queda da \nfecundidade para níveis inferiores ao da reposição e aumento \nprogressivo da sobrevivência nas idades avançadas, provocou rápido \nprocesso de envelhecimento populacional associado, também, a rápido \ndeclínio no ritmo de crescimento da população. Esse fenômeno vem"
+        },
+        {
+          "file": "seade_demografia/fecundidade/spdemografico-qual-trajetoria-populacao-paulista-seguira-futuro.pdf",
+          "score": 0.6,
+          "page": 19,
+          "excerpt": "te maiores, tendo sido beneficiado pelos avanços na área da saúde, que \nresultou em redução dos riscos de morte e aumento da vida média. Nesse \nhorizonte, a expectativa de vida da população do Estado alcançará o pa-\ntamar de 81,7 anos. \nInteressante observar que as gerações de nascidos a partir da década de \n1980 têm sido cada vez menores, de modo que a ampliação do contin-\ngente de idosos deverá ser menos acelerada no futuro, tendendo a maior \nequilíbrio entre os diferentes grupos etários da população. \nO olhar demográfico sobre os números da população permite conhecer e \ninterpretar seu processo dinâmico, trazendo subsídios valiosos para pre-\nparar o futuro de uma região. O presente artigo espera contribuir com \nesse desafio no Estado de São Paulo.\nBibliografia\nFERREIRA, C.E.C.; CAPASSI, R. A inversão da pirâmide etária paulista. SP De-\nmográfico, São Paulo, Fundação Seade, ano 10, n. 3, abr. 2010. \nFERREIRA, C.E.C.; CASTIÑEIRAS, L.L. Sobrevivência e esperança de vida em"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "excerpt": "faixas quinquenais superiores a 65 anos, cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o incremento nessa população decorre, em parte, da dinâmica \ndemográfica das gerações associadas e da tendência histórica de aumento \nna sobrevivência.\n(1) Número de pessoas com 65 anos ou mais por 100 pessoas entre 0 e 14 anos.\nenvelhecimento está mais adiantado nas regiões a oeste do Estado, onde se \nconcentra a maioria dos 91 municípios em que o número de idosos, em 2022, \njá superava o da população de 0 a 14 anos. Nos municípios mais ao sul, esta \nrelação é menor. Os diferenciais observados nos índices de envelhecimento \ndos municípios paulistas ressaltam a importância de avaliações e \nimplementações de políticas de saúde, educação e assistência social, entre"
+        },
+        {
+          "file": "seade_demografia/populacao/sp-demografico-campo-cidade-trajetoria-urbanizacao-transformacoes-demograficas-estado-sao-paulo.pdf",
+          "score": 0.5,
+          "page": 9,
+          "excerpt": "cresceu de 113,6 para 114,8, mostrando que os homens permanecem \nmajoritários, reflexo da ligação do campo a ocupações agrícolas \nhistoricamente masculinizadas e da saída de mulheres jovens em direção \nao urbano. \nO envelhecimento populacional se expressa de forma contundente \nno índice de envelhecimento, que representa a relação entre a \npopulação com 60 anos ou mais e aquela com até 15 anos de idade. \nObserva-se que, em 1980, havia 20,4 idosos para cada 100 jovens nas \náreas urbanas e apenas 13,5 nas rurais. Quarenta anos depois, esses \nnúmeros cresceram para 95,5 e 108,1, respectivamente, revelando a \ninversão da pirâmide etária e a predominância relativa dos idosos. Mais \numa vez, a migração seletiva intensificou o envelhecimento do campo, \njá que a saída de jovens para as cidades elevou proporcionalmente a \npresença de idosos.\nEssa tendência é confirmada pela participação de pessoas com 60 \nanos ou mais na população total. Nas áreas urbanas, essa proporção"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-populacao-residente-estado-sao-paulo-segundo-naturalidade.pdf",
+          "score": 0.9,
+          "page": "1",
+          "excerpt": "0: da população no Estado de São Paulo. Seus residentes somaram 44,4 milhões\n1: não naturais o padrão é mais envelhecido: 49 anos para originários de\nFonte: seade_demografia/populacao/seade-informa-demografia-populacao-residente-estado-sao-paulo-segundo-naturalidade.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/aniversario_municipio_sp.pdf",
+          "score": 0.8,
+          "page": "1",
+          "excerpt": "0: pirâMide etáriA dA populAção\n1: 100 e +\nFonte: seade_demografia/populacao/aniversario_municipio_sp.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf",
+          "score": 0.7,
+          "page": "10",
+          "excerpt": "Fonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf\n---\nFonte: seade_demografia/populacao/spdemografico-perspectivas-demograficas-distritos-municipio-sao-paulo-rapido-diferenciado-processo-envelhecimento.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-o-que-mostram-primeiros-resultados-censo-2022.pdf",
+          "score": 0.9,
+          "page": "1",
+          "excerpt": "0: Segundo o Censo Demográfico de 2022 (IBGE), o Estado de SP possui 44,4\n1: A dinâmica paulista de crescimento demográfico apresentava taxas anuais\nFonte: seade_demografia/populacao/seade-informa-demografia-o-que-mostram-primeiros-resultados-censo-2022.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-mulheres-adultas-sao-maioria-estado-sao-paulo.pdf",
+          "score": 0.9,
+          "page": "1",
+          "excerpt": "0: Estado de São Paulo, 1940-2023, em milhões\n1: Estado de São Paulo, 1940-2023, em %\nFonte: seade_demografia/populacao/seade-informa-demografia-mulheres-adultas-sao-maioria-estado-sao-paulo.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-envelhecimento-demografico-avanca-territorio-paulista.pdf",
+          "score": 0.8,
+          "page": "1",
+          "excerpt": "0: Evolução da população total e idosa, 1950-2022, em milhões\n1: Evolução do índice de envelhecimento demográfico,\nFonte: seade_demografia/populacao/seade-informa-envelhecimento-demografico-avanca-territorio-paulista.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-envelhecimento-demografico-avanca-territorio-paulista.pdf",
+          "score": 0.8,
+          "page": "1",
+          "excerpt": "0: Envelhecimento demográfico avança no território paulista\nFonte: seade_demografia/populacao/seade-informa-envelhecimento-demografico-avanca-territorio-paulista.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/sp-demografico-campo-cidade-trajetoria-urbanizacao-transformacoes-demograficas-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": "10",
+          "excerpt": "0: Índice de envelhecimento (%)\n3: Proporção de idosos (60 anos e mais) (%)\nFonte: seade_demografia/populacao/sp-demografico-campo-cidade-trajetoria-urbanizacao-transformacoes-demograficas-estado-sao-paulo.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": "1",
+          "excerpt": "0: Índices de envelhecimento da população (1)\nFonte: seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.7,
+          "page": "1",
+          "excerpt": "1: em todo o Estado, com os idosos respondendo por 17,2% da população.\nFonte: seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-mudancas-idade-media-mulher.pdf",
+          "score": 0.7,
+          "page": "1",
+          "excerpt": "0: No Estado de São Paulo, a idade média das mulheres supera a dos\n1: Em 2023, 23,1 milhões de mulheres residiam no Estado, com\nFonte: seade_demografia/populacao/seade-informa-demografia-mudancas-idade-media-mulher.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/seade-informa-demografia-idade-media-populacao-paulista-aumenta.pdf",
+          "score": 0.6,
+          "page": "1",
+          "excerpt": "0: Estado de São Paulo, 1980-2022, em anos\n3: Estado de São Paulo, 2000-2022, em milhares\nFonte: seade_demografia/populacao/seade-informa-demografia-idade-media-populacao-paulista-aumenta.pdf"
+        },
+        {
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.6,
+          "page": "8",
+          "excerpt": "1: profundamente a estrutura etária da população. A proporção de idosos\nFonte: seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf"
+        }
+      ],
+      "validation": {
+        "verified": 52,
+        "total": 53,
+        "unverified": [
+          "2000"
+        ]
+      },
+      "citation_validation": {
+        "verified": 0,
+        "total": 0,
+        "unverified": []
+      },
+      "numeric_citations": [
+        {
+          "value": "44,4",
+          "start": 43,
+          "end": 47,
+          "source_index": 14,
+          "file": "seade_demografia/populacao/seade-informa-demografia-populacao-residente-estado-sao-paulo-segundo-naturalidade.pdf",
+          "score": 0.9,
+          "page": "1",
+          "snippet": "0: da população no Estado de São Paulo. Seus residentes somaram 44,4 milhões\n1: não naturais o padrão é mais envelhecido: 49 anos para originários de",
+          "content_type": "table",
+          "claim": "...A população do Estado de São Paulo atingiu 44,4 milhões de habitantes em 2022, confirmando sua posição de unidade federativa mais populosa do país. O envelhecimento populacional é a trans...",
+          "explanation": "O valor 44,4 indica que a população do Estado de São Paulo era de 44,4 milhões de habitantes em 2022."
+        },
+        {
+          "value": "2022",
+          "start": 73,
+          "end": 77,
+          "source_index": 1,
+          "file": "seade_demografia/populacao/seade-informa-demografia-idade-media-populacao-paulista-aumenta.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...am a Nova Campina e Bom Sucesso  \nIdade média da população paulista aumenta\nPopulação, por grandes grupos etários\nEstado de São Paulo, 2000-2022, em milhares\nFonte: Fundação Seade; IBGE.\nÉ nítida a transformação na composição etária da população no século \nXXI. Enquanto o grupo de 0...",
+          "content_type": "text",
+          "claim": "...A população do Estado de São Paulo atingiu 44,4 milhões de habitantes em 2022, confirmando sua posição de unidade federativa mais populosa do país. O envelhecimento populacional é a transformação demográfica mais marc...",
+          "explanation": "O ano 2022 refere-se ao período em que a população paulista alcançou 44,4 milhões de habitantes."
+        },
+        {
+          "value": "2022",
+          "start": 385,
+          "end": 389,
+          "source_index": 19,
+          "file": "seade_demografia/populacao/seade-informa-envelhecimento-demografico-avanca-territorio-paulista.pdf",
+          "score": 0.8,
+          "page": "1",
+          "snippet": "0: Evolução da população total e idosa, 1950-2022, em milhões\n1: Evolução do índice de envelhecimento demográfico,",
+          "content_type": "table",
+          "claim": "...nas últimas décadas, caracterizado por uma forte redução da base jovem e um expressivo alargamento do topo da pirâmide etária. Entre 2000 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Com...",
+          "explanation": "O ano 2022 marca o período final da comparação entre 2000 e 2022 nas mudanças etárias da população."
+        },
+        {
+          "value": "20%",
+          "start": 417,
+          "end": 420,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...dução do \nnúmero de filhos por mulher e do aumento da longevidade, vem alterando \nsua composição etária. Enquanto a população total cresceu 20% entre \n2000 e 2022, o grupo com 65 anos ou mais aumentou 133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice d...",
+          "content_type": "text",
+          "claim": "...do por uma forte redução da base jovem e um expressivo alargamento do topo da pirâmide etária. Entre 2000 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica...",
+          "explanation": "O valor 20% representa o crescimento da população total entre 2000 e 2022."
+        },
+        {
+          "value": "65",
+          "start": 447,
+          "end": 449,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...r e do aumento da longevidade, vem alterando \nsua composição etária. Enquanto a população total cresceu 20% entre \n2000 e 2022, o grupo com 65 anos ou mais aumentou 133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice de \nenvelhecimento quase triplicar:...",
+          "content_type": "text",
+          "claim": "...se jovem e um expressivo alargamento do topo da pirâmide etária. Entre 2000 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento...",
+          "explanation": "O valor 65 refere-se à idade usada para delimitar o grupo populacional de idosos de 65 anos ou mais."
+        },
+        {
+          "value": "133%",
+          "start": 472,
+          "end": 476,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...dade, vem alterando \nsua composição etária. Enquanto a população total cresceu 20% entre \n2000 e 2022, o grupo com 65 anos ou mais aumentou 133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice de \nenvelhecimento quase triplicar: o número de pessoas de 65 a...",
+          "content_type": "text",
+          "claim": "...alargamento do topo da pirâmide etária. Entre 2000 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de...",
+          "explanation": "O valor 133% indica o aumento do grupo populacional com 65 anos ou mais entre 2000 e 2022."
+        },
+        {
+          "value": "15",
+          "start": 506,
+          "end": 508,
+          "source_index": 9,
+          "file": "seade_demografia/populacao/spdemografico-envelhecimento-dinamica-populacional-distritos-paulistanos.pdf",
+          "score": 0.6,
+          "page": 5,
+          "snippet": "...de São Paulo. O \níndice de envelhecimento, que relaciona o total de pessoas com mais \nde 60 anos de idade com a população que tem menos de 15 anos, \ndeverá dobrar em 20 anos, ao passar de 6 idosos para cada 10 jovens, \nem 2010, para 12 idosos para cada 10 jovens, em 2030, e novame...",
+          "content_type": "text",
+          "claim": "...ária. Entre 2000 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para...",
+          "explanation": "O valor 15 refere-se ao limite inferior da faixa etária jovem menor de 15 anos mencionada."
+        },
+        {
+          "value": "18%",
+          "start": 521,
+          "end": 524,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...nquanto a população total cresceu 20% entre \n2000 e 2022, o grupo com 65 anos ou mais aumentou 133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice de \nenvelhecimento quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, qu...",
+          "content_type": "text",
+          "claim": "...0 e 2022, a população total cresceu 20%, ao passo que o grupo com 65 anos ou mais expandiu 133% e o contingente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoa...",
+          "explanation": "O valor 18% mostra a redução do contingente com menos de 15 anos entre 2000 e 2022."
+        },
+        {
+          "value": "65",
+          "start": 628,
+          "end": 630,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice de \nenvelhecimento quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municí...",
+          "content_type": "text",
+          "claim": "...ente com menos de 15 anos recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,...",
+          "explanation": "O valor 65 indica a idade mínima para os idosos no cálculo do índice de envelhecimento em 2022."
+        },
+        {
+          "value": "100",
+          "start": 654,
+          "end": 657,
+          "source_index": 6,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...transportes públicos, entre outras.\nEm 2021, o índice de envelhecimento no Estado de São Paulo é de 83 \npessoas de 60 anos e mais para cada 100 menores de 15 anos. Na análise \nregional observa-se que há maior concentração de municípios com \níndices superiores a 100 ao norte e oeste...",
+          "content_type": "text",
+          "claim": "...recuou 18%. Como reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etári...",
+          "explanation": "O valor 100 indica a referência de pessoas de 0 a 14 anos usada no índice de envelhecimento."
+        },
+        {
+          "value": "0",
+          "start": 669,
+          "end": 670,
+          "source_index": 1,
+          "file": "seade_demografia/populacao/seade-informa-demografia-idade-media-populacao-paulista-aumenta.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...22, em milhares\nFonte: Fundação Seade; IBGE.\nÉ nítida a transformação na composição etária da população no século \nXXI. Enquanto o grupo de 0 a 29 anos despontava como o mais numeroso \nem 2000, observam-se no período contínua redução das faixas mais...",
+          "content_type": "text",
+          "claim": "...o reflexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a...",
+          "explanation": "O valor 0 corresponde à faixa etária inicial de 0 a 29 anos analisada no recorte populacional."
+        },
+        {
+          "value": "14",
+          "start": 673,
+          "end": 675,
+          "source_index": 7,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...dice mostra que o intervalo de \nvariação entre os municípios é amplo. Em 2010, o número de pessoas \nde 65 anos ou mais para cada 100 de 0 a 14 anos variou de 13,3 em \nItaquaquecetuba a 116,4 em Águas de São Pedro. Já em 2022, esse \níndice oscilou entre 31,8 em Itapevi e 205,4 em Tu...",
+          "content_type": "text",
+          "claim": "...flexo direto dessa dinâmica, o índice de envelhecimento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a popu...",
+          "explanation": "O valor 14 indica o limite superior da faixa etária de 0 a 14 anos usada no índice de envelhecimento."
+        },
+        {
+          "value": "23,2",
+          "start": 723,
+          "end": 727,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...índice de \nenvelhecimento quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de...",
+          "content_type": "text",
+          "claim": "...mento — definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões...",
+          "explanation": "O valor 23,2 é o índice de envelhecimento registrado no Estado de São Paulo no ano 2000."
+        },
+        {
+          "value": "2000",
+          "start": 731,
+          "end": 735,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...comportamento fez o índice de \nenvelhecimento quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de...",
+          "content_type": "text",
+          "claim": "...definido como o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010...",
+          "explanation": "O ano 2000 é a referência inicial para o índice de envelhecimento de 23,2."
+        },
+        {
+          "value": "36,5",
+          "start": 741,
+          "end": 745,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...cimento quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de...",
+          "content_type": "text",
+          "claim": "...omo o número de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3...",
+          "explanation": "O valor 36,5 corresponde ao índice de envelhecimento do Estado de São Paulo em 2010."
+        },
+        {
+          "value": "2010",
+          "start": 749,
+          "end": 753,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...quase triplicar: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de...",
+          "content_type": "text",
+          "claim": "...mero de pessoas de 65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões...",
+          "explanation": "O ano 2010 marca quando o índice de envelhecimento paulista atingiu 36,5."
+        },
+        {
+          "value": "66,3",
+          "start": 767,
+          "end": 771,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...car: o número de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de...",
+          "content_type": "text",
+          "claim": "...65 anos ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço...",
+          "explanation": "O valor 66,3 representa o índice de envelhecimento em 2022, após quase triplicar desde 2000."
+        },
+        {
+          "value": "2022",
+          "start": 775,
+          "end": 779,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...úmero de pessoas de 65 anos e mais \npara cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de...",
+          "content_type": "text",
+          "claim": "...ou mais para cada 100 pessoas de 0 a 14 anos — quase triplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda...",
+          "explanation": "O ano 2022 é quando o índice de envelhecimento alcançou 66,3."
+        },
+        {
+          "value": "65",
+          "start": 830,
+          "end": 832,
+          "source_index": 7,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...scilou entre 31,8 em Itapevi e 205,4 em Turmalina. O processo de \nAcelera o processo de envelhecimento da população paulista \nPopulação com 65 anos ou mais, por faixas etárias quinquenais\nEstado de São Paulo, 2010-2022, em milhares\nFonte: Fundação Seade; IBGE.\nEntre 2010 e 2022, ob...",
+          "content_type": "text",
+          "claim": "...riplicou no período, passando de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo...",
+          "explanation": "O valor 65 é o ponto de corte usado para identificar a população idosa nas análises etárias."
+        },
+        {
+          "value": "3,2",
+          "start": 856,
+          "end": 859,
+          "source_index": 7,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...IBGE.\nEntre 2010 e 2022, observa-se crescimento populacional expressivo nas \nfaixas quinquenais superiores a 65 anos, cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo...",
+          "content_type": "text",
+          "claim": "...ndo de 23,2 em 2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de...",
+          "explanation": "O valor 3,2 indica que em 2010 havia 3,2 milhões de pessoas com 65 anos ou mais em São Paulo."
+        },
+        {
+          "value": "2010",
+          "start": 871,
+          "end": 875,
+          "source_index": 7,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...para cada 100 de 0 a 14 anos, que em 2000 correspondia a 23,2, passou \npara 36,5 em 2010 e para 66,3 em 2022. \nTodos os municípios paulistas apresentaram aumento no índice de \nenvelhecimento, embora esse processo venha ocorrendo...",
+          "content_type": "text",
+          "claim": "...2000 para 36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170....",
+          "explanation": "O ano 2010 é a data inicial usada para comparar o aumento da população idosa."
+        },
+        {
+          "value": "5,3",
+          "start": 881,
+          "end": 884,
+          "source_index": 7,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...e 2022, observa-se crescimento populacional expressivo nas \nfaixas quinquenais superiores a 65 anos, cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo...",
+          "content_type": "text",
+          "claim": "...36,5 em 2010 e alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pesso...",
+          "explanation": "O valor 5,3 indica que em 2022 a população idosa de 65 anos ou mais era de 5,3 milhões."
+        },
+        {
+          "value": "2022",
+          "start": 896,
+          "end": 900,
+          "source_index": 3,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...e filhos por mulher e do aumento da longevidade, vem alterando \nsua composição etária. Enquanto a população total cresceu 20% entre \n2000 e 2022, o grupo com 65 anos ou mais aumentou 133% e aquele \ncom menos de 15 anos diminuiu 18%. Tal comportamento fez o índice de \nenvelhecimento q...",
+          "content_type": "text",
+          "claim": "...alcançando 66,3 em 2022. No recorte etário absoluto, a população idosa de 65 anos ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número d...",
+          "explanation": "O ano 2022 é quando a população idosa de 65 anos ou mais alcançou 5,3 milhões."
+        },
+        {
+          "value": "90",
+          "start": 975,
+          "end": 977,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...uenais superiores a 65 anos, cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o i...",
+          "content_type": "text",
+          "claim": "...os ou mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de prop...",
+          "explanation": "O valor 90 refere-se ao início da faixa etária de 90 a 99 anos, cujo número dobrou no período."
+        },
+        {
+          "value": "99",
+          "start": 980,
+          "end": 982,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...s superiores a 65 anos, cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o increm...",
+          "content_type": "text",
+          "claim": "...mais saltou de 3,2 milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção...",
+          "explanation": ""
+        },
+        {
+          "value": "83.421",
+          "start": 999,
+          "end": 1005,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...cujo total passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o incremento nessa população decorr...",
+          "content_type": "text",
+          "claim": "...milhões em 2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção, os idosos (definidos...",
+          "explanation": ""
+        },
+        {
+          "value": "170.679",
+          "start": 1011,
+          "end": 1018,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...passou de 3,2 milhões \npara 5,3 milhões de pessoas. O maior acréscimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o incremento nessa população decorre, em parte,...",
+          "content_type": "text",
+          "claim": "...2010 para 5,3 milhões em 2022. O avanço é ainda mais acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção, os idosos (definidos pelo Estatuto...",
+          "explanation": ""
+        },
+        {
+          "value": "3.234",
+          "start": 1063,
+          "end": 1068,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...hões de pessoas. O maior acréscimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o incremento nessa população decorre, em parte, da dinâmica \ndemográfica das gera...",
+          "content_type": "text",
+          "claim": "...acentuado nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção, os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já resp...",
+          "explanation": ""
+        },
+        {
+          "value": "5.095",
+          "start": 1074,
+          "end": 1079,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...scimo relativo ocorreu no grupo \nde 90 a 99 anos que dobrou: de 83.421 para 170.679. Os centenários, \nque eram 3.234 em 2010, passaram para 5.095 em 2022. Vale ressaltar \nque o incremento nessa população decorre, em parte, da dinâmica \ndemográfica das gerações associadas e da tendênci...",
+          "content_type": "text",
+          "claim": "...nas faixas extremas de idade: o grupo de 90 a 99 anos dobrou, de 83.421 para 170.679 pessoas, e o número de centenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção, os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por...",
+          "explanation": ""
+        },
+        {
+          "value": "60",
+          "start": 1184,
+          "end": 1186,
+          "source_index": 2,
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": 8,
+          "snippet": "...longevidade alterou \nprofundamente a estrutura etária da população. A proporção de idosos \n(definidos no Estatuto do Idoso como pessoas de 60 anos ou mais) \ncresceu rapidamente, respondendo por 17,2% da população estadual \nem 2022, segundo o Censo, enquanto em 1991 essa proporção...",
+          "content_type": "text",
+          "claim": "...ntenários subiu de 3.234 para 5.095 no mesmo intervalo. Em termos de proporção, os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por 17,2% da população estadual em 2022, contra 7,7% em 1991. A despeito desse avanço, São Paulo não detém a ma...",
+          "explanation": ""
+        },
+        {
+          "value": "17,2%",
+          "start": 1219,
+          "end": 1224,
+          "source_index": 2,
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": 8,
+          "snippet": "...da população. A proporção de idosos \n(definidos no Estatuto do Idoso como pessoas de 60 anos ou mais) \ncresceu rapidamente, respondendo por 17,2% da população estadual \nem 2022, segundo o Censo, enquanto em 1991 essa proporção era de \n7,7%. O envelhecimento tornou-se a característica...",
+          "content_type": "text",
+          "claim": "...no mesmo intervalo. Em termos de proporção, os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por 17,2% da população estadual em 2022, contra 7,7% em 1991. A despeito desse avanço, São Paulo não detém a maior participação de idosos entre os es...",
+          "explanation": ""
+        },
+        {
+          "value": "2022",
+          "start": 1250,
+          "end": 1254,
+          "source_index": 1,
+          "file": "seade_demografia/populacao/seade-informa-demografia-idade-media-populacao-paulista-aumenta.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...ade média da população residente em todo o Estado de São Paulo. \nEssa média para as populações municipais alterou-se bastante entre \n2010 e 2022, acompanhando a elevação apontada por esse indicador \nestadual. As áreas mais ao sul permaneceram com as menores idades \nmédias nesse perío...",
+          "content_type": "text",
+          "claim": "...de proporção, os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por 17,2% da população estadual em 2022, contra 7,7% em 1991. A despeito desse avanço, São Paulo não detém a maior participação de idosos entre os estados brasileiros, ficando aba...",
+          "explanation": ""
+        },
+        {
+          "value": "7,7%",
+          "start": 1263,
+          "end": 1267,
+          "source_index": 2,
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": 8,
+          "snippet": "...mais) \ncresceu rapidamente, respondendo por 17,2% da população estadual \nem 2022, segundo o Censo, enquanto em 1991 essa proporção era de \n7,7%. O envelhecimento tornou-se a característica demográfica mais \nmarcante do período.\nO Gráfico 2, que traz a participação dos grandes grupos...",
+          "content_type": "text",
+          "claim": "...os idosos (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por 17,2% da população estadual em 2022, contra 7,7% em 1991. A despeito desse avanço, São Paulo não detém a maior participação de idosos entre os estados brasileiros, ficando abaixo do Rio Gr...",
+          "explanation": ""
+        },
+        {
+          "value": "1991",
+          "start": 1271,
+          "end": 1275,
+          "source_index": 2,
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": 8,
+          "snippet": "...o como pessoas de 60 anos ou mais) \ncresceu rapidamente, respondendo por 17,2% da população estadual \nem 2022, segundo o Censo, enquanto em 1991 essa proporção era de \n7,7%. O envelhecimento tornou-se a característica demográfica mais \nmarcante do período.\nO Gráfico 2, que traz a par...",
+          "content_type": "text",
+          "claim": "...os (definidos pelo Estatuto do Idoso como pessoas de 60 anos ou mais) já respondiam por 17,2% da população estadual em 2022, contra 7,7% em 1991. A despeito desse avanço, São Paulo não detém a maior participação de idosos entre os estados brasileiros, ficando abaixo do Rio Grande do...",
+          "explanation": ""
+        },
+        {
+          "value": "20,2%",
+          "start": 1420,
+          "end": 1425,
+          "source_index": 2,
+          "file": "seade_demografia/populacao/sp-demografico-um-seculo-dinamica-populacional-estado-sao-paulo.pdf",
+          "score": 0.8,
+          "page": 8,
+          "snippet": "...de.\nVale destacar, todavia, que São Paulo não é o estado com a maior participação \nde população idosa, ficando abaixo do Rio Grande do Sul (20,2%), Rio de Janeiro...",
+          "content_type": "text",
+          "claim": "...espeito desse avanço, São Paulo não detém a maior participação de idosos entre os estados brasileiros, ficando abaixo do Rio Grande do Sul (20,2%) e do Rio de Janeiro. Internamente, o processo é heterogêneo: o envelhecimento está mais adiantado nas regiões a oeste do estado, onde em 9...",
+          "explanation": ""
+        },
+        {
+          "value": "91",
+          "start": 1564,
+          "end": 1566,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...mais por 100 pessoas entre 0 e 14 anos.\nenvelhecimento está mais adiantado nas regiões a oeste do Estado, onde se \nconcentra a maioria dos 91 municípios em que o número de idosos, em 2022, \njá superava o da população de 0 a 14 anos. Nos municípios mais ao sul, esta \nrelação é meno...",
+          "content_type": "text",
+          "claim": "...%) e do Rio de Janeiro. Internamente, o processo é heterogêneo: o envelhecimento está mais adiantado nas regiões a oeste do estado, onde em 91 municípios o número de idosos já superou o de crianças de 0 a 14 anos em 2022, enquanto as localidades mais ao sul apresentam relações meno...",
+          "explanation": ""
+        },
+        {
+          "value": "0",
+          "start": 1625,
+          "end": 1626,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...gerações associadas e da tendência histórica de aumento \nna sobrevivência.\n(1) Número de pessoas com 65 anos ou mais por 100 pessoas entre 0 e 14 anos.\nenvelhecimento está mais adiantado nas regiões a oeste do Estado, onde se \nconcentra a maioria dos 91 municípios em que o número...",
+          "content_type": "text",
+          "claim": "...o: o envelhecimento está mais adiantado nas regiões a oeste do estado, onde em 91 municípios o número de idosos já superou o de crianças de 0 a 14 anos em 2022, enquanto as localidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relaciona...",
+          "explanation": ""
+        },
+        {
+          "value": "14",
+          "start": 1629,
+          "end": 1631,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...ações associadas e da tendência histórica de aumento \nna sobrevivência.\n(1) Número de pessoas com 65 anos ou mais por 100 pessoas entre 0 e 14 anos.\nenvelhecimento está mais adiantado nas regiões a oeste do Estado, onde se \nconcentra a maioria dos 91 municípios em que o número de i...",
+          "content_type": "text",
+          "claim": "...envelhecimento está mais adiantado nas regiões a oeste do estado, onde em 91 municípios o número de idosos já superou o de crianças de 0 a 14 anos em 2022, enquanto as localidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 6...",
+          "explanation": ""
+        },
+        {
+          "value": "2022",
+          "start": 1640,
+          "end": 1644,
+          "source_index": 12,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.5,
+          "page": 1,
+          "snippet": "...elhecimento está mais adiantado nas regiões a oeste do Estado, onde se \nconcentra a maioria dos 91 municípios em que o número de idosos, em 2022, \njá superava o da população de 0 a 14 anos. Nos municípios mais ao sul, esta \nrelação é menor. Os diferenciais observados nos índices de e...",
+          "content_type": "text",
+          "claim": "...ento está mais adiantado nas regiões a oeste do estado, onde em 91 municípios o número de idosos já superou o de crianças de 0 a 14 anos em 2022, enquanto as localidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mai...",
+          "explanation": ""
+        },
+        {
+          "value": "2021",
+          "start": 1714,
+          "end": 1718,
+          "source_index": 0,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.9,
+          "page": 1,
+          "snippet": "...ulo/ SP - Brasil | 3324-7200 - faleconosco@seade.gov.br\nFevereiro.2021\nINFORMA\nDEMOGRAFIA\nEstado de São Paulo\nÍndice de envelhecimento (1), 2021\nPopulação municipal por classes de tamanho, 2021\nFonte: Fundação Seade. Sistema de Projeções Populacionais.\nPirâmide etária da população pa...",
+          "content_type": "text",
+          "claim": "...ios o número de idosos já superou o de crianças de 0 a 14 anos em 2022, enquanto as localidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com conce...",
+          "explanation": ""
+        },
+        {
+          "value": "60",
+          "start": 1770,
+          "end": 1772,
+          "source_index": 5,
+          "file": "seade_demografia/fecundidade/spdemografico-envelhecimento-dinamica-populacional-distritos-paulistanos.pdf",
+          "score": 0.8,
+          "page": 9,
+          "snippet": "...de envelhecimento esperado para a população residente nas \ndiversas áreas da capital. Em 2010 este índice variou de 2 pessoas com \nmais de 60 anos para cada 10 pessoas com até 15 anos, em Cidade \nTiradentes, até 23 por 10, na Consolação, já para a população \nprojetada em 2030 ele...",
+          "content_type": "text",
+          "claim": "...4 anos em 2022, enquanto as localidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com concentração de municípios com índices superiores a 100 nas...",
+          "explanation": ""
+        },
+        {
+          "value": "15",
+          "start": 1801,
+          "end": 1803,
+          "source_index": 5,
+          "file": "seade_demografia/fecundidade/spdemografico-envelhecimento-dinamica-populacional-distritos-paulistanos.pdf",
+          "score": 0.8,
+          "page": 9,
+          "snippet": "...pulação residente nas \ndiversas áreas da capital. Em 2010 este índice variou de 2 pessoas com \nmais de 60 anos para cada 10 pessoas com até 15 anos, em Cidade \nTiradentes, até 23 por 10, na Consolação, já para a população \nprojetada em 2030 ele deverá variar de 7 idosos para cada 1...",
+          "content_type": "text",
+          "claim": "...alidades mais ao sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com concentração de municípios com índices superiores a 100 nas porções norte e oeste. O padrã...",
+          "explanation": ""
+        },
+        {
+          "value": "83",
+          "start": 1817,
+          "end": 1819,
+          "source_index": 6,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...o \neducação, saúde, previdência social, transportes públicos, entre outras.\nEm 2021, o índice de envelhecimento no Estado de São Paulo é de 83 \npessoas de 60 anos e mais para cada 100 menores de 15 anos. Na análise \nregional observa-se que há maior concentração de municípios com \ní...",
+          "content_type": "text",
+          "claim": "...sul apresentam relações menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com concentração de municípios com índices superiores a 100 nas porções norte e oeste. O padrão etário também...",
+          "explanation": ""
+        },
+        {
+          "value": "100",
+          "start": 1837,
+          "end": 1840,
+          "source_index": 7,
+          "file": "seade_demografia/populacao/seade-informa-demografia-acelera-processo-envelhecimento-populacao-paulista.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...dades. O índice mostra que o intervalo de \nvariação entre os municípios é amplo. Em 2010, o número de pessoas \nde 65 anos ou mais para cada 100 de 0 a 14 anos variou de 13,3 em \nItaquaquecetuba a 116,4 em Águas de São Pedro. Já em 2022, esse \níndice oscilou entre 31,8 em Itapevi e 2...",
+          "content_type": "text",
+          "claim": "...ções menores. Em 2021, o índice estadual de envelhecimento (relacionando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com concentração de municípios com índices superiores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade m...",
+          "explanation": ""
+        },
+        {
+          "value": "100",
+          "start": 1905,
+          "end": 1908,
+          "source_index": 13,
+          "file": "seade_demografia/populacao/sp-demografico-campo-cidade-trajetoria-urbanizacao-transformacoes-demograficas-estado-sao-paulo.pdf",
+          "score": 0.5,
+          "page": 9,
+          "snippet": "...a a relação entre a \npopulação com 60 anos ou mais e aquela com até 15 anos de idade. \nObserva-se que, em 1980, havia 20,4 idosos para cada 100 jovens nas \náreas urbanas e apenas 13,5 nas rurais. Quarenta anos depois, esses \nnúmeros cresceram para 95,5 e 108,1, respectivamente, reve...",
+          "content_type": "text",
+          "claim": "...ando 60 anos ou mais com menores de 15 anos) era de 83 idosos para cada 100 jovens, com concentração de municípios com índices superiores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade mediana, que subiu de 27,9 anos em 2001 para 35,7 anos em 2021, sinal...",
+          "explanation": ""
+        },
+        {
+          "value": "27,9",
+          "start": 2001,
+          "end": 2005,
+          "source_index": 6,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...mais numerosas se deslocaram em direção ao topo da pirâmide. A idade \nmediana, que divide a população em duas parcelas iguais, passou de \n27,9 anos, em 2001, para 35,7 anos, em 2021, mostrando que, em duas \ndécadas, essa idade aumentou quase oito anos e deverá se expandir ainda \nma...",
+          "content_type": "text",
+          "claim": "...ação de municípios com índices superiores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade mediana, que subiu de 27,9 anos em 2001 para 35,7 anos em 2021, sinalizando que a população paulista está progressivamente mais envelhecida. As projeções indicam que...",
+          "explanation": ""
+        },
+        {
+          "value": "2001",
+          "start": 2014,
+          "end": 2018,
+          "source_index": 6,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...as se deslocaram em direção ao topo da pirâmide. A idade \nmediana, que divide a população em duas parcelas iguais, passou de \n27,9 anos, em 2001, para 35,7 anos, em 2021, mostrando que, em duas \ndécadas, essa idade aumentou quase oito anos e deverá se expandir ainda \nmais no futuro....",
+          "content_type": "text",
+          "claim": "...ípios com índices superiores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade mediana, que subiu de 27,9 anos em 2001 para 35,7 anos em 2021, sinalizando que a população paulista está progressivamente mais envelhecida. As projeções indicam que o contingente...",
+          "explanation": ""
+        },
+        {
+          "value": "35,7",
+          "start": 2024,
+          "end": 2028,
+          "source_index": 6,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...caram em direção ao topo da pirâmide. A idade \nmediana, que divide a população em duas parcelas iguais, passou de \n27,9 anos, em 2001, para 35,7 anos, em 2021, mostrando que, em duas \ndécadas, essa idade aumentou quase oito anos e deverá se expandir ainda \nmais no futuro. Tal process...",
+          "content_type": "text",
+          "claim": "...índices superiores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade mediana, que subiu de 27,9 anos em 2001 para 35,7 anos em 2021, sinalizando que a população paulista está progressivamente mais envelhecida. As projeções indicam que o contingente de menore...",
+          "explanation": ""
+        },
+        {
+          "value": "2021",
+          "start": 2037,
+          "end": 2041,
+          "source_index": 6,
+          "file": "seade_demografia/populacao/populacao_paulista_2021.pdf",
+          "score": 0.7,
+          "page": 1,
+          "snippet": "...ão ao topo da pirâmide. A idade \nmediana, que divide a população em duas parcelas iguais, passou de \n27,9 anos, em 2001, para 35,7 anos, em 2021, mostrando que, em duas \ndécadas, essa idade aumentou quase oito anos e deverá se expandir ainda \nmais no futuro. Tal processo de “envelhec...",
+          "content_type": "text",
+          "claim": "...iores a 100 nas porções norte e oeste. O padrão etário também se reflete na idade mediana, que subiu de 27,9 anos em 2001 para 35,7 anos em 2021, sinalizando que a população paulista está progressivamente mais envelhecida. As projeções indicam que o contingente de menores de 15 anos...",
+          "explanation": ""
+        },
+        {
+          "value": "15",
+          "start": 2173,
+          "end": 2175,
+          "source_index": 4,
+          "file": "seade_demografia/populacao/padrao_etario_populacao_paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...etário de sua população residente. A \ntendência esperada pelas projeções populacionais do Seade indica que \na queda do número de menores de 15 anos e o aumento dos maiores \nde 65 anos farão com que o contingente desses dois grupos se iguale \nnumericamente em 2034. A população entre...",
+          "content_type": "text",
+          "claim": "...em 2021, sinalizando que a população paulista está progressivamente mais envelhecida. As projeções indicam que o contingente de menores de 15 anos e o de maiores de 65 anos deverão se igualar numericamente em 2034, consolidando a inversão da pirâmide etária no médio prazo....",
+          "explanation": ""
+        },
+        {
+          "value": "65",
+          "start": 2199,
+          "end": 2201,
+          "source_index": 4,
+          "file": "seade_demografia/populacao/padrao_etario_populacao_paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...tendência esperada pelas projeções populacionais do Seade indica que \na queda do número de menores de 15 anos e o aumento dos maiores \nde 65 anos farão com que o contingente desses dois grupos se iguale \nnumericamente em 2034. A população entre 15 e 64 anos atinge um platô \naprox...",
+          "content_type": "text",
+          "claim": "...a população paulista está progressivamente mais envelhecida. As projeções indicam que o contingente de menores de 15 anos e o de maiores de 65 anos deverão se igualar numericamente em 2034, consolidando a inversão da pirâmide etária no médio prazo....",
+          "explanation": ""
+        },
+        {
+          "value": "2034",
+          "start": 2243,
+          "end": 2247,
+          "source_index": 4,
+          "file": "seade_demografia/populacao/padrao_etario_populacao_paulista.pdf",
+          "score": 0.8,
+          "page": 1,
+          "snippet": "...número de menores de 15 anos e o aumento dos maiores \nde 65 anos farão com que o contingente desses dois grupos se iguale \nnumericamente em 2034. A população entre 15 e 64 anos atinge um platô \naproximadamente em 2020, que deverá se estender até 2040.\nEstado de São Paulo...",
+          "content_type": "text",
+          "claim": "...ais envelhecida. As projeções indicam que o contingente de menores de 15 anos e o de maiores de 65 anos deverão se igualar numericamente em 2034, consolidando a inversão da pirâmide etária no médio prazo....",
+          "explanation": ""
+        }
+      ],
+      "rag_type": "principal",
+      "rag_label": "RAG Principal",
+      "conversation_id": "61d1363da9c04d308a077259fea2e802",
+      "memory_turns": 0
+    }
+  }
+]

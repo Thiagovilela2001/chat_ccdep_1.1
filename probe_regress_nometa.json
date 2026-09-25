@@ -1,0 +1,40 @@
+[
+  {
+    "domain": "labor_market",
+    "question": "Qual foi a taxa de desocupacao e o rendimento medio real no estado de Sao Paulo no trimestre mais recente divulgado pela PNAD Continua?",
+    "latency_s": 186.5,
+    "error": null,
+    "payload": {
+      "answer": "Não é possível determinar com segurança o resultado solicitado. As evidências disponíveis não sustentam uma conclusão comparável.",
+      "sources_used": [
+        "timeseries",
+        "tables",
+        "text"
+      ],
+      "rewritten_query": "Qual foi a taxa de desocupação (desemprego) e o rendimento médio real habitualmente recebido no estado de São Paulo no último trimestre divulgado pela Pesquisa Nacional por Amostra de Domicílios Contínua (PNAD Contínua)? Inclua análise contextual sobre o comportamento desses indicadores.",
+      "sources": [],
+      "validation": {
+        "verified": 0,
+        "total": 0,
+        "unverified": []
+      },
+      "citation_validation": {
+        "verified": 0,
+        "total": 0,
+        "unverified": []
+      },
+      "numeric_citations": [],
+      "rag_type": "principal",
+      "rag_label": "RAG Principal",
+      "conversation_id": "07e8c2c8aa724724b57a44499f4ef521",
+      "memory_turns": 0
+    }
+  },
+  {
+    "domain": "economic_conjuncture",
+    "question": "Como o PIB do estado de Sao Paulo variou nos ultimos trimestres divulgados?",
+    "latency_s": 85.8,
+    "error": "HTTP 500: {\"detail\":\"Falha interna ao processar a consulta.\"}",
+    "payload": null
+  }
+]
