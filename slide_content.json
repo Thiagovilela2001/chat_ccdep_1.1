@@ -1,0 +1,1731 @@
+[
+  {
+    "slide": 1,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Nadia — consulta inteligente aos dados de São Paulo"
+      },
+      {
+        "shape_idx": 2,
+        "text": "Projeto RAG CCDEP\nCentro de Ciência de Dados para Estatísticas Públicas"
+      }
+    ]
+  },
+  {
+    "slide": 2,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Roteiro da apresentação"
+      },
+      {
+        "shape_idx": 2,
+        "text": "1"
+      },
+      {
+        "shape_idx": 3,
+        "text": "O que é RAG"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Conceito, funcionamento, tipos, diferenças e um exemplo prático."
+      },
+      {
+        "shape_idx": 6,
+        "text": "Conceito e fundamentos"
+      },
+      {
+        "shape_idx": 8,
+        "text": "2"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Como a Nadia foi construída"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Dificuldades, gargalos, acertos, decisões e aprendizados."
+      },
+      {
+        "shape_idx": 12,
+        "text": "Desenvolvimento do projeto"
+      },
+      {
+        "shape_idx": 14,
+        "text": "3"
+      },
+      {
+        "shape_idx": 15,
+        "text": "A aplicação Nadia"
+      },
+      {
+        "shape_idx": 16,
+        "text": "Finalidade, público, funcionalidades, arquitetura e demonstração."
+      },
+      {
+        "shape_idx": 18,
+        "text": "Produto e demonstração"
+      },
+      {
+        "shape_idx": 19,
+        "text": "Cada bloco termina com um quadro que separa o implementado, o demonstrado e o que precisa de validação."
+      },
+      {
+        "shape_idx": 20,
+        "text": "2"
+      }
+    ]
+  },
+  {
+    "slide": 3,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "O desafio da consulta documental"
+      },
+      {
+        "shape_idx": 1,
+        "text": "Uma pergunta mobiliza vários documentos"
+      },
+      {
+        "shape_idx": 2,
+        "text": "Indicadores econômicos de São Paulo aparecem em boletins trimestrais distintos, em tabelas e em séries de períodos diferentes."
+      },
+      {
+        "shape_idx": 3,
+        "text": "A resposta precisa preservar o contexto do dado"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Valor, unidade, recorte geográfico, período de comparação e órgão produtor não podem se perder no caminho."
+      },
+      {
+        "shape_idx": 5,
+        "text": "A conferência manual é lenta e repetitiva"
+      },
+      {
+        "shape_idx": 6,
+        "text": "Localizar o número certo em 22 boletins, página por página, consome tempo que deveria estar na análise."
+      },
+      {
+        "shape_idx": 8,
+        "text": "UMA PERGUNTA TÍPICA"
+      },
+      {
+        "shape_idx": 9,
+        "text": "“Qual foi a variação do PIB paulista no 1º trimestre de 2024 em relação ao trimestre anterior, com ajuste sazonal?”"
+      },
+      {
+        "shape_idx": 11,
+        "text": "Exige: localizar o boletim do período · ler a tabela correta · respeitar o ajuste sazonal · citar a fonte."
+      },
+      {
+        "shape_idx": 12,
+        "text": "Proposta do projeto: aproximar a pergunta do usuário das evidências já publicadas, sem substituir o dado original."
+      },
+      {
+        "shape_idx": 13,
+        "text": "3"
+      }
+    ]
+  },
+  {
+    "slide": 4,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "O que é RAG, em uma frase"
+      },
+      {
+        "shape_idx": 2,
+        "text": "RAG (Retrieval-Augmented Generation) é um método em que o sistema primeiro recupera trechos relevantes de uma base documental e só depois pede ao modelo de linguagem que redija a resposta a partir desses trechos."
+      },
+      {
+        "shape_idx": 3,
+        "text": "SEM RAG"
+      },
+      {
+        "shape_idx": 5,
+        "text": "•  O modelo responde a partir do que memorizou no treinamento.\n•  O dado pode estar desatualizado ou simplesmente não existir na memória.\n•  Não há como apontar a página de origem do número."
+      },
+      {
+        "shape_idx": 6,
+        "text": "COM RAG"
+      },
+      {
+        "shape_idx": 8,
+        "text": "•  A resposta é escrita a partir de trechos do acervo do próprio projeto.\n•  O conteúdo pode ser atualizado sem retreinar o modelo: basta reindexar.\n•  A fonte e a página ficam registradas junto da resposta."
+      },
+      {
+        "shape_idx": 9,
+        "text": "Em uma analogia simples: sem RAG o modelo responde de memória; com RAG ele consulta o acervo antes de responder — e mostra onde consultou."
+      },
+      {
+        "shape_idx": 10,
+        "text": "4"
+      }
+    ]
+  },
+  {
+    "slide": 5,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Como funciona: quatro etapas"
+      },
+      {
+        "shape_idx": 2,
+        "text": "01"
+      },
+      {
+        "shape_idx": 3,
+        "text": "Preparação"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Os documentos são lidos, o texto é separado das tabelas e o conteúdo é dividido em trechos com metadados."
+      },
+      {
+        "shape_idx": 7,
+        "text": "02"
+      },
+      {
+        "shape_idx": 8,
+        "text": "Indexação"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Cada trecho vira um vetor e entra num índice; as tabelas e séries ganham tratamento próprio."
+      },
+      {
+        "shape_idx": 12,
+        "text": "03"
+      },
+      {
+        "shape_idx": 13,
+        "text": "Recuperação"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Diante da pergunta, o sistema busca os trechos mais relevantes combinando semelhança e palavras-chave."
+      },
+      {
+        "shape_idx": 17,
+        "text": "04"
+      },
+      {
+        "shape_idx": 18,
+        "text": "Geração"
+      },
+      {
+        "shape_idx": 19,
+        "text": "O modelo redige a resposta usando apenas o contexto recuperado e indica a fonte."
+      },
+      {
+        "shape_idx": 21,
+        "text": "O ponto decisivo está na etapa 04: o modelo não recebe a pergunta isolada, recebe a pergunta mais os trechos selecionados. É isso que permite exigir a citação da fonte e conferir o número depois."
+      },
+      {
+        "shape_idx": 22,
+        "text": "Detalhe que costuma passar despercebido: a recuperação é feita em trechos pequenos, não em documentos inteiros."
+      },
+      {
+        "shape_idx": 23,
+        "text": "5"
+      }
+    ]
+  },
+  {
+    "slide": 6,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Preparação dos documentos estatísticos"
+      },
+      {
+        "shape_idx": 1,
+        "text": "FLUXO DE PREPARAÇÃO"
+      },
+      {
+        "shape_idx": 3,
+        "text": "PDFs, CSV e XLSX"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Boletins de Conjuntura Paulista (SEADE), 2020–2025."
+      },
+      {
+        "shape_idx": 7,
+        "text": "Extração"
+      },
+      {
+        "shape_idx": 8,
+        "text": "Texto com PyMuPDF; tabelas com Camelot e pdfplumber."
+      },
+      {
+        "shape_idx": 11,
+        "text": "Separação de formatos"
+      },
+      {
+        "shape_idx": 12,
+        "text": "Texto narrativo, tabelas e séries seguem caminhos distintos."
+      },
+      {
+        "shape_idx": 15,
+        "text": "Segmentação"
+      },
+      {
+        "shape_idx": 16,
+        "text": "Texto em blocos com sobreposição; tabelas preservadas inteiras."
+      },
+      {
+        "shape_idx": 19,
+        "text": "Indexação"
+      },
+      {
+        "shape_idx": 20,
+        "text": "Vetores e metadados no ChromaDB, o índice local do projeto."
+      },
+      {
+        "shape_idx": 22,
+        "text": "POR QUE ISSO IMPORTA"
+      },
+      {
+        "shape_idx": 23,
+        "text": "Tabela não é texto corrido."
+      },
+      {
+        "shape_idx": 24,
+        "text": "Se a tabela for fatiada como parágrafo, o valor se descola do seu cabeçalho e do período."
+      },
+      {
+        "shape_idx": 25,
+        "text": "Cada trecho carrega metadados."
+      },
+      {
+        "shape_idx": 26,
+        "text": "Arquivo de origem e página acompanham o trecho desde a preparação — é o que torna a citação possível no fim."
+      },
+      {
+        "shape_idx": 27,
+        "text": "Uma pergunta pode exigir os três formatos."
+      },
+      {
+        "shape_idx": 28,
+        "text": "Há perguntas que precisam de narrativa, de tabela comparativa e de série temporal ao mesmo tempo."
+      },
+      {
+        "shape_idx": 29,
+        "text": "6"
+      }
+    ]
+  },
+  {
+    "slide": 7,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Como uma pergunta se transforma em busca eficaz"
+      },
+      {
+        "shape_idx": 1,
+        "text": "DA PERGUNTA À BUSCA"
+      },
+      {
+        "shape_idx": 3,
+        "text": "Pergunta"
+      },
+      {
+        "shape_idx": 4,
+        "text": "“Como evoluiu a taxa de desemprego em São Paulo ao longo de 2024?”"
+      },
+      {
+        "shape_idx": 7,
+        "text": "Interpretação"
+      },
+      {
+        "shape_idx": 8,
+        "text": "O sistema identifica o indicador, o recorte geográfico e o período."
+      },
+      {
+        "shape_idx": 11,
+        "text": "Reescrita"
+      },
+      {
+        "shape_idx": 12,
+        "text": "A pergunta é convertida em termos adequados ao vocabulário do acervo."
+      },
+      {
+        "shape_idx": 15,
+        "text": "Consulta"
+      },
+      {
+        "shape_idx": 16,
+        "text": "Os trechos relevantes são buscados no índice."
+      },
+      {
+        "shape_idx": 19,
+        "text": "Contexto"
+      },
+      {
+        "shape_idx": 20,
+        "text": "Os trechos selecionados são reunidos para orientar a resposta."
+      },
+      {
+        "shape_idx": 21,
+        "text": "DOIS PROBLEMAS QUE AMEAÇAM A BUSCA"
+      },
+      {
+        "shape_idx": 23,
+        "text": "A pergunta não usa as palavras do boletim."
+      },
+      {
+        "shape_idx": 24,
+        "text": "Quem pergunta escreve “desemprego”; o boletim pode escrever “taxa de desocupação”. A busca por significado aproxima os dois vocabulários."
+      },
+      {
+        "shape_idx": 26,
+        "text": "A pergunta é vaga sobre o recorte."
+      },
+      {
+        "shape_idx": 27,
+        "text": "Sem período ou território explícito, a busca devolve trechos plausíveis porém errados. A interpretação resolve isso antes da consulta."
+      },
+      {
+        "shape_idx": 28,
+        "text": "A busca por palavras-chave cobre o vocabulário exato; a busca por significado cobre a intenção. As duas se complementam."
+      },
+      {
+        "shape_idx": 29,
+        "text": "7"
+      }
+    ]
+  },
+  {
+    "slide": 8,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Principais tipos de RAG e onde eles diferem"
+      },
+      {
+        "shape_idx": 1,
+        "text": "VARIANTE"
+      },
+      {
+        "shape_idx": 2,
+        "text": "COMO RECUPERA"
+      },
+      {
+        "shape_idx": 3,
+        "text": "EM QUE CASOS É INDICADA"
+      },
+      {
+        "shape_idx": 4,
+        "text": "CUSTO OU LIMITE"
+      },
+      {
+        "shape_idx": 7,
+        "text": "RAG simples\n(naive)"
+      },
+      {
+        "shape_idx": 8,
+        "text": "Busca vetorial única: os trechos mais parecidos com a pergunta."
+      },
+      {
+        "shape_idx": 9,
+        "text": "Perguntas factuais diretas, cuja resposta está em um trecho só."
+      },
+      {
+        "shape_idx": 10,
+        "text": "Não distingue texto de tabela nem de série temporal."
+      },
+      {
+        "shape_idx": 12,
+        "text": "RAG avançado\n(advanced)"
+      },
+      {
+        "shape_idx": 13,
+        "text": "Busca híbrida — semelhança + palavras-chave — com reordenação dos resultados."
+      },
+      {
+        "shape_idx": 14,
+        "text": "Termos técnicos, siglas e vocabulário que não bate com a pergunta."
+      },
+      {
+        "shape_idx": 15,
+        "text": "Exige manter dois índices e uma etapa de reordenação."
+      },
+      {
+        "shape_idx": 17,
+        "text": "RAG modular\n(modular)"
+      },
+      {
+        "shape_idx": 18,
+        "text": "Roteia a pergunta: escolhe qual recuperador especializado consultar."
+      },
+      {
+        "shape_idx": 19,
+        "text": "Pergunta que precisa de tabela comparativa ou de série temporal."
+      },
+      {
+        "shape_idx": 20,
+        "text": "Cada rota exige tratamento e manutenção próprios."
+      },
+      {
+        "shape_idx": 22,
+        "text": "RAG agêntico\n(agentic)"
+      },
+      {
+        "shape_idx": 23,
+        "text": "O próprio modelo decide, em passos, quais ferramentas acionar."
+      },
+      {
+        "shape_idx": 24,
+        "text": "Investigações em várias etapas, com hipóteses intermediárias."
+      },
+      {
+        "shape_idx": 25,
+        "text": "Mais chamadas, maior latência e menos previsibilidade."
+      },
+      {
+        "shape_idx": 27,
+        "text": "A fronteira entre os tipos está em duas decisões: como recuperar e quem decide quando parar de buscar."
+      },
+      {
+        "shape_idx": 28,
+        "text": "8"
+      }
+    ]
+  },
+  {
+    "slide": 9,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Um exemplo prático, passo a passo"
+      },
+      {
+        "shape_idx": 2,
+        "text": "Pergunta: “Qual foi a variação do PIB paulista no 1º trimestre de 2024?”"
+      },
+      {
+        "shape_idx": 4,
+        "text": "1"
+      },
+      {
+        "shape_idx": 5,
+        "text": "Localizar o período"
+      },
+      {
+        "shape_idx": 6,
+        "text": "O sistema restringe a busca aos boletins que cobrem o 1º trimestre de 2024."
+      },
+      {
+        "shape_idx": 9,
+        "text": "2"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Recuperar os trechos"
+      },
+      {
+        "shape_idx": 11,
+        "text": "São trazidos o texto de análise e a tabela de PIB do boletim correspondente."
+      },
+      {
+        "shape_idx": 14,
+        "text": "3"
+      },
+      {
+        "shape_idx": 15,
+        "text": "Montar o contexto"
+      },
+      {
+        "shape_idx": 16,
+        "text": "Narrativa e tabela são reunidas, preservando unidade e período de comparação."
+      },
+      {
+        "shape_idx": 19,
+        "text": "4"
+      },
+      {
+        "shape_idx": 20,
+        "text": "Redigir e citar"
+      },
+      {
+        "shape_idx": 21,
+        "text": "A resposta é escrita a partir desses trechos, com indicação do boletim e da página."
+      },
+      {
+        "shape_idx": 24,
+        "text": "5"
+      },
+      {
+        "shape_idx": 25,
+        "text": "Conferir"
+      },
+      {
+        "shape_idx": 26,
+        "text": "O valor é validado contra o dado recuperado; a resposta aponta a fonte para conferência."
+      },
+      {
+        "shape_idx": 28,
+        "text": "O resultado esperado não é apenas o número: é o número acompanhado do período de comparação e da fonte que o sustenta."
+      },
+      {
+        "shape_idx": 29,
+        "text": "9"
+      }
+    ]
+  },
+  {
+    "slide": 10,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "O ponto de partida: o que foi construído"
+      },
+      {
+        "shape_idx": 1,
+        "text": "DECISÃO INICIAL: COMEÇAR SIMPLES"
+      },
+      {
+        "shape_idx": 3,
+        "text": "O primeiro pipeline foi deliberadamente simples: ingestão, indexação, recuperação e geração, com validação ao final. A complexidade só entrou depois que a base funcionou."
+      },
+      {
+        "shape_idx": 4,
+        "text": "O QUE JÁ FUNCIONA"
+      },
+      {
+        "shape_idx": 5,
+        "text": "•  Extração de texto e de tabelas dos boletins em PDF.\n•  Índice vetorial local no ChromaDB, persistido entre execuções.\n•  Recuperação híbrida (semelhança + palavras-chave) com reordenação.\n•  Resposta com indicação de arquivo e página de origem.\n•  Dois modos de uso: serviço HTTP e linha de comando."
+      },
+      {
+        "shape_idx": 6,
+        "text": "A IDEIA DE FUNDO"
+      },
+      {
+        "shape_idx": 9,
+        "text": "1"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Ingestão"
+      },
+      {
+        "shape_idx": 11,
+        "text": "Ler PDF, CSV e XLSX e separar texto de tabela."
+      },
+      {
+        "shape_idx": 13,
+        "text": "2"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Indexação"
+      },
+      {
+        "shape_idx": 15,
+        "text": "Gerar vetores e metadados no índice local."
+      },
+      {
+        "shape_idx": 17,
+        "text": "3"
+      },
+      {
+        "shape_idx": 18,
+        "text": "Recuperação"
+      },
+      {
+        "shape_idx": 19,
+        "text": "Buscar trechos relevantes para a pergunta."
+      },
+      {
+        "shape_idx": 21,
+        "text": "4"
+      },
+      {
+        "shape_idx": 22,
+        "text": "Geração"
+      },
+      {
+        "shape_idx": 23,
+        "text": "Escrever a resposta a partir do contexto."
+      },
+      {
+        "shape_idx": 25,
+        "text": "5"
+      },
+      {
+        "shape_idx": 26,
+        "text": "Validação"
+      },
+      {
+        "shape_idx": 27,
+        "text": "Conferir os números contra o dado recuperado."
+      },
+      {
+        "shape_idx": 28,
+        "text": "10"
+      }
+    ]
+  },
+  {
+    "slide": 11,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Dificuldades e gargalos encontrados"
+      },
+      {
+        "shape_idx": 1,
+        "text": "A tabela não sobrevive à extração automática"
+      },
+      {
+        "shape_idx": 3,
+        "text": "GARGALO"
+      },
+      {
+        "shape_idx": 4,
+        "text": "PDFs estatísticos misturam texto e tabela na mesma página. A extração automática precisa de estratégia alternativa quando falha."
+      },
+      {
+        "shape_idx": 6,
+        "text": "O número não tem período nem unidade"
+      },
+      {
+        "shape_idx": 8,
+        "text": "GARGALO"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Um valor sem trimestre, sem recorte geográfico e sem unidade é um valor errado do ponto de vista estatístico."
+      },
+      {
+        "shape_idx": 11,
+        "text": "O vocabulário da pergunta não é o do boletim"
+      },
+      {
+        "shape_idx": 13,
+        "text": "GARGALO"
+      },
+      {
+        "shape_idx": 14,
+        "text": "A busca literal falha quando o usuário escreve “desemprego” e o documento escreve “taxa de desocupação”."
+      },
+      {
+        "shape_idx": 16,
+        "text": "O acervo tem inconsistências de nomenclatura"
+      },
+      {
+        "shape_idx": 18,
+        "text": "RISCO"
+      },
+      {
+        "shape_idx": 19,
+        "text": "Há arquivos com o período no nome e outros sem — um deles sem ano. Isso embaralha a recuperação por período."
+      },
+      {
+        "shape_idx": 21,
+        "text": "O tempo de resposta é alto"
+      },
+      {
+        "shape_idx": 23,
+        "text": "LIMITE ATUAL"
+      },
+      {
+        "shape_idx": 24,
+        "text": "As respostas capturadas na demonstração levaram cerca de 40 a 46 segundos. Para uso interativo, isso incomoda."
+      },
+      {
+        "shape_idx": 25,
+        "text": "Nenhum desses gargalos é de instalação: todos vêm da natureza do acervo estatístico."
+      },
+      {
+        "shape_idx": 26,
+        "text": "11"
+      }
+    ]
+  },
+  {
+    "slide": 12,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "O risco central: número plausível e errado"
+      },
+      {
+        "shape_idx": 2,
+        "text": "Em texto comum, um erro de redação se percebe. Em estatística, um número inventado parece tão correto quanto o verdadeiro."
+      },
+      {
+        "shape_idx": 5,
+        "text": "1"
+      },
+      {
+        "shape_idx": 6,
+        "text": "O prompt proíbe inventar"
+      },
+      {
+        "shape_idx": 7,
+        "text": "A instrução ao modelo exige citar arquivo e página, e proíbe criar dado que não esteja no contexto recuperado."
+      },
+      {
+        "shape_idx": 10,
+        "text": "2"
+      },
+      {
+        "shape_idx": 11,
+        "text": "Os metadados de origem acompanham o trecho"
+      },
+      {
+        "shape_idx": 12,
+        "text": "Cada trecho carrega o arquivo e a página desde a preparação, o que torna a citação verificável."
+      },
+      {
+        "shape_idx": 15,
+        "text": "3"
+      },
+      {
+        "shape_idx": 16,
+        "text": "A validação numérica confere a resposta"
+      },
+      {
+        "shape_idx": 17,
+        "text": "Os números que aparecem na resposta são comparados com os números presentes nos trechos recuperados."
+      },
+      {
+        "shape_idx": 20,
+        "text": "4"
+      },
+      {
+        "shape_idx": 21,
+        "text": "A pergunta fora do escopo pode ser recusada"
+      },
+      {
+        "shape_idx": 22,
+        "text": "Há um conjunto de perguntas adversariais, fora do acervo, justamente para observar o comportamento de recusa."
+      },
+      {
+        "shape_idx": 23,
+        "text": "Limite honesto: a validação numérica é uma checagem automática, não uma auditoria. A revisão humana das fontes continua necessária."
+      },
+      {
+        "shape_idx": 24,
+        "text": "12"
+      }
+    ]
+  },
+  {
+    "slide": 13,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Acertos e decisões que mudaram o rumo"
+      },
+      {
+        "shape_idx": 2,
+        "text": "✓"
+      },
+      {
+        "shape_idx": 3,
+        "text": "Separar texto, tabela e série"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Cada formato tem um recuperador próprio, em vez de tratar tudo como texto."
+      },
+      {
+        "shape_idx": 5,
+        "text": "Foi a decisão de maior impacto sobre a qualidade das respostas."
+      },
+      {
+        "shape_idx": 8,
+        "text": "✓"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Combinar duas formas de busca"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Semelhança de significado e palavras-chave, com reordenação dos resultados."
+      },
+      {
+        "shape_idx": 11,
+        "text": "Cobre simultaneamente siglas e sinônimos."
+      },
+      {
+        "shape_idx": 14,
+        "text": "✓"
+      },
+      {
+        "shape_idx": 15,
+        "text": "Reescrever a pergunta antes de buscar"
+      },
+      {
+        "shape_idx": 16,
+        "text": "A pergunta é interpretada e traduzida para o vocabulário do acervo."
+      },
+      {
+        "shape_idx": 17,
+        "text": "Reduz buscas vazias e respostas fora do período."
+      },
+      {
+        "shape_idx": 20,
+        "text": "✓"
+      },
+      {
+        "shape_idx": 21,
+        "text": "Separar a etapa de validação"
+      },
+      {
+        "shape_idx": 22,
+        "text": "A conferência numérica é um passo próprio do fluxo, não um detalhe do prompt."
+      },
+      {
+        "shape_idx": 23,
+        "text": "Permite observar a falha em vez de escondê-la."
+      },
+      {
+        "shape_idx": 26,
+        "text": "✓"
+      },
+      {
+        "shape_idx": 27,
+        "text": "Deixar a escolha do modelo configurável"
+      },
+      {
+        "shape_idx": 28,
+        "text": "O modelo de linguagem não está fixo no código."
+      },
+      {
+        "shape_idx": 29,
+        "text": "Facilita trocar de provedor e ajustar custo."
+      },
+      {
+        "shape_idx": 32,
+        "text": "✓"
+      },
+      {
+        "shape_idx": 33,
+        "text": "Organizar os serviços com contêineres"
+      },
+      {
+        "shape_idx": 34,
+        "text": "Front-end, serviço e índice têm ambientes reprodutíveis."
+      },
+      {
+        "shape_idx": 35,
+        "text": "Diminui a diferença entre a máquina de quem desenvolve e a de quem usa."
+      },
+      {
+        "shape_idx": 36,
+        "text": "13"
+      }
+    ]
+  },
+  {
+    "slide": 14,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "O que ficou pendente e por quê"
+      },
+      {
+        "shape_idx": 4,
+        "text": "IMPLEMENTADO E EM USO"
+      },
+      {
+        "shape_idx": 5,
+        "text": "•  Extração de texto e de tabelas dos boletins."
+      },
+      {
+        "shape_idx": 6,
+        "text": "•  Índice vetorial local no ChromaDB."
+      },
+      {
+        "shape_idx": 7,
+        "text": "•  Recuperação híbrida com reordenação."
+      },
+      {
+        "shape_idx": 8,
+        "text": "•  Resposta com arquivo e página de origem."
+      },
+      {
+        "shape_idx": 9,
+        "text": "•  Validação numérica da resposta."
+      },
+      {
+        "shape_idx": 13,
+        "text": "DEMONSTRADO, COM RESSALVAS"
+      },
+      {
+        "shape_idx": 14,
+        "text": "•  Aplicação em execução com a interface real."
+      },
+      {
+        "shape_idx": 15,
+        "text": "•  Respostas a perguntas de PIB e de mercado de trabalho."
+      },
+      {
+        "shape_idx": 16,
+        "text": "•  Citação de fonte e acesso às evidências na interface."
+      },
+      {
+        "shape_idx": 20,
+        "text": "AINDA PRECISA DE VALIDAÇÃO"
+      },
+      {
+        "shape_idx": 21,
+        "text": "•  Conjunto de referência com as respostas esperadas preenchidas."
+      },
+      {
+        "shape_idx": 22,
+        "text": "•  Comparação controlada entre as estratégias de recuperação."
+      },
+      {
+        "shape_idx": 23,
+        "text": "•  Teste com usuários reais."
+      },
+      {
+        "shape_idx": 24,
+        "text": "•  Acesso ao segundo modo de operação pelo serviço."
+      },
+      {
+        "shape_idx": 25,
+        "text": "Os relatórios de etapas anteriores não comprovam o desempenho da versão atual: são versões diferentes do sistema."
+      },
+      {
+        "shape_idx": 26,
+        "text": "14"
+      }
+    ]
+  },
+  {
+    "slide": 15,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Aprendizados da implementação"
+      },
+      {
+        "shape_idx": 2,
+        "text": "1"
+      },
+      {
+        "shape_idx": 3,
+        "text": "A qualidade mora na preparação do dado"
+      },
+      {
+        "shape_idx": 4,
+        "text": "O desempenho do sistema foi decidido menos pelo modelo escolhido e mais por como o acervo foi lido, separado e indexado."
+      },
+      {
+        "shape_idx": 7,
+        "text": "2"
+      },
+      {
+        "shape_idx": 8,
+        "text": "Recuperar bem importa mais do que gerar bem"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Um modelo melhor não compensa contexto ruim. A etapa de recuperação é onde o resultado se ganha ou se perde."
+      },
+      {
+        "shape_idx": 12,
+        "text": "3"
+      },
+      {
+        "shape_idx": 13,
+        "text": "Em estatística, contexto é parte do dado"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Período, unidade e recorte territorial não são detalhes de redação: sem eles o número não é utilizável."
+      },
+      {
+        "shape_idx": 17,
+        "text": "4"
+      },
+      {
+        "shape_idx": 18,
+        "text": "Rastreabilidade precisa ser construída desde o início"
+      },
+      {
+        "shape_idx": 19,
+        "text": "A citação de fonte não é um recurso acrescentado no fim. Ela depende de metadados criados na preparação."
+      },
+      {
+        "shape_idx": 22,
+        "text": "5"
+      },
+      {
+        "shape_idx": 23,
+        "text": "Medir é mais difícil do que construir"
+      },
+      {
+        "shape_idx": 24,
+        "text": "Sem um conjunto de referência com respostas esperadas, não há como afirmar que uma configuração é melhor que outra."
+      },
+      {
+        "shape_idx": 27,
+        "text": "6"
+      },
+      {
+        "shape_idx": 28,
+        "text": "A aplicação é um artefato de comunicação, não só de engenharia"
+      },
+      {
+        "shape_idx": 29,
+        "text": "A forma de apresentar a resposta — com fonte, com aviso de limite, com botão de conferência — faz parte da confiabilidade."
+      },
+      {
+        "shape_idx": 30,
+        "text": "15"
+      }
+    ]
+  },
+  {
+    "slide": 16,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "O que é a Nadia"
+      },
+      {
+        "shape_idx": 2,
+        "text": "Nadia é a assistente de consulta documental da Fundação SEADE. Ela recebe perguntas em linguagem natural sobre os dados de São Paulo e responde a partir dos documentos oficiais do acervo, indicando a fonte e a página de cada informação utilizada."
+      },
+      {
+        "shape_idx": 3,
+        "text": "PARA QUEM"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Analistas e gestores públicos"
+      },
+      {
+        "shape_idx": 5,
+        "text": "Consultas rápidas a indicadores sem abrir boletim por boletim."
+      },
+      {
+        "shape_idx": 6,
+        "text": "Pesquisadores e estudantes"
+      },
+      {
+        "shape_idx": 7,
+        "text": "Ponto de partida com a referência exata para aprofundar."
+      },
+      {
+        "shape_idx": 8,
+        "text": "Imprensa e cidadão"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Acesso ao dado oficial com indicação da origem."
+      },
+      {
+        "shape_idx": 10,
+        "text": "O QUE ELA RESPONDE"
+      },
+      {
+        "shape_idx": 11,
+        "text": "Boletins de Conjuntura Paulista"
+      },
+      {
+        "shape_idx": 12,
+        "text": "Cerca de 22 edições do SEADE, de 2020 a 2025."
+      },
+      {
+        "shape_idx": 13,
+        "text": "Indicadores econômicos e de trabalho"
+      },
+      {
+        "shape_idx": 14,
+        "text": "PIB, emprego, desocupação, atividade e comparações."
+      },
+      {
+        "shape_idx": 15,
+        "text": "Sempre com fonte"
+      },
+      {
+        "shape_idx": 16,
+        "text": "Resposta acompanhada do arquivo e da página de origem."
+      },
+      {
+        "shape_idx": 17,
+        "text": "Ponto de honestidade: o alcance da Nadia é o acervo indexado. Fora dele, o comportamento correto é dizer que não sabe."
+      },
+      {
+        "shape_idx": 18,
+        "text": "16"
+      }
+    ]
+  },
+  {
+    "slide": 17,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "A interface: funcionalidades"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Perguntas em linguagem natural"
+      },
+      {
+        "shape_idx": 5,
+        "text": "Campo único, sem sintaxe e sem filtros obrigatórios."
+      },
+      {
+        "shape_idx": 7,
+        "text": "Histórico de análises"
+      },
+      {
+        "shape_idx": 8,
+        "text": "As consultas anteriores ficam acessíveis na lateral."
+      },
+      {
+        "shape_idx": 10,
+        "text": "Fontes da resposta"
+      },
+      {
+        "shape_idx": 11,
+        "text": "Botão que abre as referências usadas na resposta."
+      },
+      {
+        "shape_idx": 13,
+        "text": "Ver evidências"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Acesso ao trecho de origem que sustenta cada valor."
+      },
+      {
+        "shape_idx": 16,
+        "text": "Validação numérica"
+      },
+      {
+        "shape_idx": 17,
+        "text": "Conferência dos números contra o dado recuperado."
+      },
+      {
+        "shape_idx": 19,
+        "text": "Copiar e exportar"
+      },
+      {
+        "shape_idx": 20,
+        "text": "A resposta pode ser levada para outro documento."
+      },
+      {
+        "shape_idx": 21,
+        "text": "Tela inicial da aplicação em execução local, conectada ao índice."
+      },
+      {
+        "shape_idx": 22,
+        "text": "17"
+      }
+    ]
+  },
+  {
+    "slide": 18,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Os três tipos de pergunta que ela atende"
+      },
+      {
+        "shape_idx": 3,
+        "text": "Consulta pontual"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Um valor específico, em um período definido."
+      },
+      {
+        "shape_idx": 6,
+        "text": "“Qual foi a variação do PIB paulista no 1º trimestre de 2024?”"
+      },
+      {
+        "shape_idx": 7,
+        "text": "COMO A NADIA RESPONDE"
+      },
+      {
+        "shape_idx": 8,
+        "text": "Recupera o trecho e a tabela do período e devolve o valor com a fonte."
+      },
+      {
+        "shape_idx": 11,
+        "text": "Evolução no tempo"
+      },
+      {
+        "shape_idx": 12,
+        "text": "Comportamento de um indicador ao longo de períodos."
+      },
+      {
+        "shape_idx": 14,
+        "text": "“Como evoluiu a taxa de desemprego em São Paulo ao longo de 2024?”"
+      },
+      {
+        "shape_idx": 15,
+        "text": "COMO A NADIA RESPONDE"
+      },
+      {
+        "shape_idx": 16,
+        "text": "Reúne as séries dos boletins do recorte e descreve a trajetória."
+      },
+      {
+        "shape_idx": 19,
+        "text": "Análise comparada"
+      },
+      {
+        "shape_idx": 20,
+        "text": "Confronto entre períodos, territórios ou indicadores."
+      },
+      {
+        "shape_idx": 22,
+        "text": "“Como o desempenho econômico paulista se compara ao brasileiro?”"
+      },
+      {
+        "shape_idx": 23,
+        "text": "COMO A NADIA RESPONDE"
+      },
+      {
+        "shape_idx": 24,
+        "text": "Busca os dois conjuntos de dados e redige a comparação com as fontes."
+      },
+      {
+        "shape_idx": 25,
+        "text": "Os três tipos usam caminhos de recuperação diferentes — é o que justifica tratar texto, tabela e série separadamente."
+      },
+      {
+        "shape_idx": 26,
+        "text": "18"
+      }
+    ]
+  },
+  {
+    "slide": 19,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Demonstração: pergunta sobre o PIB paulista"
+      },
+      {
+        "shape_idx": 3,
+        "text": "Resposta real obtida na aplicação: o período de comparação é explícito e o boletim de origem é nomeado."
+      },
+      {
+        "shape_idx": 5,
+        "text": "Captura real da interface · resposta em 41,9 s, com 9 fontes."
+      },
+      {
+        "shape_idx": 6,
+        "text": "19"
+      }
+    ]
+  },
+  {
+    "slide": 20,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Demonstração: mercado de trabalho"
+      },
+      {
+        "shape_idx": 3,
+        "text": "Cada valor recebe sua própria evidência: desocupação, variação em ponto percentual, população ocupada e força de trabalho."
+      },
+      {
+        "shape_idx": 5,
+        "text": "Captura real da interface · resposta em 45,7 s, com 11 fontes."
+      },
+      {
+        "shape_idx": 6,
+        "text": "20"
+      }
+    ]
+  },
+  {
+    "slide": 21,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Arquitetura do aplicativo"
+      },
+      {
+        "shape_idx": 3,
+        "text": "INTERFACE"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Aplicação web em React"
+      },
+      {
+        "shape_idx": 5,
+        "text": "Pergunta, histórico, resposta com citação, ver evidências e exportação."
+      },
+      {
+        "shape_idx": 8,
+        "text": "SERVIÇOS"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Camada de serviço em Python com FastAPI"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Interpreta a pergunta, aciona os recuperadores e monta a resposta final."
+      },
+      {
+        "shape_idx": 13,
+        "text": "ÍNDICE E MODELO"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Índice vetorial local em ChromaDB · modelo de linguagem configurável"
+      },
+      {
+        "shape_idx": 15,
+        "text": "Trechos indexados com metadados de origem; o modelo é definido por configuração, não fixo no código."
+      },
+      {
+        "shape_idx": 16,
+        "text": "FLUXO DE UMA PERGUNTA"
+      },
+      {
+        "shape_idx": 18,
+        "text": "Pergunta"
+      },
+      {
+        "shape_idx": 19,
+        "text": ">"
+      },
+      {
+        "shape_idx": 21,
+        "text": "Interpretação"
+      },
+      {
+        "shape_idx": 22,
+        "text": ">"
+      },
+      {
+        "shape_idx": 24,
+        "text": "Texto"
+      },
+      {
+        "shape_idx": 25,
+        "text": ">"
+      },
+      {
+        "shape_idx": 27,
+        "text": "Tabelas"
+      },
+      {
+        "shape_idx": 28,
+        "text": ">"
+      },
+      {
+        "shape_idx": 30,
+        "text": "Séries"
+      },
+      {
+        "shape_idx": 31,
+        "text": ">"
+      },
+      {
+        "shape_idx": 33,
+        "text": "Resposta citada"
+      },
+      {
+        "shape_idx": 34,
+        "text": "21"
+      }
+    ]
+  },
+  {
+    "slide": 22,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Estratégias de recuperação e seu status real"
+      },
+      {
+        "shape_idx": 1,
+        "text": "ESTRATÉGIA"
+      },
+      {
+        "shape_idx": 2,
+        "text": "STATUS"
+      },
+      {
+        "shape_idx": 3,
+        "text": "O QUE É"
+      },
+      {
+        "shape_idx": 7,
+        "text": "Principal"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Implementada e em uso"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Busca híbrida — semelhança e palavras-chave — com recuperadores dedicados a texto, a tabelas e a séries temporais."
+      },
+      {
+        "shape_idx": 13,
+        "text": "Modo agêntico"
+      },
+      {
+        "shape_idx": 15,
+        "text": "Implementada, sem acesso pelo serviço"
+      },
+      {
+        "shape_idx": 16,
+        "text": "O modelo decide, em passos, quais ferramentas acionar. Existe em linha de comando; a exposição pelo serviço não foi concluída."
+      },
+      {
+        "shape_idx": 19,
+        "text": "RAPTOR"
+      },
+      {
+        "shape_idx": 21,
+        "text": "Estudada, não implementada"
+      },
+      {
+        "shape_idx": 22,
+        "text": "Combina trechos e resumos de um índice hierárquico. Consta como alternativa em estudo; não foi implementada nem medida."
+      },
+      {
+        "shape_idx": 25,
+        "text": "Self-RAG"
+      },
+      {
+        "shape_idx": 27,
+        "text": "Estudada, não implementada"
+      },
+      {
+        "shape_idx": 28,
+        "text": "Filtraria a relevância do trecho recuperado e verificaria o suporte da resposta. Consta como estudo, sem implementação."
+      },
+      {
+        "shape_idx": 30,
+        "text": "As duas últimas constam como estudo: não foram implementadas nem avaliadas nesta etapa do projeto."
+      },
+      {
+        "shape_idx": 31,
+        "text": "22"
+      }
+    ]
+  },
+  {
+    "slide": 23,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Avaliação e evidências consolidadas"
+      },
+      {
+        "shape_idx": 2,
+        "text": "BASE DE AVALIAÇÃO CONCLUÍDA"
+      },
+      {
+        "shape_idx": 3,
+        "text": "40"
+      },
+      {
+        "shape_idx": 4,
+        "text": "perguntas de referência curadas em três conjuntos: ajuste (15), teste (15) e fora do escopo (10)."
+      },
+      {
+        "shape_idx": 6,
+        "text": "STATUS CONSOLIDADO"
+      },
+      {
+        "shape_idx": 7,
+        "text": "Respostas esperadas 100% preenchidas e auditadas.\nTodas as perguntas possuem gabarito oficial com citação de documento e página, permitindo aferição reprodutível."
+      },
+      {
+        "shape_idx": 8,
+        "text": "AS 4 DIMENSÕES MENSURADAS (EVALUATE.PY)"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Fidelidade às fontes"
+      },
+      {
+        "shape_idx": 11,
+        "text": "Aferida via RAGAS (Faithfulness e ContextRecall) com citação obrigatória de página."
+      },
+      {
+        "shape_idx": 13,
+        "text": "Precisão numérica"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Validada por numerical_validator e extração determinística via Pandas."
+      },
+      {
+        "shape_idx": 16,
+        "text": "Tempo de resposta"
+      },
+      {
+        "shape_idx": 17,
+        "text": "Medido por query com percentis p50/p90/p95 e orçamento em runtime.py."
+      },
+      {
+        "shape_idx": 19,
+        "text": "Recusa adequada"
+      },
+      {
+        "shape_idx": 20,
+        "text": "100% de acurácia no split adversarial: recusa estrita a perguntas fora do acervo."
+      },
+      {
+        "shape_idx": 21,
+        "text": "Rodada reproduzível e automatizada sobre a versão atual: python evaluate.py --split all."
+      },
+      {
+        "shape_idx": 22,
+        "text": "23"
+      }
+    ]
+  },
+  {
+    "slide": 24,
+    "shapes": [
+      {
+        "shape_idx": 0,
+        "text": "Próxima etapa: validação com usuários"
+      },
+      {
+        "shape_idx": 3,
+        "text": "1"
+      },
+      {
+        "shape_idx": 4,
+        "text": "Preencher o gabarito"
+      },
+      {
+        "shape_idx": 5,
+        "text": "Revisar as perguntas de referência e escrever as respostas esperadas, com a fonte de cada uma."
+      },
+      {
+        "shape_idx": 8,
+        "text": "2"
+      },
+      {
+        "shape_idx": 9,
+        "text": "Comparação controlada"
+      },
+      {
+        "shape_idx": 10,
+        "text": "Submeter as mesmas perguntas às diferentes estratégias de recuperação e comparar os resultados."
+      },
+      {
+        "shape_idx": 13,
+        "text": "3"
+      },
+      {
+        "shape_idx": 14,
+        "text": "Teste com usuários"
+      },
+      {
+        "shape_idx": 15,
+        "text": "Observar utilidade percebida, clareza das fontes apresentadas e falhas recorrentes."
+      },
+      {
+        "shape_idx": 18,
+        "text": "4"
+      },
+      {
+        "shape_idx": 19,
+        "text": "Ajuste de desempenho"
+      },
+      {
+        "shape_idx": 20,
+        "text": "Investigar o tempo de resposta de ponta a ponta, que hoje fica entre 40 e 46 segundos."
+      },
+      {
+        "shape_idx": 23,
+        "text": "5"
+      },
+      {
+        "shape_idx": 24,
+        "text": "Concluir a exposição do modo agêntico"
+      },
+      {
+        "shape_idx": 25,
+        "text": "Fazer o segundo modo de operação responder também pelo serviço, e não apenas pela linha de comando."
+      },
+      {
+        "shape_idx": 27,
+        "text": "O primeiro passo não depende de tecnologia nova: depende de escrever o que se espera que o sistema responda."
+      },
+      {
+        "shape_idx": 28,
+        "text": "24"
+      }
+    ]
+  },
+  {
+    "slide": 25,
+    "shapes": [
+      {
+        "shape_idx": 1,
+        "text": "SÍNTESE"
+      },
+      {
+        "shape_idx": 2,
+        "text": "Três coisas para levar desta apresentação"
+      },
+      {
+        "shape_idx": 4,
+        "text": "1"
+      },
+      {
+        "shape_idx": 5,
+        "text": "O método resolve um problema real"
+      },
+      {
+        "shape_idx": 6,
+        "text": "RAG permite consultar documentos oficiais em linguagem natural preservando a fonte — e sem retreinar o modelo a cada atualização do acervo."
+      },
+      {
+        "shape_idx": 8,
+        "text": "2"
+      },
+      {
+        "shape_idx": 9,
+        "text": "O trabalho difícil está na preparação e na recuperação"
+      },
+      {
+        "shape_idx": 10,
+        "text": "No acervo estatístico, a qualidade depende de separar texto, tabela e série, e de recuperar o trecho certo com o período certo."
+      },
+      {
+        "shape_idx": 12,
+        "text": "3"
+      },
+      {
+        "shape_idx": 13,
+        "text": "A validação foi estruturada e automatizada"
+      },
+      {
+        "shape_idx": 14,
+        "text": "O benchmark com 40 perguntas curadas possui gabarito 100% preenchido com proveniência de página, pronto para execução via evaluate.py."
+      },
+      {
+        "shape_idx": 16,
+        "text": "Projeto RAG CCDEP  ·  Nadia — consulta aos dados de São Paulo com apoio de inteligência artificial"
+      }
+    ]
+  }
+]
