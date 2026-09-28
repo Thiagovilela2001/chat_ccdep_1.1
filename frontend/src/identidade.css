@@ -604,7 +604,12 @@ h1, h2, h3, .empty-state h1, .message-heading strong, .section-title {
 
 /* ── Diálogos ──────────────────────────────────────────────────────────────── */
 
-/* O véu pode ser translúcido: ele existe para escurecer o que está atrás. */
+/* O vidro não é sobrescrito aqui: as quatro declarações de `backdrop-filter`
+   que existiam no styles.css (topbar, véu do diálogo, gaveta de fontes e modal
+   de exportação) foram removidas na origem — override não resolvia, porque o
+   minificador descarta a declaração sem prefixo quando as duas estão juntas e o
+   Chrome não aplicava só a `-webkit-`. Sobrou o véu, que escurece o que está
+   atrás e pode ser translúcido: */
 .dialog-backdrop { background: rgba(6, 12, 26, 0.62); }
 .settings-dialog {
   border: 1px solid var(--line);

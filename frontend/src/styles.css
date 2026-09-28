@@ -442,7 +442,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .validation-panel { display: grid; gap: 10px; }.validation-card { padding: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }.validation-top { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 9px; }.validation-top > span { display: grid; width: 31px; height: 31px; place-items: center; color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, var(--surface-raised)); border-radius: 9px; }.validation-card.is-complete .validation-top > span { color: var(--success); background: color-mix(in srgb, var(--success) 10%, var(--surface-raised)); }.validation-top > div { display: grid; gap: 1px; }.validation-top small { color: var(--ink-faint); font-size: 8px; }.validation-top strong { font-size: 11px; }.validation-top b { font-size: 14px; }.validation-bar { height: 4px; margin-top: 11px; overflow: hidden; background: var(--line); border-radius: 99px; }.validation-bar i { display: block; height: 100%; background: var(--warning); }.is-complete .validation-bar i { background: var(--success); }.validation-card > p { display: flex; align-items: center; gap: 5px; margin: 9px 0 0; color: var(--success); font-size: 9px; }.unverified-values { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 11px; }.unverified-values small { width: 100%; color: var(--ink-faint); font-size: 8px; }.unverified-values code { padding: 3px 5px; color: var(--warning); font-size: 9px; background: color-mix(in srgb, var(--warning) 8%, var(--surface-raised)); border-radius: 5px; }
 .pipeline-panel { display: grid; gap: 7px; }.info-block { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 9px; padding: 9px; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; }.info-block > span { display: grid; width: 29px; height: 29px; place-items: center; color: var(--success); background: var(--brand-soft); border-radius: 8px; }.info-block > div { display: grid; gap: 1px; }.info-block small { color: var(--ink-faint); font-size: 8px; }.info-block strong { font-size: 10px; }.reasoning { padding: 11px; background: var(--surface-soft); border-radius: 11px; }.reasoning small { color: var(--ink-faint); font-size: 8px; font-weight: 750; text-transform: uppercase; }.reasoning p { margin: 5px 0 0; font-size: 10px; line-height: 1.5; }.pipeline-panel details { font-size: 9px; }.pipeline-panel summary { display: flex; align-items: center; gap: 6px; padding: 9px; cursor: pointer; }.pipeline-panel pre { max-height: 350px; padding: 10px; overflow: auto; color: #dce8e2; font-size: 8px; line-height: 1.5; background: #102d2e; border-radius: 9px; }
 
-.dialog-backdrop { position: fixed; z-index: 100; display: grid; inset: 0; place-items: center; padding: 20px; background: rgba(8, 24, 23, .52); backdrop-filter: blur(7px); animation: fade-in 160ms ease; }
+.dialog-backdrop { position: fixed; z-index: 100; display: grid; inset: 0; place-items: center; padding: 20px; background: rgba(8, 24, 23, .52); animation: fade-in 160ms ease; }
 .settings-dialog { width: min(500px, 100%); overflow: hidden; background: var(--surface-raised); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow-lg); animation: dialog-in 200ms ease; }.settings-dialog > header { display: flex; align-items: center; justify-content: space-between; padding: 19px 21px; border-bottom: 1px solid var(--line); }.settings-dialog header small { color: var(--ink-faint); font-size: 8px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }.settings-dialog h2 { margin: 3px 0 0; font-size: 20px; letter-spacing: -.03em; }.dialog-body { display: grid; gap: 18px; padding: 21px; }.dialog-body label:not(.toggle-row) { display: grid; gap: 7px; }.dialog-body label > span { font-size: 10px; font-weight: 750; }.dialog-body input:not([type="checkbox"]) { width: 100%; padding: 10px 11px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; outline: 0; }.dialog-body label > small { color: var(--ink-faint); font-size: 8px; }.toggle-row { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 12px; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; }.toggle-row > span { display: grid; gap: 3px; }.toggle-row strong { font-size: 10px; }.toggle-row small { color: var(--ink-faint); font-size: 8px; }.toggle-row input { position: absolute; opacity: 0; }.toggle-row i { position: relative; width: 36px; height: 20px; flex: 0 0 auto; background: var(--line-strong); border-radius: 99px; transition: 150ms; }.toggle-row i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: 150ms; box-shadow: 0 1px 3px rgba(0,0,0,.2); }.toggle-row input:checked + i { background: var(--success); }.toggle-row input:checked + i::after { transform: translateX(16px); }.settings-dialog > footer { display: flex; justify-content: flex-end; gap: 7px; padding: 14px 21px 18px; }.secondary-button, .primary-button { padding: 9px 13px; font-size: 10px; font-weight: 750; cursor: pointer; border-radius: 9px; }.secondary-button { color: var(--ink-soft); background: transparent; border: 1px solid var(--line); }.primary-button { color: white; background: var(--brand); border: 1px solid var(--brand); }
 .mobile-scrim { display: none; }
 .is-spinning { animation: spin 1s linear infinite; }
@@ -606,7 +606,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   color: var(--ink);
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(14px);
 }
 .topbar-left { gap: 11px; }
 .topbar-left small { color: var(--ink-faint); font-size: 8px; }
@@ -1260,7 +1259,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
   z-index: 999;
   display: flex;
   justify-content: flex-end;
@@ -1531,7 +1529,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
