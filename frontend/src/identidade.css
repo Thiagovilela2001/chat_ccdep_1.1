@@ -32,8 +32,8 @@
   --line: rgba(18, 32, 60, 0.14);
   --line-strong: rgba(18, 32, 60, 0.24);
 
-  --brand: #3a6fdc;
-  --brand-strong: #2b5bc4;
+  --brand: #4176e6;
+  --brand-strong: #3462cc;
   --brand-deep: #12203c;
   --brand-soft: #e2ecfd;
   --accent: #6a55e0;
@@ -66,36 +66,40 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #090d1a;
-  --surface: #151c30;
-  --surface-raised: #1b2440;
-  --surface-soft: #222d4b;
-  --surface-tint: #121829;
-  --ink: #f0f4fc;
-  --ink-soft: #b9c2d8;
-  --ink-faint: #7e89a4;
-  --line: rgba(159, 186, 235, 0.20);
-  --line-strong: rgba(159, 186, 235, 0.34);
+  /* Preto de verdade no fundo: as camadas se separam por tom de cinza, não por
+     transparência, e a identidade fica com o azul (acento e halo). */
+  --bg: #000000;
+  --surface: #0d0e11;
+  --surface-raised: #14161b;
+  --surface-soft: #1c1f26;
+  --surface-tint: #08090c;
+  --ink: #f2f4f8;
+  --ink-soft: #b6bcc9;
+  --ink-faint: #7b8291;
+  --line: rgba(255, 255, 255, 0.13);
+  --line-strong: rgba(255, 255, 255, 0.24);
 
   --brand: #6e9bff;
   --brand-strong: #8cb2ff;
-  --brand-deep: #090d1a;
-  --brand-soft: #1e2f57;
+  --brand-deep: #000000;
+  --brand-soft: #16233d;
   --accent: #a78bfa;
-  --accent-soft: #2b2450;
+  --accent-soft: #241d3f;
   --lime: #6e9bff;
   --success: #35c3b3;
   --warning: #e79a63;
   --danger: #ec858b;
 
-  --wash: rgba(110, 155, 255, 0.20);
-  --wash-soft: rgba(110, 155, 255, 0.10);
-  --grid-line: rgba(159, 186, 235, 0.055);
-  --glow: rgba(110, 155, 255, 0.26);
+  --wash: rgba(110, 155, 255, 0.16);
+  --wash-soft: rgba(110, 155, 255, 0.07);
+  --grid-line: rgba(255, 255, 255, 0.055);
+  --chrome: #000000;
+  --chrome-deep: #000000;
+  --glow: rgba(110, 155, 255, 0.22);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.30);
-  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 14px 32px rgba(0, 0, 0, 0.40);
-  --shadow-lg: 0 22px 54px rgba(0, 0, 0, 0.60);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.6), 0 14px 32px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 22px 54px rgba(0, 0, 0, 0.7);
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
@@ -543,7 +547,7 @@ h1, h2, h3, .empty-state h1, .message-heading strong, .section-title {
 .validation-bar { height: 6px; border-radius: var(--pill); background: #dfe6f1; }
 .validation-bar i { border-radius: var(--pill); background: var(--warning); }
 .validation-card.is-complete .validation-bar i { background: var(--success); }
-:root[data-theme="dark"] .validation-bar { background: #26324f; }
+:root[data-theme="dark"] .validation-bar { background: #26272c; }
 .unverified-values code { padding: 4px 7px; font-family: var(--font-mono); font-size: 10px; border-radius: 7px; }
 .pipeline-panel pre { color: var(--ink); background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius-sm); }
 
@@ -628,6 +632,9 @@ h1, h2, h3, .empty-state h1, .message-heading strong, .section-title {
 
 :root[data-theme="dark"] .brand-mark { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5); }
 :root[data-theme="dark"] .brand small { color: #8b97b3; }
+/* Sobre preto o fundo e a lateral têm o mesmo tom: a borda é o que separa. */
+:root[data-theme="dark"] .sidebar { border-right-color: rgba(255, 255, 255, 0.09); }
+:root[data-theme="dark"] .sidebar-foot { border-top-color: rgba(255, 255, 255, 0.10); }
 
 /* Barras de rolagem discretas */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
