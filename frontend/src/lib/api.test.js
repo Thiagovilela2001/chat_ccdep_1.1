@@ -60,4 +60,24 @@ describe("configuração da API", () => {
     );
     fetchMock.mockRestore();
   });
+
+  it("explica em português as falhas que o usuário pode resolver", async () => {
+    const cases = [
+      [401, /chave válida/i],
+      [429, /Limite de consultas/i],
+      [503, /indisponível no momento/i],
+      [504, /tempo limite do servidor/i],
+    ];
+
+    for (const [status, expected] of cases) {
+      const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: false,
+        status,
+        json: async () => ({ detail: "detalhe cru do backend" }),
+      });
+
+      await expect(queryBackend("https://rag.example", "Pergunta?")).rejects.toThrow(expected);
+      fetchMock.mockRestore();
+    }
+  });
 });

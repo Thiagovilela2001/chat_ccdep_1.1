@@ -102,6 +102,17 @@ export async function queryBackend(
     if (response.status === 429) {
       throw new Error("Limite de consultas atingido. Aguarde alguns instantes e tente novamente.");
     }
+    if (response.status === 504) {
+      throw new Error(
+        "A análise passou do tempo limite do servidor e foi interrompida. "
+        + "Tente novamente ou faça uma pergunta mais específica.",
+      );
+    }
+    if (response.status === 503) {
+      throw new Error(
+        "O serviço de linguagem está indisponível no momento. Tente novamente em instantes.",
+      );
+    }
     throw new Error(await errorDetail(response));
   }
 
