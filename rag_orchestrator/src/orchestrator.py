@@ -9,19 +9,23 @@ from __future__ import annotations
 
 import asyncio
 import time
+from typing import TYPE_CHECKING
 
 from rag_core.answer_policy import REFUSAL_TEXT
 
 from .fusion import run_engines, select_best
-from .query_analyzer import QueryAnalyzer
+from .query_analyzer import QueryAnalyzer, make_analyzer
 from .quality_gate import summarize
 from .registry import get_client, get_profiles, health_is_ready, profile_dict
 from .router import RouteDecision, route
 
+if TYPE_CHECKING:
+    from .jev_analyzer import JevQueryAnalyzer
+
 class Orchestrator:
-    def __init__(self, analyzer: QueryAnalyzer | None = None,
+    def __init__(self, analyzer: QueryAnalyzer | JevQueryAnalyzer | None = None,
                  multi_engine: bool = False, timeout: int = 180):
-        self.analyzer = analyzer or QueryAnalyzer()
+        self.analyzer = analyzer or make_analyzer()
         self.multi_engine = multi_engine
         self.timeout = timeout
 

@@ -4,9 +4,11 @@ query_analyzer.py — Análise semântica da consulta (antes da recuperação).
 Classifica a pergunta em dimensões que caracterizam **a própria consulta**
 (nunca o corpus — princípio 2), produzindo o JSON consumido pelo `router`.
 
-A via primária é uma única chamada LLM barata (JSON estrito). Há um fallback
-heurístico apenas para resiliência (sem chave/rede/parse) — não é o caminho
-principal e não substitui a análise semântica.
+A via primária é uma única chamada LLM barata (JSON estrito) **ou** uma única
+requisição ao Jev (TypeSafe System One, ver `jev_analyzer.py`), escolhida por
+`make_analyzer()`. Há um fallback heurístico apenas para resiliência (sem
+chave/rede/parse) — não é o caminho principal e não substitui a análise
+semântica.
 
 Não importa `transformers`/HuggingFace: usa apenas o SDK `openai`.
 """
@@ -15,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 
+from rag_core.jev import jev_enabled
 from rag_core.llm import interp_model, openai_client_kwargs
 from rag_core.runtime import bounded_float
 from rag_core.metrics import record_reported_usage
@@ -172,3 +175,19 @@ def _heuristic_fallback(question: str) -> dict:
     out["confidence"] = 0.3  # baixa: sinaliza que foi fallback, não análise real
     out["reasoning"] = "fallback heurístico (LLM indisponível)"
     return out
+
+
+def make_analyzer(*, use_jev: bool | None = None):
+    """
+    Analisador padrão do orquestrador.
+
+    Usa o classificador Jev (TypeSafe System One) quando há `TYPESAFE_API_KEY` e
+    o recurso está habilitado (`RAG_JEV_ENABLED`); o próprio `JevQueryAnalyzer`
+    cai para o `QueryAnalyzer` (LLM) — e este para a heurística — em qualquer
+    falha. Com `use_jev=False` ou sem chave, o caminho LLM de sempre é mantido.
+    """
+    if use_jev is False or (use_jev is None and not jev_enabled()):
+        return QueryAnalyzer()
+    from .jev_analyzer import JevQueryAnalyzer  # import tardio: evita ciclo
+
+    return JevQueryAnalyzer(fallback=QueryAnalyzer())

@@ -6,12 +6,18 @@ Implementação baseada em Asai et al. (2023), adaptada para LLMs off-the-shelf
 do paper são substituídos por chamadas LLM explícitas ao modelo de crítica.
 
 Fluxo:
-  1. RETRIEVE?  LLM decide se busca em documentos é necessária.
+  1. RETRIEVE?  decide se busca em documentos é necessária.
   2. RETRIEVE   Busca nas 3 fontes em paralelo (se necessário).
-  3. ISREL      LLM filtra passages irrelevantes em batch.
+  3. ISREL      filtra passages irrelevantes em batch.
   4. GENERATE   LLM principal gera resposta apenas com passages relevantes.
-  5. ISSUP      LLM verifica se a resposta é suportada factualmente.
+  5. ISSUP      verifica se a resposta é suportada factualmente.
   6. RETRY      Se support="none", refina a query e re-busca uma vez.
+
+Os três julgamentos (RETRIEVE?, ISREL, ISSUP) são semânticos e têm caminho
+duplo: com Jev configurado (`TYPESAFE_API_KEY` + `RAG_JEV_ENABLED`), viram
+Noul/Choice tipados via `rag_core.jev` — ISREL vira uma pergunta Noul por
+trecho em uma única requisição (fan-out) e ISSUP uma Choice `full|partial|none`.
+Sem chave, ou em qualquer falha da Jev, o caminho LLM original assume.
 
 Modelo de crítica (gpt-5-mini): RETRIEVE?, ISREL, ISSUP, refinamento de query.
 Modelo principal (gpt-5-chat-latest): GENERATE apenas.
@@ -26,6 +32,7 @@ from openai import AsyncOpenAI
 from rag_core.answer_policy import REFUSAL_TEXT, sanitize_answer
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
 from rag_core.domain_skills import build_domain_prompt_block
+from rag_core.jev import JevClient, choice, jev_enabled, noul
 from rag_core.llm import interp_model, openai_client_kwargs
 from rag_core.runtime import bounded_int, limit_context
 from rag_core.provenance import format_source_context, source_labels
@@ -113,6 +120,20 @@ Responda APENAS com JSON: {{"query": "..."}}
 Pergunta original: {question}
 Resposta parcial (primeiros 300 chars): {answer}"""
 
+# ── Julgamentos tipados (Jev) ─────────────────────────────────────────────────
+
+_JEV_RETRIEVE = (
+    "Responder `pergunta` exige buscar em uma base documental de conjuntura "
+    "econômica e estatísticas do Estado de São Paulo (2020 a 2025), em vez de "
+    "usar apenas conhecimento geral?"
+)
+
+_JEV_SUPPORT_CRITERIA = {
+    "full": "todos os pontos centrais da resposta têm respaldo explícito no contexto",
+    "partial": "parte dos pontos ou dados da resposta é confirmada e outra parte não",
+    "none": "a resposta não é sustentada pelo contexto, ou é uma recusa",
+}
+
 # ── Engine ────────────────────────────────────────────────────────────────────
 
 class SelfRAGEngine:
@@ -129,6 +150,7 @@ class SelfRAGEngine:
         llm,
         domain_skills=None,
         labor_market_skill=None,
+        jev_client=None,
     ):
         self._text         = text_retriever
         self._tables       = tables_retriever
@@ -138,8 +160,23 @@ class SelfRAGEngine:
         self._domain_skills = domain_skills
         self._labor_skill  = labor_market_skill
         self._client       = AsyncOpenAI(**openai_client_kwargs())
+        # Julgamentos tipados (RETRIEVE?, ISREL, ISSUP) quando a Jev está ativa;
+        # `None` mantém o caminho LLM original.
+        self._jev = (
+            jev_client if jev_client is not None else (JevClient() if jev_enabled() else None)
+        )
 
     # ── Helpers ───────────────────────────────────────────────────────────────
+
+    async def _jev_call(self, state: dict, questions: dict):
+        """Uma requisição System One fora do event loop; `None` se indisponível."""
+        if self._jev is None:
+            return None
+        try:
+            return await asyncio.to_thread(self._jev.system_one, state, questions)
+        except Exception as exc:
+            log.warning("SelfRAG: chamada à Jev falhou: %s", exc)
+            return None
 
     async def _json_call(self, prompt: str, model: str | None = None) -> dict:
         """Chamada LLM que retorna JSON. Remove markdown code fences se presentes."""
@@ -198,14 +235,77 @@ class SelfRAGEngine:
 
     async def _decide_retrieve(self, question: str) -> bool:
         """RETRIEVE? — decide se busca é necessária para esta pergunta."""
+        if self._jev is not None:
+            response = await self._jev_call(
+                {"pergunta": question},
+                {"precisa_busca": noul(_JEV_RETRIEVE)},
+            )
+            if response is not None:
+                decision = response.noul_decision("precisa_busca")
+                if decision is not None:
+                    log.info(
+                        "SelfRAG RETRIEVE? (Jev): p=%.3f → %s",
+                        response.noul("precisa_busca"),
+                        decision,
+                    )
+                    return decision
+            log.warning("SelfRAG: Jev sem resposta em RETRIEVE? — usando o LLM.")
+
         result = await self._json_call(_RETRIEVE_PROMPT.format(question=question))
         decision = result.get("retrieve", True)
         return decision if isinstance(decision, bool) else True
 
+    async def _jev_filter(self, question: str, passages: list[str]) -> list[str] | None:
+        """
+        ISREL tipado: uma pergunta Noul independente por trecho, todas na mesma
+        requisição (avaliação paralela, sem contexto cruzado entre trechos).
+        """
+        state = {
+            "pergunta": question,
+            "trechos": [
+                {"indice": index, "texto": passage[:500]}
+                for index, passage in enumerate(passages)
+            ],
+        }
+        questions = {
+            f"trecho_{index}": noul(
+                f"O `trechos[{index}].texto` ajuda a responder a `pergunta`?"
+            )
+            for index in range(len(passages))
+        }
+
+        response = await self._jev_call(state, questions)
+        if response is None:
+            return None
+
+        decisions = {
+            index: response.noul_decision(f"trecho_{index}")
+            for index in range(len(passages))
+        }
+        if any(decision is None for decision in decisions.values()):
+            log.warning("SelfRAG: ISREL (Jev) incompleto — usando o LLM.")
+            return None
+
+        return [
+            passage
+            for index, passage in enumerate(passages)
+            if decisions[index]
+        ]
+
     async def _filter_relevant(self, question: str, passages: list[str]) -> list[str]:
-        """ISREL — filtra passages não-relevantes em batch (uma única chamada LLM)."""
+        """ISREL — filtra passages não-relevantes em batch (uma única chamada)."""
         if not passages:
             return []
+
+        if self._jev is not None:
+            relevant = await self._jev_filter(question, passages)
+            if relevant is not None:
+                log.info(
+                    "SelfRAG ISREL (Jev): %d/%d passages relevantes",
+                    len(relevant), len(passages),
+                )
+                return relevant if relevant else passages  # fallback: usa todos se vazio
+            log.warning("SelfRAG: Jev sem resposta em ISREL — usando o LLM.")
 
         numbered = "\n\n".join(f"[{i}] {p[:500]}" for i, p in enumerate(passages))
         result = await self._json_call(
@@ -247,6 +347,30 @@ class SelfRAGEngine:
 
     async def _check_support(self, answer: str, context: str) -> str:
         """ISSUP — retorna 'full', 'partial' ou 'none'."""
+        if self._jev is not None:
+            response = await self._jev_call(
+                {"resposta": answer[:1000], "contexto": context[:3000]},
+                {
+                    "suporte": choice(
+                        "A `resposta` é sustentada factualmente pelo `contexto`?",
+                        _JEV_SUPPORT_CRITERIA,
+                    )
+                },
+            )
+            if response is not None:
+                support = response.choice("suporte", allowed=_JEV_SUPPORT_CRITERIA)
+                if support is not None:
+                    log.info(
+                        "SelfRAG ISSUP (Jev): %s (conf=%.2f, p(none)=%.2f)",
+                        support,
+                        response.confidence("suporte") or 0.0,
+                        response.answer("suporte").probability("none")
+                        if response.answer("suporte")
+                        else 0.0,
+                    )
+                    return support
+            log.warning("SelfRAG: Jev sem resposta em ISSUP — usando o LLM.")
+
         result = await self._json_call(
             _ISSUP_PROMPT.format(context=context[:3000], answer=answer[:1000])
         )
