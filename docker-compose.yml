@@ -122,6 +122,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # O bundle é montado no build e as chamadas partem do navegador: a URL
+        # precisa ser a porta publicada no host, não o nome do serviço.
+        VITE_PRINCIPAL_URL: http://localhost:${RAG_PRINCIPAL_PORT:-8000}
+        VITE_META_URL: http://localhost:${RAG_ORCHESTRATOR_PORT:-8010}
     container_name: rag-ccdep-frontend
     init: true
     cap_drop:

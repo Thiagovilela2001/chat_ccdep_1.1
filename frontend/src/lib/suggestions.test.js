@@ -49,4 +49,15 @@ describe("perguntas em destaque", () => {
     expect(demographicPools.length).toBeGreaterThanOrEqual(6);
     expect(demographicPools.every(({ questions }) => questions.length >= 4)).toBe(true);
   });
+
+  it("formula todas as sugestões para exigir evidência numérica", () => {
+    const numericCue = /\b(?:quant\w*|valor\w*|taxa\w*|percent\w*|saldo|total|variac\w*|diferenc\w*|proporc\w*|participac\w*|indice\w*|ranking|pontos|habitantes|postos|projetos|anos)\b/i;
+
+    FEATURED_QUESTION_POOLS.forEach(({ questions }) => {
+      questions.forEach((question) => {
+        const normalizedQuestion = question.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+        expect(normalizedQuestion).toMatch(numericCue);
+      });
+    });
+  });
 });
