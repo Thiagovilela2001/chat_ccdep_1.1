@@ -1,8 +1,9 @@
 """Probe de saúde do RAG Principal via HTTP.
 
-Uso: python probe_rag_health.py [porta] [dominios] [saida]
-     python probe_rag_health.py 8000 labor_market,demography probe_regress.json
-Escreve o JSON de resultados e imprime resumo compacto.
+Uso: python scripts/probe_rag_health.py [porta] [dominios] [saida]
+     python scripts/probe_rag_health.py 8000 labor_market,demography medicoes/probe_regress.json
+Escreve o JSON de resultados (padrao: probe_results.json no diretorio atual) e imprime resumo
+compacto. As medicoes ja coletadas ficam em medicoes/.
 """
 import json
 import sys
