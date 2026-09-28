@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./App";
+import { apiUrls } from "./lib/api";
 import {
   annotateNumericCitations,
   conceptualizeTabularSnippet,
@@ -50,7 +51,7 @@ describe("inicialização da interface", () => {
     expect(container.textContent).not.toContain("RAPTOR");
     expect(container.textContent).not.toContain("Self-RAG");
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      "http://localhost:8000/health",
+      `${apiUrls().principal}/health`,
       expect.any(Object),
     );
   });
