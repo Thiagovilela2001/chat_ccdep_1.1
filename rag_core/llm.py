@@ -11,9 +11,19 @@ Configuração por ambiente
     RAG_LLM_PROVIDER   "maritaca" (padrão) | "openai" | "ollama"
     RAG_LLM_MODEL      sobrescreve o modelo de síntese
     RAG_INTERP_MODEL   sobrescreve o modelo de interpretação/crítica
+    RAG_EXTRACT_MODEL  sobrescreve o modelo da extração estruturada
+                       (tabelas/séries temporais); padrão: o de síntese
     RAG_POPUP_MODEL    sobrescreve o modelo das explicações de citações
     RAG_LLM_BASE_URL   sobrescreve a base URL do provedor
     RAG_LLM_API_KEY    sobrescreve a chave (senão usa a chave padrão do provedor)
+    RAG_LLM_REASONING_EFFORT
+                       esforço de raciocínio enviado ao provedor. Vazio (padrão)
+                       ou "auto"/"default" não enviar nada. Em modelo de
+                       raciocínio, "none" corta o "pensamento" dos passos
+                       mecânicos: medido no DeepSeek, a extração de série
+                       temporal caiu de 9,7s (JSON vazio, orçamento consumido
+                       pelo raciocínio) para 2,3s com o JSON completo.
+                       "low" e "minimal" não reduziram nada lá.
 
 Maritaca usa a chave `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.
 Ollama roda localmente e não exige chave.
@@ -32,6 +42,10 @@ Dois consumidores
 from __future__ import annotations
 
 import os
+
+from .logger import get_logger
+
+log = get_logger(__name__)
 
 _PROVIDERS: dict[str, dict] = {
     "maritaca": {
@@ -78,6 +92,7 @@ def _cfg() -> dict:
     )
     cfg["main_model"] = os.getenv("RAG_LLM_MODEL", cfg["main_model"])
     cfg["interp_model"] = os.getenv("RAG_INTERP_MODEL", cfg["interp_model"])
+    cfg["extract_model"] = os.getenv("RAG_EXTRACT_MODEL") or cfg["main_model"]
     cfg["popup_model"] = os.getenv("RAG_POPUP_MODEL", cfg["popup_model"])
     return cfg
 
@@ -88,6 +103,60 @@ def main_model() -> str:
 
 def interp_model() -> str:
     return _cfg()["interp_model"]
+
+
+def extract_model() -> str:
+    """Modelo dos passos mecânicos de extração estruturada (tabelas/séries)."""
+    return _cfg()["extract_model"]
+
+
+# Valores aceitos pela API compatível com OpenAI. Qualquer outro é ignorado para
+# não transformar uma configuração errada em erro 400 na consulta.
+_REASONING_EFFORTS = frozenset({"none", "minimal", "low", "medium", "high"})
+# Valores que significam "não enviar nada" e manter o padrão do provedor.
+_REASONING_OFF = frozenset({"", "auto", "default"})
+
+
+def _parse_reasoning_effort(var_name: str) -> str | None:
+    raw = os.getenv(var_name, "").strip().lower()
+    if raw in _REASONING_OFF:
+        return None
+    if raw not in _REASONING_EFFORTS:
+        log.warning(
+            "%s=%r ignorado; use %s",
+            var_name,
+            raw,
+            ", ".join(sorted(_REASONING_EFFORTS)),
+        )
+        return None
+    return raw
+
+
+def main_reasoning_effort() -> str | None:
+    """Esforço de raciocínio da síntese principal (`RAG_LLM_REASONING_EFFORT`)."""
+    return _parse_reasoning_effort("RAG_LLM_REASONING_EFFORT")
+
+
+def interp_reasoning_effort() -> str | None:
+    """Esforço de raciocínio da interpretação/roteamento (`RAG_INTERP_REASONING_EFFORT`)."""
+    return _parse_reasoning_effort("RAG_INTERP_REASONING_EFFORT")
+
+
+def extract_reasoning_effort() -> str | None:
+    """Esforço de raciocínio da extração estruturada (`RAG_EXTRACT_REASONING_EFFORT`)."""
+    return _parse_reasoning_effort("RAG_EXTRACT_REASONING_EFFORT")
+
+
+def reasoning_effort(role: str = "main") -> str | None:
+    """
+    Esforço de raciocínio por papel: 'main' (síntese), 'interp' (interpretação)
+    ou 'extract' (extração). Preserva compatibilidade quando chamado sem argumentos.
+    """
+    if role in ("interp", "interpretation"):
+        return interp_reasoning_effort()
+    if role in ("extract", "extraction"):
+        return extract_reasoning_effort()
+    return main_reasoning_effort()
 
 
 def popup_model() -> str:
@@ -141,6 +210,8 @@ def _register_model(model: str, context_window: int) -> None:
 def make_llm(
     *,
     interp: bool = False,
+    extract: bool = False,
+    role: str | None = None,
     temperature: float = 0.0,
     timeout: float = 60.0,
     model: str | None = None,
@@ -148,13 +219,30 @@ def make_llm(
     """
     Cria o LLM do LlamaIndex para o provedor configurado.
 
-    interp=True usa o modelo de interpretação/crítica (mais leve, quando o
-    provedor distingue); caso contrário, o modelo de síntese.
+    Papéis suportados:
+    - síntese (padrão): model=main_model(), reasoning=RAG_LLM_REASONING_EFFORT
+    - interp=True / role='interp': model=interp_model(), reasoning=RAG_INTERP_REASONING_EFFORT
+    - extract=True / role='extract': model=extract_model(), reasoning=RAG_EXTRACT_REASONING_EFFORT
     """
+    if interp and extract:
+        raise ValueError("interp=True e extract=True são mutuamente exclusivos.")
+
+    eff_role = role or ("interp" if interp else ("extract" if extract else "main"))
+
     from llama_index.llms.openai import OpenAI
 
     cfg = _cfg()
-    mdl = model or (cfg["interp_model"] if interp else cfg["main_model"])
+    if model:
+        mdl = model
+    elif eff_role == "interp":
+        mdl = cfg["interp_model"]
+    elif eff_role == "extract":
+        mdl = cfg["extract_model"]
+    else:
+        mdl = cfg["main_model"]
+
+    effort = reasoning_effort(eff_role)
+    adicional: dict = {"reasoning_effort": effort} if effort else {}
 
     if cfg["base_url"]:
         # Provedor compatível (Maritaca): registra o modelo e aponta a base URL.
@@ -165,6 +253,13 @@ def make_llm(
             api_key=cfg["api_key"],
             temperature=temperature,
             timeout=timeout,
+            additional_kwargs=adicional,
         )
 
-    return OpenAI(model=mdl, api_key=cfg["api_key"], temperature=temperature, timeout=timeout)
+    return OpenAI(
+        model=mdl,
+        api_key=cfg["api_key"],
+        temperature=temperature,
+        timeout=timeout,
+        additional_kwargs=adicional,
+    )

@@ -94,6 +94,13 @@ Trechos:
 {context}
 
 Pergunta: {question}
+
+Lembrete final: liste TODOS os pares período/valor presentes nos trechos, na
+ordem em que aparecem. Não escolha um único par nem resuma: se houver dez
+períodos, devolva dez linhas. Quando os trechos compararem mais de um indicador,
+use uma coluna por indicador (ex: "Período", "PIB", "Emprego") — não misture
+indicadores na mesma coluna nem inclua linhas de "Total". Responda apenas com o
+JSON.
 """
 
 _ANALYZE_PROMPT = """\

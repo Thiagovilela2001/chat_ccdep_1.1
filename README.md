@@ -59,6 +59,17 @@ O reranking das consultas também preserva diretamente o score híbrido Vector+B
 por padrão. `RAG_LLM_RERANK=1` reativa o reranker por LLM, caso o Ollama esteja
 configurado com janela de contexto e timeout suficientes.
 
+O modelo de síntese também atende a extração estruturada de tabelas e séries
+temporais; `RAG_EXTRACT_MODEL` separa os dois papéis. Em provedores com modelo de
+raciocínio, o esforço é configurável independentemente por papel:
+- `RAG_LLM_REASONING_EFFORT`: síntese principal;
+- `RAG_INTERP_REASONING_EFFORT`: interpretação, roteamento e consultas alternativas;
+- `RAG_EXTRACT_REASONING_EFFORT`: extração de tabelas e séries temporais.
+
+Valores aceitos: `none`, `minimal`, `low`, `medium`, `high`. Vazio/auto mantém o padrão
+do provedor. A configuração ótima de latência e precisão deve ser validada via
+`python evaluate.py --split dev` antes de fixar em produção.
+
 2. Principal, Agentic e Self-RAG baixam o índice portátil publicado quando seus
    bancos estão ausentes ou vazios, sem reprocessar o corpus. Para complementar
    o índice, coloque PDFs, CSVs, XLSX/XLS ou TXT em `data/`; essas três engines
@@ -206,7 +217,11 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_INDEX_DOWNLOAD_TIMEOUT` | `600` | timeout HTTPS em segundos |
 | `RAG_INDEX_READ_ONLY` | automático com bootstrap | usa somente leitura sem diferenças; habilita sincronização quando o corpus local contém fontes novas |
 | `RAG_RETRIEVAL_TOP_K` | `80` | candidatos por pool textual ou tabular |
-| `RAG_QUERY_FUSION_QUERIES` | `2` | consulta original mais expansões semânticas |
+| `RAG_QUERY_FUSION_QUERIES` | `2` | consulta original mais expansões semânticas; `1` desliga a consulta alternativa por retriever |
+| `RAG_EXTRACT_MODEL` | modelo de síntese | modelo da extração estruturada (tabelas e séries temporais) |
+| `RAG_LLM_REASONING_EFFORT` | vazio (padrão do provedor) | esforço de raciocínio da síntese principal (`none`, `minimal`, `low`, `medium`, `high`) |
+| `RAG_INTERP_REASONING_EFFORT` | vazio (padrão do provedor) | esforço de raciocínio da interpretação/roteamento (`none`, `minimal`, `low`, `medium`, `high`) |
+| `RAG_EXTRACT_REASONING_EFFORT` | vazio (padrão do provedor) | esforço de raciocínio da extração estruturada (`none`, `minimal`, `low`, `medium`, `high`) |
 | `RAG_RERANK_CANDIDATE_LIMIT` | `40` | candidatos enviados ao reranker |
 | `RAG_RERANK_TOP_N` | `24` | resultados preservados pelo reranker |
 | `RAG_TEXT_TOP_N` | `20` | trechos narrativos enviados à síntese |

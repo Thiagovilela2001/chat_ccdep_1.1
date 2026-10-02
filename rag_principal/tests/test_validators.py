@@ -221,3 +221,76 @@ def test_argumento_textual_aceita_termos_presentes_na_fonte():
     )
 
     assert checks[0].verified
+
+
+# ── Casos obrigatórios Frente B ───────────────────────────────────────────────
+
+def test_semantic_equivalence_1_60_versus_1_6():
+    checks = validate_numbers(
+        "A taxa de crescimento foi de 1,60%.",
+        [_node("A taxa de crescimento da economia foi de 1,6%.")],
+    )
+    by_val = {c.value: c for c in checks}
+    assert by_val["1,60%"].verified
+
+
+def test_direction_language_recuou_1_10_versus_minus_1_1():
+    checks = validate_numbers(
+        "A indústria recuou 1,10% na comparação trimestral.",
+        [_node("No mesmo período, a indústria registrou -1,1% na comparação trimestral.")],
+    )
+    by_val = {c.value: c for c in checks}
+    assert by_val["1,10%"].verified
+
+
+def test_table_header_unit_inheritance_cell_minus_2_8_under_em_percent():
+    table_node = _node(
+        "Tabela 1 - Variação do PIB por setor (em %)\n"
+        "Setor | Taxa\n"
+        "Indústria | -2,8\n"
+        "Serviços | 1,8\n"
+    )
+    table_node.metadata["type"] = "table"
+    checks = validate_numbers(
+        "O setor industrial apresentou variação de -2,8%.",
+        [table_node],
+    )
+    by_val = {c.value: c for c in checks}
+    assert by_val["-2,8%"].verified
+    assert by_val["-2,8%"].unit == "%"
+
+
+def test_period_conflict_1_6_in_april_does_not_support_1_6_in_q1():
+    checks = validate_numbers(
+        "O indicador avançou 1,6% no primeiro trimestre de 2026.",
+        [_node("O indicador registrou crescimento de 1,6% em abril de 2026.")],
+    )
+    by_val = {c.value: c for c in checks}
+    assert not by_val["1,6%"].verified
+
+
+def test_refusal_with_question_year_marked_not_applicable():
+    question = "Qual foi a taxa de mortalidade infantil em 2024?"
+    response = "Não foram encontrados dados de mortalidade infantil para o ano de 2024 no acervo consultado."
+    checks = validate_numbers(
+        response,
+        [_node("Taxa de mortalidade infantil em 2023 foi de 10,8 por mil nascidos vivos.")],
+        question=question,
+    )
+    by_val = {c.value: c for c in checks}
+    assert "2024" in by_val
+    assert not by_val["2024"].applicable
+    applicable = [c for c in checks if getattr(c, "applicable", True)]
+    assert len(applicable) == 0
+
+
+def test_repeated_numbers_in_different_periods_not_misconsumed():
+    response = "O PIB cresceu 1,5% no 1º trimestre e a inflação foi de 1,5% em abril."
+    node_q1 = _node("O PIB apresentou crescimento de 1,5% no 1º trimestre.")
+    node_apr = _node("A inflação oficial registrou 1,5% em abril.")
+    checks = validate_numbers(response, [node_q1, node_apr])
+    assert len(checks) == 2
+    assert all(c.verified for c in checks)
+    sources = [c.source_index for c in checks]
+    assert sources == [0, 1]
+

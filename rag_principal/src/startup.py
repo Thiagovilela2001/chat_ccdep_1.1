@@ -88,6 +88,9 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     llm = make_llm(temperature=0.0, timeout=60.0)
     Settings.llm = llm
     interp_llm  = make_llm(interp=True, temperature=0.0, timeout=30.0)
+    # Extração estruturada é passo mecânico (JSON a partir do contexto): pode usar
+    # um modelo mais leve que o da síntese sem perder a resposta final.
+    extract_llm = make_llm(extract=True, temperature=0.0, timeout=60.0)
 
     # 5. Retriever híbrido compartilhado + reranker
     log.info("[4] Inicializando retrievers")
@@ -110,8 +113,8 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
 
     # 6. Três retrievers especializados
     text_ret   = TextRetriever(text_retriever, reranker)
-    tables_ret = TablesRetriever(table_retriever, reranker, llm)
-    ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
+    tables_ret = TablesRetriever(table_retriever, reranker, extract_llm)
+    ts_ret     = TimeSeriesRetriever(table_retriever, reranker, extract_llm)
 
     # 7. Skills de domínio (opcionais — descobertas em .agents/skills)
     domain_skills = DomainSkillRegistry(base_dir)

@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-10-02T17:51:08.922060+00:00",
+  "split": "dev",
+  "run": {
+    "seed": 42,
+    "rag": "rag_principal",
+    "use_graph": false,
+    "limit": null,
+    "git_commit": "172d851e1781a9cd62d5155fbdca18e768591f02",
+    "python": "3.13.9",
+    "packages": {
+      "ragas": "0.4.3",
+      "datasets": "4.8.4",
+      "llama-index": "0.14.20",
+      "openai": "2.44.0"
+    },
+    "dataset_sha256": {
+      "dev": "c77185e0b7cfc031d1fbd59da7a56ac4f31226cb7c90141a5815d730bda3f481",
+      "test": "6ab1824dfcffab64922fd748103c7f62dfbcb97c33c0a98a99286ceae6f93f96",
+      "adversarial": "abd3a778bdef092e83000618926b906a14662ca47e5a3760ce15e053137d38b4"
+    },
+    "models": {
+      "main": "deepseek-flash",
+      "interp": "deepseek-chat",
+      "extract": "deepseek-flash"
+    },
+    "reasoning_effort": {
+      "main": "",
+      "interp": "",
+      "extract": ""
+    },
+    "query_fusion_queries": "1",
+    "rerank_enabled": "0",
+    "ragas_judge_model": "sabia-4",
+    "ragas_judge_provider": "maritaca",
+    "ragas_judge_base_url": "https://chat.maritaca.ai/api"
+  },
+  "summary": {
+    "faithfulness": NaN,
+    "context_precision": NaN,
+    "context_recall": NaN,
+    "numeric_precision": NaN,
+    "latency_p50_ms": 185444.4,
+    "latency_p95_ms": 226330.5
+  },
+  "details": [
+    {
+      "user_input": "Qual era a mortalidade infantil paulista em 2024 e como ela se distribuía por idade e causas?",
+      "response": "[ERRO] ",
+      "retrieved_contexts": [],
+      "reference": "Em 2024, a mortalidade infantil paulista foi de 11,18 óbitos de menores de um ano por mil nascidos vivos. As taxas eram de 5,5 por mil entre 0 e 6 dias, 2,1 por mil entre 7 e 27 dias e 3,7 por mil entre 28 e 364 dias. As causas perinatais respondiam por 54% dos óbitos e taxa de 6,1 por mil; malformações congênitas representavam 24%.",
+      "id": "dev_demography_03",
+      "type": "lookup",
+      "domain": "demography",
+      "expected_source_files": [
+        "seade_demografia/mortalidade/seade-informa-demografia-mortalidade-infantil_2025-1.pdf"
+      ],
+      "expected_source_pages": [
+        1
+      ],
+      "latency_ms": 185444.4,
+      "numeric_precision": null,
+      "faithfulness": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "user_input": "Qual foi o desempenho do PIB paulista no primeiro trimestre de 2026 nas diferentes bases de comparação?",
+      "response": "[ERRO] ",
+      "retrieved_contexts": [],
+      "reference": "No primeiro trimestre de 2026, o PIB paulista cresceu 1,8% ante o trimestre imediatamente anterior, com ajuste sazonal, e 1,3% frente ao primeiro trimestre de 2025. No acumulado de quatro trimestres, avançou 0,6%. Nessa última base, agropecuária cresceu 1,5%, serviços 1,8% e indústria recuou 2,4%.",
+      "id": "dev_economy_01",
+      "type": "comparacao",
+      "domain": "economic_conjuncture",
+      "expected_source_files": [
+        "pib/pib-sao-paulo-trimestral-avancou-primeiro-trimestre-2026.pdf"
+      ],
+      "expected_source_pages": [
+        1
+      ],
+      "latency_ms": 226330.5,
+      "numeric_precision": null,
+      "faithfulness": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    }
+  ]
+}

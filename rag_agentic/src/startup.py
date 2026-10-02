@@ -52,6 +52,9 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
     llm        = make_llm(temperature=0.0, timeout=60.0)
     Settings.llm = llm
     interp_llm = make_llm(interp=True, temperature=0.0, timeout=30.0)
+    # Extração estruturada é passo mecânico (JSON a partir do contexto): pode usar
+    # um modelo mais leve que o da síntese sem perder a resposta final.
+    extract_llm = make_llm(extract=True, temperature=0.0, timeout=60.0)
 
     log.info("[4] Inicializando retrievers")
     bm25_nodes = load_nodes_cache(db_path)
@@ -64,8 +67,8 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[AgenticEngin
     reranker = build_llm_reranker(interp_llm)
 
     text_ret   = TextRetriever(text_retriever, reranker)
-    tables_ret = TablesRetriever(table_retriever, reranker, llm)
-    ts_ret     = TimeSeriesRetriever(table_retriever, reranker, llm)
+    tables_ret = TablesRetriever(table_retriever, reranker, extract_llm)
+    ts_ret     = TimeSeriesRetriever(table_retriever, reranker, extract_llm)
 
     domain_skills = DomainSkillRegistry(base_dir)
     if domain_skills.is_loaded():
