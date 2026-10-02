@@ -223,9 +223,10 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_INTERP_REASONING_EFFORT` | vazio (padrão do provedor) | esforço de raciocínio da interpretação/roteamento (`none`, `minimal`, `low`, `medium`, `high`) |
 | `RAG_EXTRACT_REASONING_EFFORT` | vazio (padrão do provedor) | esforço de raciocínio da extração estruturada (`none`, `minimal`, `low`, `medium`, `high`) |
 | `RAG_RERANK_CANDIDATE_LIMIT` | `40` | candidatos enviados ao reranker |
-| `RAG_RERANK_TOP_N` | `24` | resultados preservados pelo reranker |
-| `RAG_TEXT_TOP_N` | `20` | trechos narrativos enviados à síntese |
-| `RAG_STRUCTURED_TOP_N` | `10` | trechos tabulares/temporais por retriever |
+| `RAG_RERANK_TOP_N` | `24` | resultados preservados pelo reranker por retriever |
+| `RAG_CONTEXT_TOP_K` | `10` | limite global de trechos mais relevantes preservados após o reranking unificado |
+| `RAG_TEXT_TOP_N` | `12` | trechos narrativos preservados por retriever |
+| `RAG_STRUCTURED_TOP_N` | `8` | trechos tabulares/temporais por retriever |
 | `RAG_MAX_CHUNKS_PER_DOCUMENT` | `3` | prioridade inicial por documento antes do preenchimento |
 | `RAG_MAX_DOMAIN_SKILLS` | `2` | skills especializadas combinadas por consulta |
 | `RAG_INPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |

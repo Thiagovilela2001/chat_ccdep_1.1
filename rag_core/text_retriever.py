@@ -60,12 +60,16 @@ def rerank_top_n() -> int:
     return bounded_int("RAG_RERANK_TOP_N", 24, 5, 50)
 
 
+def context_top_k() -> int:
+    return bounded_int("RAG_CONTEXT_TOP_K", 10, 5, 25)
+
+
 def text_top_n() -> int:
-    return bounded_int("RAG_TEXT_TOP_N", 20, 5, 40)
+    return bounded_int("RAG_TEXT_TOP_N", 12, 5, 40)
 
 
 def structured_top_n() -> int:
-    return bounded_int("RAG_STRUCTURED_TOP_N", 10, 3, 20)
+    return bounded_int("RAG_STRUCTURED_TOP_N", 8, 3, 20)
 
 
 def max_chunks_per_document() -> int:
@@ -106,7 +110,7 @@ class ScoreReranker:
 
     def postprocess_nodes(self, nodes, query_str: str | None = None):
         del query_str
-        return list(nodes[:self.top_n])
+        return sorted(list(nodes or []), key=_relevance, reverse=True)[:self.top_n]
 
 
 class _RerankDiagnosis:

@@ -14,7 +14,7 @@ from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.logger import get_logger
 from rag_core.runtime import limit_context, request_timeout_seconds
 from rag_core.provenance import format_source_context, source_labels
-from rag_core.text_retriever import deduplicate_nodes
+from rag_core.text_retriever import deduplicate_nodes, context_top_k
 
 log = get_logger(__name__)
 
@@ -128,6 +128,7 @@ class AnalysisEngine:
         domain_skills=None,
         labor_market_skill=None,
         graph_retriever=None,
+        reranker=None,
     ):
         self._text = text_retriever
         self._tables = tables_retriever
@@ -136,6 +137,7 @@ class AnalysisEngine:
         self._domain_skills = domain_skills
         self._labor_skill = labor_market_skill
         self._graph = graph_retriever
+        self._reranker = reranker
 
     async def answer(
         self,
@@ -202,14 +204,49 @@ class AnalysisEngine:
             except Exception as exc:
                 log.warning("GraphRetriever falhou; continuando sem grafo: %s", exc)
 
-        all_source_nodes = deduplicate_nodes(
+        # Unifica nós brutos de todas as fontes
+        raw_candidates = deduplicate_nodes(
             text_nodes + tables_nodes + ts_nodes + graph_nodes
         )
+
+        # Reranking global sobre os candidatos unificados
+        if self._reranker is not None and raw_candidates:
+            try:
+                reranked = self._reranker.postprocess_nodes(
+                    raw_candidates, query_str=question
+                )
+                if reranked:
+                    all_source_nodes = list(reranked)
+                else:
+                    all_source_nodes = raw_candidates
+            except Exception as exc:
+                log.warning("Reranking global de fontes falhou: %s", exc)
+                all_source_nodes = raw_candidates
+        else:
+            all_source_nodes = raw_candidates
+
+        # Poda para o Top-K mais relevante
+        all_source_nodes = all_source_nodes[:context_top_k()]
+
+        # Filtra text_nodes para a síntese manter apenas trechos do Top-K
+        kept_ids = {
+            getattr(n.node if hasattr(n, "node") else n, "node_id", None)
+            for n in all_source_nodes
+        }
+        filtered_text_nodes = [
+            n for n in text_nodes
+            if getattr(n.node if hasattr(n, "node") else n, "node_id", None) in kept_ids
+        ]
+        if not filtered_text_nodes and not tables_data and not ts_data:
+            filtered_text_nodes = [
+                n for n in all_source_nodes
+                if getattr(n.node if hasattr(n, "node") else n, "metadata", {}).get("type") != "table"
+            ]
 
         # Síntese: único LLM call com contexto unificado
         context_block = limit_context(
             _build_context_block(
-                text_nodes, tables_data, tables_nodes, ts_data, ts_nodes, graph_nodes
+                filtered_text_nodes, tables_data, tables_nodes, ts_data, ts_nodes, graph_nodes
             )
         )
 
@@ -232,3 +269,4 @@ class AnalysisEngine:
         )
 
         return sanitize_answer(response.text, question=question), all_source_nodes
+

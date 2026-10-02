@@ -208,3 +208,68 @@ def test_factory_configura_lote_maior_e_repeticao_menor():
     assert reranker._batch_reranker.choice_batch_size == 30
     assert reranker._retry_reranker.choice_batch_size == 10
 
+
+def test_context_top_k_bounds(monkeypatch):
+    from rag_core.text_retriever import context_top_k
+    monkeypatch.delenv("RAG_CONTEXT_TOP_K", raising=False)
+    assert context_top_k() == 10
+
+    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "3")
+    assert context_top_k() == 5
+
+    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "30")
+    assert context_top_k() == 25
+
+    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "15")
+    assert context_top_k() == 15
+
+
+def test_analysis_engine_global_rerank_and_prune():
+    import asyncio
+    from rag_principal.src.analysis_engine import AnalysisEngine
+    from unittest.mock import MagicMock
+    from llama_index.core.schema import NodeWithScore, TextNode
+
+    mock_llm = MagicMock()
+    mock_llm.complete.return_value = MagicMock(text="Resposta sintetizada")
+
+    text_nodes = [
+        NodeWithScore(node=TextNode(text=f"Texto {i}", id_=f"txt_{i}"), score=0.1 * i)
+        for i in range(10)
+    ]
+    table_nodes = [
+        NodeWithScore(node=TextNode(text=f"Tabela {i}", id_=f"tbl_{i}"), score=0.5 * i)
+        for i in range(5)
+    ]
+
+    mock_text = MagicMock()
+    mock_text.retrieve.return_value = text_nodes
+    mock_tables = MagicMock()
+    mock_tables.retrieve.return_value = ("tabela_dados", table_nodes)
+    mock_ts = MagicMock()
+    mock_ts.retrieve.return_value = None
+
+    mock_reranker = MagicMock()
+    mock_reranker.postprocess_nodes.side_effect = lambda nodes, query_str=None: list(reversed(nodes))
+
+    engine = AnalysisEngine(
+        text_retriever=mock_text,
+        tables_retriever=mock_tables,
+        timeseries_retriever=mock_ts,
+        llm=mock_llm,
+        reranker=mock_reranker,
+    )
+
+    ans, nodes = asyncio.run(
+        engine.answer(
+            question="Qual foi o PIB?",
+            sources=["text", "tables"],
+            rewritten_query="PIB",
+        )
+    )
+
+    assert mock_reranker.postprocess_nodes.called
+    assert len(nodes) <= 10
+    assert nodes[0].node.id_ == table_nodes[-1].node.id_
+
+

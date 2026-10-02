@@ -142,6 +142,7 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
         text_ret, tables_ret, ts_ret, llm,
         domain_skills=domain_skills,
         graph_retriever=graph_ret,
+        reranker=reranker,
     )
 
     log.info("Sistema pronto")
