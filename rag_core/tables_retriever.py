@@ -49,6 +49,9 @@ Regras:
 - Para perguntas amplas, regionais ou comparativas, extraia todas as regiões e
   todos os períodos disponíveis nos trechos. Não pare na primeira linha ou no
   primeiro período e não resuma os registros antes do cálculo.
+- Se os trechos não contiverem dados sobre a pergunta, localidade ou indicador solicitado,
+  retorne {{"columns": [], "rows": []}} ou {{"data": {{}}}}. Nunca invente ou atribua dados de
+  outros municípios, regiões ou períodos à entidade da pergunta.
 
 Trechos:
 {context}
@@ -65,8 +68,11 @@ Regras:
 - Se a pergunta exigir uma conta, apresente a operação no texto final.
 - Cubra do primeiro ao último período disponível e identifique os resultados
   regionais relevantes em cada período, sem substituir nomes por uma contagem total.
+- Se os dados disponíveis não responderem à pergunta ou forem vazios, retorne
+  {{"resultado": "[Sem dados estruturados extraídos da tabela]"}}.
 
 Pergunta: {question}
+
 
 Dados disponíveis:
 {data_preview}
@@ -123,6 +129,8 @@ class TablesRetriever:
 
         context = limit_context("\n\n---\n\n".join(n.get_content() for n in reranked))
         structured = self._extract_and_calculate(question, context)
+        if not structured or "[Sem dados estruturados" in structured:
+            return None, reranked
         return structured, reranked
 
     def _extract_and_calculate(self, question: str, context: str) -> str:
@@ -137,9 +145,9 @@ class TablesRetriever:
             log.warning("Extracao estruturada de tabela falhou: %s", exc)
             return "[Sem dados estruturados extraídos da tabela]"
 
-        if df is not None:
+        if df is not None and not df.empty:
             data_preview = df.to_string(max_rows=200)
-        elif data is not None:
+        elif data:
             data_preview = str(data)
         else:
             return "[Sem dados estruturados extraídos da tabela]"
@@ -149,7 +157,11 @@ class TablesRetriever:
             _CALCULATE_PROMPT.format(question=question, data_preview=data_preview)
         )
         try:
-            return result_text(parse_json_object(calc_resp.text))
+            res = result_text(parse_json_object(calc_resp.text))
+            if not res or "[Sem dados estruturados" in res:
+                return "[Sem dados estruturados extraídos da tabela]"
+            return res
         except StructuredOutputError as exc:
             log.warning("Calculo estruturado sobre tabela falhou: %s", exc)
-            return data_preview
+            return "[Sem dados estruturados extraídos da tabela]"
+
