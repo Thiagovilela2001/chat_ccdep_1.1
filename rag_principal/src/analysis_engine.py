@@ -212,8 +212,10 @@ class AnalysisEngine:
         # Reranking global sobre os candidatos unificados
         if self._reranker is not None and raw_candidates:
             try:
-                reranked = self._reranker.postprocess_nodes(
-                    raw_candidates, query_str=question
+                reranked = await asyncio.to_thread(
+                    self._reranker.postprocess_nodes,
+                    raw_candidates,
+                    query_str=question,
                 )
                 if reranked:
                     all_source_nodes = list(reranked)
@@ -260,13 +262,12 @@ class AnalysisEngine:
             legacy_labor_skill=self._labor_skill,
         )
 
-        response = self._llm.complete(
-            _SYNTHESIS_PROMPT.format(
-                skill_block=skill_block,
-                context_block=context_block,
-                question=question,
-            )
+        prompt = _SYNTHESIS_PROMPT.format(
+            skill_block=skill_block,
+            context_block=context_block,
+            question=question,
         )
+        response = await asyncio.to_thread(self._llm.complete, prompt)
 
         return sanitize_answer(response.text, question=question), all_source_nodes
 

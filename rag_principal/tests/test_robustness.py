@@ -1,11 +1,17 @@
 import asyncio
 from types import SimpleNamespace
+import pytest
 
 from rag_principal.src.analysis_engine import AnalysisEngine
 from rag_agentic.src.agent_engine import _critic_rounds, _max_iterations, _max_tool_calls
 from rag_selfrag.src.self_rag_engine import _max_retries
 from rag_core.answer_policy import REFUSAL_TEXT
 from rag_core.query_service import execute_engine_query
+
+
+@pytest.fixture(autouse=True)
+def _enable_validation(monkeypatch):
+    monkeypatch.setenv("RAG_NUMERIC_VALIDATION", "1")
 
 
 class _Retriever:
@@ -517,3 +523,45 @@ def test_pergunta_regional_ampla_exige_todos_os_periodos_disponiveis():
     assert "primeiro trimestre" in response.answer.lower()
     assert "segundo trimestre" in response.answer.lower()
     assert response.validation.verified == response.validation.total == 4
+
+
+def test_reranker_nao_bloqueia_event_loop():
+    import time
+
+    class SlowReranker:
+        def postprocess_nodes(self, nodes, query_str=None):
+            time.sleep(1.0)
+            return nodes
+
+    node = SimpleNamespace(node_id="n1", get_content=lambda: "Conteúdo relevante", metadata={})
+    engine = AnalysisEngine(
+        _Retriever(result=[node]),
+        _Retriever(result=None),
+        _Retriever(result=None),
+        _LLM(),
+        reranker=SlowReranker(),
+    )
+
+    async def _concurrent_task():
+        await asyncio.sleep(0.05)
+        return "quick_done"
+
+    async def _main():
+        start = time.perf_counter()
+        query_fut = asyncio.create_task(engine.answer(
+            question="Qual o impacto?",
+            sources=["text"],
+            rewritten_query="impacto",
+        ))
+        quick_fut = asyncio.create_task(_concurrent_task())
+
+        quick_result = await quick_fut
+        elapsed_quick = time.perf_counter() - start
+
+        await query_fut
+        return quick_result, elapsed_quick
+
+    quick_result, elapsed_quick = asyncio.run(_main())
+    assert quick_result == "quick_done"
+    assert elapsed_quick < 0.5
+
