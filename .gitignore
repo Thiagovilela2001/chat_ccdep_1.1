@@ -42,6 +42,7 @@ data_old/
 # ── Documentos e arquivos de conversa ────────────────────────────────────────
 *.docx
 *.pdf
+*.pptx
 conversa_*
 
 # ── OS ───────────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ Thumbs.db
 
 # ── Artefatos regenerados (não versionar) ────────────────────────────────────
 data.zip
+graphify-out/
 *.md.resolved
 chroma_backups_*/
 index_artifacts/

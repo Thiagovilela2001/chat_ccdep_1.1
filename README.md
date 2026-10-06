@@ -229,6 +229,8 @@ helper legado restrito e não constitui uma fronteira de isolamento.
 | `RAG_STRUCTURED_TOP_N` | `8` | trechos tabulares/temporais por retriever |
 | `RAG_MAX_CHUNKS_PER_DOCUMENT` | `3` | prioridade inicial por documento antes do preenchimento |
 | `RAG_MAX_DOMAIN_SKILLS` | `2` | skills especializadas combinadas por consulta |
+| `RAG_NUMERIC_VALIDATION` | `1` | habilita validação numérica dos fatos e geração de citações flutuantes; `0` desativa sem desligar retries |
+| `RAG_ANSWER_RETRIES` | `1` | habilita novas tentativas quando há recusa com fontes recuperadas ou cobertura incompleta |
 | `RAG_INPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 | `RAG_OUTPUT_COST_PER_MILLION_USD` | `0` | preço para estimativa agregada de custo |
 

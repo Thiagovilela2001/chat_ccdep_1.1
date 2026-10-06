@@ -71,6 +71,8 @@ cru), então trocar de LLM é só configuração:
 | `RAG_LLM_MODEL` | `sabia-4` (maritaca) | Modelo de síntese |
 | `RAG_INTERP_MODEL` | `sabia-4` (maritaca) | Interpretação/crítica/enriquecimento |
 | `RAG_POPUP_MODEL` | `sabiazinho-4` (maritaca) | Explicações curtas dos popups numéricos |
+| `RAG_NUMERIC_VALIDATION` | `1` | Validação numérica e cards flutuantes (`1`=ativo, `0`=desativado) |
+| `RAG_ANSWER_RETRIES` | `1` | Novas tentativas para recusa com fontes e cobertura incompleta (`1`=ativo, `0`=desativado) |
 | `RAG_LLM_BASE_URL` / `RAG_LLM_API_KEY` | — | Sobrescrevem base/chave (provedor custom) |
 
 Chaves: Maritaca usa `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.
