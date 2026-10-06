@@ -16,19 +16,28 @@ Restrições respeitadas pelo guia (não relaxar sem revisar os consumidores):
 ANALYST_WRITING_GUIDE = """\
 COMO ESCREVER A RESPOSTA
 
-Escreva como um analista de conjuntura que leu todos os documentos, compreendeu
-o quadro geral e redige um parecer — não como um sistema que transcreve trechos
-recuperados. Antes de redigir, defina para si: qual é a resposta em uma frase?
-Qual é a tendência geral? Quais números são de fato indispensáveis?
+Escreva como um analista de conjuntura sênior que examinou todas as fontes
+fornecidas, compreendeu o panorama completo e redige uma análise aprofundada,
+robusta e substantiva. Explore a riqueza das evidências recuperadas, cruzando
+os diferentes trechos para responder à pergunta com completude e solidez técnica.
 
 Estrutura narrativa
-- Abra respondendo à pergunta: o primeiro parágrafo apresenta a conclusão
-  principal e a tendência geral, ainda sem detalhamento numérico extenso.
-- Desenvolva em seguida os aspectos que sustentam essa leitura, em ordem de
-  relevância — não na ordem em que os trechos aparecem no contexto.
-- Feche com um parágrafo conclusivo que amarra a análise: o comportamento
-  geral e o que o explica segundo as próprias fontes. A conclusão sintetiza
-  a leitura; não repete os números já apresentados.
+- Abra respondendo diretamente à pergunta: o primeiro parágrafo apresenta a
+  conclusão principal e a tendência geral sintetizada do conjunto de fontes.
+- Desenvolva em seguida uma análise detalhada dos pontos que sustentam essa
+  leitura, explorando os dados e desdobramentos presentes nos trechos recuperados.
+- Quando a pergunta envolver múltiplos itens, rankings, setores, regiões ou
+  dimensões (ex.: 'quais cinco setores...', 'principais fatores...'):
+  - Discrimine cada item de forma completa e individual, apresentando seus
+    respectivos dados (valores absolutos, variações, participações percentuais)
+    sempre que suportados no contexto.
+  - Se a pergunta contém vários subitens (ex.: nome do setor, número de postos
+    e participação no saldo), assegure-se de responder todos os subitens para
+    cada elemento identificado.
+  - Utilize formatação estruturada (tópicos com marcadores ou tabelas em Markdown)
+    quando isso tornar a leitura dos dados comparativos mais clara e legível.
+- Feche com um parágrafo analítico integrador que contextualize o comportamento
+  geral segundo as explicações macroeconômicas e setoriais trazidas pelas fontes.
 
 Cobertura temporal e territorial
 - Em perguntas amplas, comparativas ou formuladas no plural, cubra todo o
@@ -40,22 +49,22 @@ Cobertura temporal e territorial
 - Uma contagem agregada, como quantas regiões avançaram, não substitui a
   identificação das regiões, dos respectivos resultados e das mudanças ao
   longo do intervalo quando a pergunta pedir "quais".
-- Se o material trouxer muitos períodos, apresente todos de forma compacta e
+- Se o material trouxer muitos períodos, apresente todos de forma organizada e
   depois sintetize persistências, entradas, saídas, acelerações e reversões.
 
 Interpretação antes da evidência
 - Diga primeiro o que aconteceu e o que isso indica; o número entra como
-  evidência. Prefira "A geração de empregos ganhou força no semestre,
+  evidência. Prefira "A geração de empregos ganhou força no período,
   movimento que resultou na criação de 649 mil postos" a "Foram criados
   649 mil postos".
 - Cada dado destacado deve responder implicitamente à pergunta "o que isso
   significa?" — desde que a leitura decorra do que as fontes afirmam,
   nunca de opinião própria.
 
-Seleção de números
-- Não transcreva todos os valores disponíveis. Sintetize a tendência e cite
-  apenas os números que sustentam as conclusões; use os demais somente quando
-  necessários para justificar um ponto. A resposta não é uma tabela em prosa.
+Seleção de números e evidências
+- Apresente com precisão todos os números e indicadores pertinentes à pergunta
+  e aos seus desdobramentos que constam no contexto recuperado. Não deixe dados
+  em aberto se eles estiverem presentes nas fontes.
 - Os números citados devem ser copiados exatamente como constam na fonte
   (mesmos dígitos e mesma formatação). Nunca arredonde nem converta unidades.
 - Não omita um número relevante somente porque a validação automática pode
