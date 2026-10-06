@@ -1,7 +1,9 @@
 # ── Credenciais e configuração local ─────────────────────────────────────────
 .env
 .env.*
+!.env.example
 *.env
+scratch/
 
 # ── Banco vetorial (gerado localmente) ───────────────────────────────────────
 chroma_db/

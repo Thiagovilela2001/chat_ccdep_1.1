@@ -565,3 +565,72 @@ def test_reranker_nao_bloqueia_event_loop():
     assert quick_result == "quick_done"
     assert elapsed_quick < 0.5
 
+
+def test_flag_numeric_validation_zero_desativa_validacao_mas_mantem_retries(monkeypatch):
+    monkeypatch.setenv("RAG_NUMERIC_VALIDATION", "0")
+    monkeypatch.setenv("RAG_ANSWER_RETRIES", "1")
+
+    node = SimpleNamespace(
+        node_id="n1",
+        metadata={"source_file": "doc.pdf", "page": 1},
+        score=0.9,
+        get_content=lambda: "Houve avanço de 10% no primeiro trimestre e 20% no segundo trimestre.",
+    )
+
+    class RetryingEngine:
+        calls = 0
+        async def answer(self, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                # Recusa na primeira tentativa com nós disponíveis -> deve acionar retry
+                return REFUSAL_TEXT, [node]
+            return "Houve avanço de 10% no primeiro trimestre e 20% no segundo trimestre.", [node]
+
+    engine = RetryingEngine()
+    response, _ = asyncio.run(execute_engine_query(
+        question="Qual o avanço nos períodos?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=lambda q, _: {"sources": ["text"], "rewritten_query": q, "is_labor_market": False},
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    # Retry por recusa foi acionado mesmo com RAG_NUMERIC_VALIDATION=0
+    assert engine.calls == 2
+    # Validação numérica não rodou -> contadores zerados e sem citações numéricas
+    assert response.validation.total == 0
+    assert response.numeric_citations == []
+    assert "10%" in response.answer
+
+
+def test_flag_numeric_validation_um_executa_validacao_e_retries(monkeypatch):
+    monkeypatch.setenv("RAG_NUMERIC_VALIDATION", "1")
+    monkeypatch.setenv("RAG_ANSWER_RETRIES", "1")
+
+    node = SimpleNamespace(
+        node_id="n1",
+        metadata={"source_file": "doc.pdf", "page": 1},
+        score=0.9,
+        get_content=lambda: "Houve avanço de 10% no primeiro trimestre.",
+    )
+
+    class ValidatingEngine:
+        async def answer(self, **kwargs):
+            return "Houve avanço de 10% no primeiro trimestre.", [node]
+
+    engine = ValidatingEngine()
+    response, _ = asyncio.run(execute_engine_query(
+        question="Qual o avanço?",
+        engine=engine,
+        interp_llm=object(),
+        interpreter=lambda q, _: {"sources": ["text"], "rewritten_query": q, "is_labor_market": False},
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+
+    assert response.validation.total > 0
+    assert response.validation.verified > 0
+    assert len(response.numeric_citations) > 0
+
+

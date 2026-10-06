@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 import unicodedata
 from dataclasses import dataclass, replace
@@ -67,6 +68,22 @@ Valores que já foram validados na tentativa anterior e devem ser reaproveitados
 quando forem pertinentes à pergunta: {verified_values}
 """
 log = get_logger(__name__)
+
+
+def _flag_enabled(var_name: str, default: bool = True) -> bool:
+    """Lê flag booleana de ambiente em tempo de execução."""
+    val = os.getenv(var_name, "1" if default else "0").strip().lower()
+    return val not in {"0", "false", "no", "off"}
+
+
+def _numeric_validation_enabled() -> bool:
+    """True se validação numérica dos fatos e cards flutuantes de citação estiverem ativos."""
+    return _flag_enabled("RAG_NUMERIC_VALIDATION", default=True)
+
+
+def _answer_retries_enabled() -> bool:
+    """True se novas tentativas por recusa com fontes ou cobertura incompleta estiverem ativas."""
+    return _flag_enabled("RAG_ANSWER_RETRIES", default=True)
 
 
 def _requires_complete_coverage(question: str) -> bool:
@@ -263,12 +280,18 @@ async def _run_engine_attempt(
         timeout=request_timeout_seconds(),
     )
     answer = sanitize_answer(answer, question=display_question)
-    checks = await asyncio.to_thread(validate_numbers, answer, source_nodes)
-    unverified = [check.value for check in checks if not check.verified]
-    argument_checks = await asyncio.to_thread(validate_arguments, answer, source_nodes)
-    unsupported_arguments = [
-        check.sentence for check in argument_checks if not check.verified
-    ]
+    if _numeric_validation_enabled():
+        checks = await asyncio.to_thread(validate_numbers, answer, source_nodes)
+        unverified = [check.value for check in checks if not check.verified]
+        argument_checks = await asyncio.to_thread(validate_arguments, answer, source_nodes)
+        unsupported_arguments = [
+            check.sentence for check in argument_checks if not check.verified
+        ]
+    else:
+        checks = []
+        unverified = []
+        argument_checks = []
+        unsupported_arguments = []
     return _EngineAttempt(
         answer=answer,
         source_nodes=source_nodes,
@@ -317,10 +340,12 @@ async def execute_engine_query(
         is_labor_market=interp.get("is_labor_market", False),
     )
     needs_recovery = bool(
-        attempt.unverified
-        or attempt.unsupported_arguments
-        or (attempt.answer == REFUSAL_TEXT and attempt.source_nodes)
-        or (complete_coverage and _looks_incomplete(attempt))
+        _answer_retries_enabled()
+        and (
+            (_numeric_validation_enabled() and (attempt.unverified or attempt.unsupported_arguments))
+            or (attempt.answer == REFUSAL_TEXT and attempt.source_nodes)
+            or (complete_coverage and _looks_incomplete(attempt))
+        )
     )
     if needs_recovery:
         log.warning(
@@ -346,13 +371,17 @@ async def execute_engine_query(
             is_labor_market=interp.get("is_labor_market", False),
         )
         recovery_is_preferred = (
-            not recovery.unverified
-            and not recovery.unsupported_arguments
-            and (recovery.checks or attempt.unsupported_arguments)
-        ) or (
-            recovery.verified > attempt.verified
-            and len(recovery.unverified) <= len(attempt.unverified)
-            and len(recovery.unsupported_arguments) <= len(attempt.unsupported_arguments)
+            (attempt.answer == REFUSAL_TEXT and recovery.answer != REFUSAL_TEXT)
+            or (
+                not recovery.unverified
+                and not recovery.unsupported_arguments
+                and (recovery.checks or attempt.unsupported_arguments or not _numeric_validation_enabled())
+            )
+            or (
+                recovery.verified > attempt.verified
+                and len(recovery.unverified) <= len(attempt.unverified)
+                and len(recovery.unsupported_arguments) <= len(attempt.unsupported_arguments)
+            )
         )
         if complete_coverage and recovery_is_preferred:
             recovery_is_preferred = _coverage_score(recovery) >= _coverage_score(attempt)
@@ -360,13 +389,17 @@ async def execute_engine_query(
             attempt = recovery
 
     # Recusas ou respostas sem afirmações numéricas ainda recebem nova síntese.
-    if _needs_qualitative_retry(attempt):
+    if _answer_retries_enabled() and _needs_qualitative_retry(attempt):
         pre_qualitative_attempt = attempt
         log.warning(
             "Tentando nova resposta com os valores numericos validados",
             extra={"question": question[:120]},
         )
-        verified_values = _verified_value_list(pre_qualitative_attempt)
+        verified_values = (
+            _verified_value_list(pre_qualitative_attempt)
+            if _numeric_validation_enabled()
+            else []
+        )
         retry_instruction = _SUPPORTED_NUMERIC_RETRY_INSTRUCTION.format(
             verified_values=", ".join(verified_values) or "nenhum ainda",
         )
@@ -471,7 +504,7 @@ async def execute_engine_query(
         question + "\n" + "\n".join(node.get_content() for node in source_nodes),
         answer,
     )
-    numeric_citations = [] if answer_blocked_by_guardrail else [
+    numeric_citations = [] if (answer_blocked_by_guardrail or not _numeric_validation_enabled()) else [
         NumericCitationInfo(
             value=check.value,
             start=check.response_start,
