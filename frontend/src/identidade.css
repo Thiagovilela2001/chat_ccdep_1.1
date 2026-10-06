@@ -1497,3 +1497,69 @@ h1, h2, h3, .empty-state h1, .message-heading strong, .section-title,
 
 .theme-ribbon span svg,
 .theme-ribbon span:nth-child(n) svg { color: var(--brand); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Responsividade
+   - Cards de sugestão: quantas colunas couberem com no mínimo 260px cada
+     (3 no desktop largo, 2 em tablet/notebook, 1 no celular).
+   - Ações da resposta quebram linha em vez de vazar.
+   - Piso de 11px para texto auxiliar e 12–13px para texto de leitura.
+   - No celular o avatar sai: o nome "Nadia"/"Você" no cabeçalho já identifica.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.suggestion-carousel {
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+}
+
+.answer-actions { flex-wrap: wrap; }
+
+.government-bar > small,
+.government-brand strong,
+.sidebar-government strong,
+.topbar-left small,
+.brand small,
+.sidebar .brand small,
+.top-status,
+.message-heading time,
+.message-heading span,
+.message--user .message-heading time,
+.metric-chip,
+.composer-bottom > span,
+.composer-note,
+.connection-card small,
+.clear-history-btn,
+.theme-ribbon span,
+.trust-row,
+.score-line span,
+.source-cards small,
+.suggestion-card small,
+.suggestion-label span,
+.verified-source-values span,
+.verified-source-values b,
+.numeric-source-context small,
+.numeric-source-file small,
+.numeric-source-heading small,
+.numeric-source-concept > small,
+.numeric-source-table th {
+  font-size: 11px;
+}
+
+.section-title { font-size: 12px; }
+.source-excerpt p { font-size: 13px; line-height: 1.6; }
+
+@media (max-width: 720px) {
+  .message { grid-template-columns: minmax(0, 1fr); }
+  .message-avatar { display: none; }
+  .message--user .message-content { max-width: 100%; }
+  .answer-actions button { flex: 1 1 calc(50% - 6px); justify-content: center; }
+}
+
+/* A lateral é estreita: faixa e subtítulo da marca ficam numa linha só. */
+.sidebar-government strong,
+.sidebar .brand small {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar .brand small { white-space: normal; line-height: 1.2; }
