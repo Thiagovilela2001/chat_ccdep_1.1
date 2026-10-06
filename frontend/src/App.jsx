@@ -2,24 +2,31 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Activity,
   AlertTriangle,
   ArrowUp,
+  Baby,
+  BookOpen,
+  Briefcase,
   Building2,
+  ChartLine,
   Check,
   CheckCircle2,
-  CircleStop,
   ChevronDown,
   ChevronRight,
+  CircleStop,
   Clock3,
   Code2,
   Copy,
   Database,
   Download,
+  Factory,
   FileText,
   Gauge,
+  HandHeart,
+  HeartPulse,
   History,
-  Layers3,
+  Hourglass,
+  ListChecks,
   MapPin,
   Menu,
   MessageSquarePlus,
@@ -30,10 +37,10 @@ import {
   PanelRightOpen,
   RefreshCw,
   Route,
+  Scale,
   Search,
   Settings,
   ShieldCheck,
-  Sparkles,
   Sun,
   Users,
   X,
@@ -103,10 +110,16 @@ function highlightVerifiedValues(text, values = []) {
 }
 
 const SUGGESTION_ICONS = {
-  labor: Activity,
-  activity: Gauge,
-  comparison: Layers3,
+  labor: Briefcase,
+  social: HandHeart,
+  activity: Factory,
+  comparison: Scale,
   demography: Users,
+  "demography-aging": Hourglass,
+  "demography-fertility": Baby,
+  "demography-longevity": HeartPulse,
+  "demography-migration": Route,
+  "demography-projections": ChartLine,
   investment: Building2,
   regional: MapPin,
 };
@@ -369,7 +382,7 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
       <div className="trust-row" aria-label="Compromissos da resposta">
         <span><ShieldCheck size={15} /> Fontes oficiais</span>
         <span><CheckCircle2 size={15} /> Números conferidos</span>
-        <span><Sparkles size={15} /> Síntese objetiva</span>
+        <span><ListChecks size={15} /> Síntese objetiva</span>
       </div>
 
       <section className="suggestion-section" aria-labelledby="suggestion-title">
@@ -379,15 +392,15 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
             <strong id="suggestion-title">Explore os dados do Estado</strong>
           </span>
           <div className="theme-ribbon" aria-label="Áreas de conhecimento">
-            <span><Activity size={14} /> Trabalho</span>
-            <span><Gauge size={14} /> Economia</span>
-            <span><Layers3 size={14} /> Sociedade</span>
+            <span><Briefcase size={14} /> Trabalho</span>
+            <span><ChartLine size={14} /> Economia</span>
+            <span><Users size={14} /> Sociedade</span>
           </div>
         </div>
         <div className="suggestion-carousel" aria-label="Perguntas sugeridas">
           {visibleSuggestions.map(({ id, eyebrow, title }) => {
             const isDemography = id.startsWith("demography");
-            const Icon = SUGGESTION_ICONS[id] || (isDemography ? Users : Sparkles);
+            const Icon = SUGGESTION_ICONS[id] || BookOpen;
             return (
               <button
                 type="button"
@@ -546,7 +559,7 @@ function Composer({ value, setValue, onSubmit, loading, onCancel }) {
           aria-label="Digite sua pergunta"
         />
         <div className="composer-bottom">
-          <span><Sparkles size={14} /> Resposta com fontes do Seade</span>
+          <span><BookOpen size={14} /> Resposta com fontes do Seade</span>
           {loading ? (
             <button className="send-button is-stop" type="button" onClick={onCancel} aria-label="Cancelar consulta">
               <CircleStop size={18} />

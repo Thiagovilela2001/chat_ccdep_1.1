@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock3, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 const STEPS = [
   { id: "interpret", label: "Interpretação & Expansão da Consulta", estimatedSec: 2 },
@@ -42,7 +42,7 @@ export function ProgressStepper({ active = true }) {
       </span>
       <div className="progress-stepper-header">
         <div className="progress-stepper-title">
-          <Sparkles className="progress-sparkle-icon spin-slow" size={16} />
+          <LoaderCircle className="progress-sparkle-icon spin-slow" size={16} />
           <span>Processando análise documental</span>
         </div>
         <div className="progress-stepper-timer" aria-hidden="true">

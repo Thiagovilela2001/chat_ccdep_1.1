@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Database, FileText, Filter, Search, Sparkles, X } from "lucide-react";
+import { BadgeCheck, CheckCircle2, Database, FileText, Filter, Search, X } from "lucide-react";
 
 export function SourcesDrawer({
   isOpen = false,
@@ -201,7 +201,7 @@ export function SourcesDrawer({
                   {matchingCitations.length > 0 && (
                     <div className="source-cited-numbers-wrap">
                       <span className="source-cited-label">
-                        <Sparkles size={12} /> Dados validados no texto:
+                        <BadgeCheck size={12} /> Dados validados no texto:
                       </span>
                       <div className="source-cited-pills">
                         {matchingCitations.map((cit, cIdx) => (

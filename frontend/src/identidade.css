@@ -1467,3 +1467,33 @@ h1, h2, h3, .empty-state h1, .message-heading strong, .section-title,
   background: color-mix(in srgb, var(--highlight) 70%, #fff);
   box-shadow: none;
 }
+
+/* Caixa normal nos rótulos; a faixa do Governo SP mantém o padrão do estado */
+.sidebar-label,
+.sidebar-label-toggle,
+.brand small,
+.topbar-left small,
+.suggestion-label strong,
+.theme-ribbon span,
+.inspector header small,
+.section-title,
+.source-excerpt small,
+.verified-source-values span {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.sidebar-label-toggle { font-size: 12px; font-weight: 500; }
+.suggestion-label strong { font-size: 24px; }
+
+/* Faixa do governo e rodapé da lateral sobre o grafite */
+.sidebar-government {
+  color: #a1a1a8;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.sidebar-foot { border-top-color: rgba(255, 255, 255, 0.10); }
+.connection-card, .settings-button { color: #c4c5cb; }
+.connection-card small { color: #a1a1a8; }
+
+.theme-ribbon span svg,
+.theme-ribbon span:nth-child(n) svg { color: var(--brand); }
