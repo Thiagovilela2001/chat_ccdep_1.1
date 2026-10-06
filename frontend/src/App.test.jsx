@@ -92,6 +92,39 @@ describe("inicialização da interface", () => {
     expect(container.querySelectorAll(".history-list button")).toHaveLength(1);
   });
 
+  it("reenvia a pergunta após erro sem duplicá-la no histórico", async () => {
+    let queryCalls = 0;
+    globalThis.fetch = vi.fn((url, options) => {
+      if (!String(url).endsWith("/query")) return Promise.reject(new TypeError("offline"));
+      queryCalls += 1;
+      if (queryCalls === 1) return Promise.resolve({ ok: false, status: 503, json: async () => ({}) });
+      // O histórico do reenvio não carrega a pergunta repetida nem o erro.
+      expect(JSON.parse(options.body).history).toEqual([{ role: "user", content: "Pergunta X" }]);
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({ answer: "Resposta ok." }) });
+    });
+    localStorage.setItem("nadia.messages.v1", JSON.stringify([{
+      id: "user-1", role: "user", content: "Pergunta X", createdAt: "2026-08-24T10:38:00.000Z",
+    }]));
+    await act(async () => root.render(<App />));
+
+    // Primeira tentativa: falha 503.
+    const textarea = container.querySelector("textarea");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set.call(textarea, "Pergunta Y");
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => container.querySelector(".composer").requestSubmit());
+    const retry = [...container.querySelectorAll(".answer-actions button")]
+      .find((button) => button.textContent.includes("Tentar novamente"));
+    expect(retry).toBeDefined();
+
+    await act(async () => retry.click());
+    const userCopies = [...container.querySelectorAll(".user-copy")].map((node) => node.textContent);
+    expect(userCopies).toEqual(["Pergunta X", "Pergunta Y"]);
+    expect(container.querySelector(".error-card")).toBeNull();
+    expect(container.textContent).toContain("Resposta ok.");
+  });
+
   it("mantem o painel de transparencia escondido sem pop-up numerico", async () => {
     localStorage.setItem("nadia.messages.v1", JSON.stringify([{
       id: "assistant-1",

@@ -128,8 +128,9 @@ function storedConversations() {
 }
 
 function storedTheme() {
-  const value = readStorage(globalThis.localStorage, STORAGE.theme, "light");
-  return value === "dark" ? "dark" : "light";
+  const value = readStorage(globalThis.localStorage, STORAGE.theme, "");
+  if (value === "dark" || value === "light") return value;
+  return globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function storedEndpoints() {
@@ -409,7 +410,32 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
   );
 }
 
-function Message({ message, onInspect, onExport, onOpenDrawer }) {
+function CopyButton({ text }) {
+  const [status, setStatus] = useState("idle");
+  const timerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  async function handleClick() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("copied");
+    } catch {
+      setStatus("failed");
+    }
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setStatus("idle"), 2000);
+  }
+
+  return (
+    <button type="button" onClick={handleClick} aria-live="polite">
+      {status === "copied" ? <Check size={14} /> : <Copy size={14} />}
+      {status === "copied" ? "Copiado" : status === "failed" ? "Falha ao copiar" : "Copiar"}
+    </button>
+  );
+}
+
+function Message({ message, onInspect, onExport, onOpenDrawer, onRetry }) {
   const isUser = message.role === "user";
   return (
     <article className={`message message--${message.role}`}>
@@ -420,7 +446,16 @@ function Message({ message, onInspect, onExport, onOpenDrawer }) {
           <time>{relativeTime(message.createdAt)}</time>
         </div>
         {message.error ? (
-          <div className="error-card"><AlertTriangle size={18} /> {message.content}</div>
+          <>
+            <div className="error-card"><AlertTriangle size={18} /> {message.content}</div>
+            {onRetry && (
+              <div className="answer-actions">
+                <button className="is-primary" type="button" onClick={() => onRetry(message)}>
+                  <RefreshCw size={14} /> Tentar novamente
+                </button>
+              </div>
+            )}
+          </>
         ) : isUser ? (
           <p className="user-copy">{message.content}</p>
         ) : (
@@ -434,9 +469,7 @@ function Message({ message, onInspect, onExport, onOpenDrawer }) {
           <>
             <AnswerMetrics meta={message.meta} />
             <div className="answer-actions">
-              <button type="button" onClick={() => navigator.clipboard.writeText(message.content)}>
-                <Copy size={14} /> Copiar
-              </button>
+              <CopyButton text={message.content} />
               {message.meta.sources && message.meta.sources.length > 0 && (
                 <button className="is-primary" type="button" onClick={() => onOpenDrawer?.(message.meta)}>
                   <Database size={14} /> Fontes ({message.meta.sources.length})
@@ -801,6 +834,8 @@ export default function App() {
   const [sourcesDrawerState, setSourcesDrawerState] = useState(null);
   const activeController = useRef(null);
   const messageScroll = useRef(null);
+  // Falso quando o usuário rolou para cima para ler; o auto-scroll não o puxa de volta.
+  const stickToBottom = useRef(true);
   const endpoints = useMemo(() => apiUrls(endpointOverrides), [endpointOverrides]);
   const activeUrl = endpoints[ACTIVE_RAG_TYPE];
 
@@ -826,8 +861,14 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    writeStorage(globalThis.localStorage, STORAGE.theme, theme);
   }, [theme]);
+
+  // Só persiste a escolha explícita; sem ela, segue o tema do sistema.
+  function toggleTheme() {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    writeStorage(globalThis.localStorage, STORAGE.theme, next);
+  }
 
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.endpoints, JSON.stringify(endpointOverrides)), [endpointOverrides]);
   useEffect(() => writeStorage(globalThis.sessionStorage, STORAGE.apiKey, apiKey), [apiKey]);
@@ -841,7 +882,7 @@ export default function App() {
   }, [conversations]);
   useEffect(() => {
     const container = messageScroll.current;
-    if (!container || (messages.length === 0 && !loading)) return undefined;
+    if (!container || (messages.length === 0 && !loading) || !stickToBottom.current) return undefined;
     const frame = window.requestAnimationFrame(() => {
       container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
     });
@@ -912,6 +953,7 @@ export default function App() {
   function openConversation(conversation) {
     activeController.current?.abort();
     const restoredMessages = Array.isArray(conversation?.messages) ? conversation.messages : [];
+    stickToBottom.current = true;
     setConversationId(conversation.id);
     setMessages(restoredMessages);
     setSelectedMeta(null);
@@ -934,18 +976,20 @@ export default function App() {
     setConversationId(uid());
   }
 
-  async function submitQuestion(value) {
+  // `baseMessages` permite reenviar descartando a tentativa que falhou (ver retryQuestion).
+  async function submitQuestion(value, baseMessages = messages) {
     const question = value.trim();
     if (!question || loading) return;
     const userMessage = { id: uid(), role: "user", content: question, createdAt: new Date().toISOString() };
-    setMessages((current) => [...current, userMessage]);
+    stickToBottom.current = true;
+    setMessages([...baseMessages, userMessage]);
     setInput("");
     setLoading(true);
     setSidebarOpen(false);
     const controller = new AbortController();
     activeController.current = controller;
     try {
-      const history = messages
+      const history = baseMessages
         .filter((message) => !message.error && ["user", "assistant"].includes(message.role))
         .slice(-12)
         .map(({ role, content }) => ({ role, content: String(content).slice(0, 4000) }));
@@ -970,13 +1014,19 @@ export default function App() {
       if (error.name !== "AbortError") {
         setMessages((current) => [...current, {
           id: uid(), role: "assistant", content: error.message || "Não foi possível concluir a consulta.",
-          error: true, createdAt: new Date().toISOString(),
+          error: true, question, createdAt: new Date().toISOString(),
         }]);
       }
     } finally {
       activeController.current = null;
       setLoading(false);
     }
+  }
+
+  function retryQuestion(errorMessage) {
+    const index = messages.indexOf(errorMessage);
+    // Remove a pergunta original e o erro; submitQuestion recoloca a pergunta.
+    submitQuestion(errorMessage.question, messages.slice(0, Math.max(index - 1, 0)));
   }
 
   function inspect(meta, sourceIndex = null) {
@@ -1038,14 +1088,21 @@ export default function App() {
             </span>
           </div>
           <div className="topbar-actions">
-            <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="Alternar tema">
+            <button className="icon-button" onClick={toggleTheme} aria-label="Alternar tema">
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
           </div>
         </header>
 
         <div className="conversation">
-          <div className="message-scroll" ref={messageScroll}>
+          <div
+            className="message-scroll"
+            ref={messageScroll}
+            onScroll={(event) => {
+              const element = event.currentTarget;
+              stickToBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 120;
+            }}
+          >
             <div className={`message-column ${messages.length === 0 ? "is-empty" : ""}`}>
               {messages.length === 0 ? (
                 <EmptyState
@@ -1056,13 +1113,18 @@ export default function App() {
                   suggestions={featuredQuestions}
                 />
               ) : (
-                messages.map((message) => (
+                messages.map((message, index) => (
                   <Message
                     key={message.id}
                     message={message}
                     onInspect={inspect}
                     onExport={handleExport}
                     onOpenDrawer={handleOpenDrawer}
+                    onRetry={
+                      message.error && message.question && !loading && index === messages.length - 1
+                        ? retryQuestion
+                        : undefined
+                    }
                   />
                 ))
               )}
