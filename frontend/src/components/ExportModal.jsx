@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Download, FileText, Printer, X } from "lucide-react";
 
 export function ExportModal({
@@ -10,6 +10,22 @@ export function ExportModal({
   numericCitations = [],
 }) {
   const [copied, setCopied] = useState(false);
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previousFocus = document.activeElement;
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus?.();
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -86,6 +102,7 @@ export function ExportModal({
             <h3 id="export-modal-title">Exportar Relatório de Análise</h3>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             className="export-modal-close-btn"
             onClick={onClose}

@@ -137,7 +137,7 @@ describe("inicialização da interface", () => {
     expect(container.querySelector(".answer-metrics").textContent).toContain("67.8 s");
   });
 
-  it("torna um dado numérico verificável e fixa sua fonte ao clicar", async () => {
+  it("mantém a resposta em texto limpo sem cards flutuantes de números", async () => {
     const content = "O PIB paulista cresceu 12,5%.";
     const start = Array.from(content).indexOf("1");
     localStorage.setItem("nadia.messages.v1", JSON.stringify([{
@@ -152,11 +152,6 @@ describe("inicialização da interface", () => {
           page: 8,
           score: 0.92,
           excerpt: "O PIB paulista cresceu 12,5% no período.",
-        }, {
-          file: "conjuntura/anexo.pdf",
-          page: 2,
-          score: 0.81,
-          excerpt: "Outro trecho recuperado, sem o dado selecionado.",
         }],
         numeric_citations: [{
           value: "12,5%",
@@ -177,40 +172,8 @@ describe("inicialização da interface", () => {
 
     await act(async () => root.render(<App />));
     const citationButton = container.querySelector('[aria-label="Ver fonte do valor 12,5%"]');
-    expect(citationButton).not.toBeNull();
-    expect(citationButton.getAttribute("aria-expanded")).toBe("false");
-
-    await act(async () => citationButton.click());
-    expect(citationButton.getAttribute("aria-expanded")).toBe("true");
-    expect(document.body.textContent).toContain("Dado verificado");
-    expect(document.body.textContent).toContain("p. 8");
-    expect(document.body.textContent).toContain("O que esse dado mostra");
-    expect(document.body.textContent).toContain(
-      "O PIB paulista registrou crescimento de 12,5% no período analisado.",
-    );
-    expect(document.body.textContent).toContain("PIB paulista");
-    expect(document.body.textContent).toContain("Período");
-    expect(document.body.querySelector(".numeric-source-table mark").textContent).toBe("12,5%");
-    expect(document.body.querySelector(".numeric-table-value").textContent).toBe("2025");
-    expect(document.body.querySelector(".numeric-source-raw").open).toBe(false);
-
-    const copyEvidenceButton = [...document.body.querySelectorAll("button")]
-      .find((button) => button.textContent.includes("Copiar trecho"));
-    await act(async () => copyEvidenceButton.click());
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "Indicador: PIB paulista\nValor: 12,5%\nPeríodo: 2025",
-    );
-    expect(copyEvidenceButton.textContent).toContain("Copiado");
-
-    const openSourceButton = [...document.body.querySelectorAll("button")]
-      .find((button) => button.textContent.includes("Ver fonte completa"));
-    await act(async () => openSourceButton.click());
-    expect(container.querySelector(".inspector").classList.contains("is-open")).toBe(true);
-    expect(container.querySelectorAll(".source-card-trigger")).toHaveLength(1);
-    expect(container.textContent).not.toContain("Outro trecho recuperado, sem o dado selecionado.");
-    expect(container.querySelector(".source-card-trigger").getAttribute("aria-expanded")).toBe("true");
-    expect(container.querySelector(".verified-source-values").textContent).toContain("12,5%");
-    expect(container.querySelector(".source-excerpt-highlighted mark").textContent).toBe("12,5%");
+    expect(citationButton).toBeNull();
+    expect(container.textContent).toContain("O PIB paulista cresceu 12,5%.");
   });
 
   it("mantém anos no texto sem abrir validação argumentativa", async () => {
@@ -250,6 +213,50 @@ describe("inicialização da interface", () => {
     expect(container.textContent).toContain("2022");
     expect(container.querySelector('[aria-label="Ver fonte do valor 2010"]')).toBeNull();
     expect(container.querySelector('[aria-label="Ver fonte do valor 2022"]')).toBeNull();
+  });
+
+  it("permite retrair e expandir a barra lateral de histórico", async () => {
+    await act(async () => root.render(<App />));
+
+    const shell = container.querySelector(".app-shell");
+    const collapseButton = container.querySelector(".sidebar-collapse-btn");
+    const menuButton = container.querySelector(".menu-button");
+
+    expect(shell.classList.contains("sidebar-collapsed")).toBe(false);
+
+    // Retrai a barra lateral
+    await act(async () => collapseButton.click());
+    expect(shell.classList.contains("sidebar-collapsed")).toBe(true);
+    expect(localStorage.getItem("nadia.sidebar.collapsed")).toBe("true");
+
+    // Reabre a barra lateral pelo botão de menu na topbar
+    await act(async () => menuButton.click());
+    expect(shell.classList.contains("sidebar-collapsed")).toBe(false);
+    expect(localStorage.getItem("nadia.sidebar.collapsed")).toBe("false");
+  });
+
+  it("permite retrair e expandir o acordeão da lista de histórico", async () => {
+    localStorage.setItem("nadia.messages.v1", JSON.stringify([{
+      id: "u-1", role: "user", content: "Consulta teste", createdAt: "2026-08-24T10:38:00.000Z",
+    }]));
+
+    await act(async () => root.render(<App />));
+
+    const historyToggle = container.querySelector(".sidebar-label-toggle");
+    const historyList = container.querySelector(".history-list");
+
+    expect(historyToggle.getAttribute("aria-expanded")).toBe("true");
+    expect(historyList.classList.contains("is-collapsed")).toBe(false);
+
+    // Retrai o histórico
+    await act(async () => historyToggle.click());
+    expect(historyToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(historyList.classList.contains("is-collapsed")).toBe(true);
+
+    // Expande novamente
+    await act(async () => historyToggle.click());
+    expect(historyToggle.getAttribute("aria-expanded")).toBe("true");
+    expect(historyList.classList.contains("is-collapsed")).toBe(false);
   });
 });
 

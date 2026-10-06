@@ -86,8 +86,7 @@ describe("SourcesDrawer", () => {
     });
   });
 
-  it("dispara callback ao clicar no pill de dado para pular ate a citacao no texto", async () => {
-    const onJumpToCitation = vi.fn();
+  it("exibe o dado citado na fonte sem oferecer uma navegacao indisponivel", async () => {
     const sources = [
       { file: "conjuntura/boletim.pdf", page: 2, score: 0.9, excerpt: "Crescimento de 12,5%." },
     ];
@@ -100,17 +99,15 @@ describe("SourcesDrawer", () => {
           onClose={() => {}}
           sources={sources}
           numericCitations={numericCitations}
-          onJumpToCitation={onJumpToCitation}
         />
       )
     );
 
-    const jumpPill = container.querySelector(".source-jump-pill");
-    expect(jumpPill).not.toBeNull();
-    expect(jumpPill.textContent).toContain("12,5%");
-
-    await act(async () => jumpPill.click());
-    expect(onJumpToCitation).toHaveBeenCalledWith(numericCitations[0]);
+    const dataPill = container.querySelector(".source-data-pill");
+    expect(dataPill).not.toBeNull();
+    expect(dataPill.textContent).toContain("12,5%");
+    expect(dataPill.tagName).toBe("SPAN");
+    expect(container.querySelector(".source-jump-pill")).toBeNull();
   });
 });
 

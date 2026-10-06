@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -11,7 +10,6 @@ import {
   CheckCircle2,
   CircleStop,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   Clock3,
   Code2,
@@ -26,6 +24,8 @@ import {
   Menu,
   MessageSquarePlus,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   RefreshCw,
@@ -46,10 +46,7 @@ import {
   queryBackend,
 } from "./lib/api";
 import {
-  annotateNumericCitations,
-  conceptualizeTabularSnippet,
   isCalendarYearCitation,
-  parseTabularSnippet,
 } from "./lib/numericCitations";
 import { upsertConversation, validStoredConversations } from "./lib/conversations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
@@ -230,7 +227,9 @@ function Sidebar({
   onConversationPick,
   onOpenSettings,
   onClearHistory,
+  onToggleCollapse,
 }) {
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const history = [...conversations].sort(
     (left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0),
   );
@@ -256,9 +255,20 @@ function Sidebar({
               <small>Assistente de dados</small>
             </span>
           </a>
-          <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu">
-            <X size={18} />
-          </button>
+          <div className="sidebar-head-actions">
+            <button
+              type="button"
+              className="icon-button sidebar-collapse-btn"
+              onClick={onToggleCollapse}
+              aria-label="Recolher histórico"
+              title="Recolher barra lateral (Ctrl+B)"
+            >
+              <PanelLeftClose size={18} />
+            </button>
+            <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu">
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <button className="new-chat" onClick={onNewChat}>
@@ -267,11 +277,26 @@ function Sidebar({
         </button>
 
         <section className="sidebar-section history-section">
-          <div className="sidebar-label">
-            <span>Histórico</span>
-            <History size={14} />
-          </div>
-          <div className="history-list">
+          <button
+            type="button"
+            className="sidebar-label sidebar-label-toggle"
+            onClick={() => setHistoryCollapsed((prev) => !prev)}
+            aria-expanded={!historyCollapsed}
+            aria-label={historyCollapsed ? "Expandir histórico de conversas" : "Recolher histórico de conversas"}
+            title={historyCollapsed ? "Expandir histórico" : "Recolher histórico"}
+          >
+            <span className="sidebar-label-main">
+              <History size={14} />
+              <span>Histórico</span>
+              {history.length > 0 && (
+                <span className="history-count-badge">{history.length}</span>
+              )}
+            </span>
+            <span className="sidebar-label-chevron">
+              {historyCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            </span>
+          </button>
+          <div className={`history-list ${historyCollapsed ? "is-collapsed" : ""}`}>
             {history.length === 0 ? (
               <p className="history-empty">Suas análises aparecerão aqui.</p>
             ) : (
@@ -288,7 +313,7 @@ function Sidebar({
               ))
             )}
           </div>
-          {history.length > 0 && (
+          {!historyCollapsed && history.length > 0 && (
             <ClearHistoryButton onClearHistory={onClearHistory} />
           )}
         </section>
@@ -315,27 +340,24 @@ function Sidebar({
 }
 
 function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
-  const suggestionCarousel = useRef(null);
-
-  const scrollSuggestions = (direction) => {
-    const carousel = suggestionCarousel.current;
-    if (!carousel) return;
-    const card = carousel.querySelector(".suggestion-card");
-    const cardWidth = card?.getBoundingClientRect().width || carousel.clientWidth * 0.8;
-    carousel.scrollBy({ left: direction * cardWidth * 2, behavior: "smooth" });
-  };
+  const visibleSuggestions = suggestions.slice(0, 6);
 
   return (
     <section className="empty-state">
-      <div className="welcome-mark">
-        <BrandMark />
-        <span>Nadia · inteligência Seade</span>
+      <div className="hero-intro">
+        <div className="welcome-mark">
+          <BrandMark />
+          <span>
+            <small>Inteligência pública aplicada</small>
+            Nadia · Fundação Seade
+          </span>
+        </div>
+        <h1>Transforme dados de São Paulo em decisões mais claras.</h1>
+        <p>
+          Investigue trabalho, economia e sociedade em linguagem natural. A Nadia cruza
+          documentos oficiais e apresenta cada resposta com fontes rastreáveis.
+        </p>
       </div>
-      <h1>O que você quer saber<br />sobre São Paulo?</h1>
-      <p>
-        Converse com os dados da Fundação Seade. Pergunte em linguagem natural e
-        receba respostas objetivas, com fontes e números verificáveis.
-      </p>
       <Composer
         value={input}
         setValue={setInput}
@@ -343,366 +365,52 @@ function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
         loading={false}
         onCancel={() => {}}
       />
-      <div className="suggestion-label">
-        <strong>Experimente perguntar</strong>
-        <div className="suggestion-actions">
-          <span>deslize para explorar</span>
-          <div className="suggestion-controls">
-            <button type="button" onClick={() => scrollSuggestions(-1)} aria-label="Ver perguntas anteriores">
-              <ChevronLeft size={16} />
-            </button>
-            <button type="button" onClick={() => scrollSuggestions(1)} aria-label="Ver próximas perguntas">
-              <ChevronRight size={16} />
-            </button>
+      <div className="trust-row" aria-label="Compromissos da resposta">
+        <span><ShieldCheck size={15} /> Fontes oficiais</span>
+        <span><CheckCircle2 size={15} /> Números conferidos</span>
+        <span><Sparkles size={15} /> Síntese objetiva</span>
+      </div>
+
+      <section className="suggestion-section" aria-labelledby="suggestion-title">
+        <div className="suggestion-label">
+          <span>
+            <small>Comece por uma pergunta</small>
+            <strong id="suggestion-title">Explore os dados do Estado</strong>
+          </span>
+          <div className="theme-ribbon" aria-label="Áreas de conhecimento">
+            <span><Activity size={14} /> Trabalho</span>
+            <span><Gauge size={14} /> Economia</span>
+            <span><Layers3 size={14} /> Sociedade</span>
           </div>
         </div>
-      </div>
-      <div className="suggestion-carousel" ref={suggestionCarousel} aria-label="Perguntas sugeridas">
-        {suggestions.map(({ id, eyebrow, title }) => {
-          const isDemography = id.startsWith("demography");
-          const Icon = SUGGESTION_ICONS[id] || (isDemography ? Users : Sparkles);
-          return (
-            <button
-              type="button"
-              className={`suggestion-card ${isDemography ? "is-demography" : ""}`}
-              key={id}
-              onClick={() => onPick(title)}
-            >
-              <span className="suggestion-icon"><Icon size={18} /></span>
-              <small>{eyebrow}</small>
-              <strong>{title}</strong>
-              <ArrowUp size={16} />
-            </button>
-          );
-        })}
-      </div>
-      <div className="trust-row">
-        <span><ShieldCheck size={15} /> Fontes rastreáveis</span>
-        <span><CheckCircle2 size={15} /> Validação numérica</span>
-        <span><Sparkles size={15} /> Síntese técnica</span>
-      </div>
-      <div className="theme-ribbon" aria-label="Áreas de conhecimento">
-        <span><Activity size={15} /> Trabalho</span>
-        <span><Gauge size={15} /> Economia</span>
-        <span><Layers3 size={15} /> Sociedade</span>
-      </div>
+        <div className="suggestion-carousel" aria-label="Perguntas sugeridas">
+          {visibleSuggestions.map(({ id, eyebrow, title }) => {
+            const isDemography = id.startsWith("demography");
+            const Icon = SUGGESTION_ICONS[id] || (isDemography ? Users : Sparkles);
+            return (
+              <button
+                type="button"
+                className={`suggestion-card ${isDemography ? "is-demography" : ""}`}
+                key={id}
+                onClick={() => onPick(title)}
+              >
+                <span className="suggestion-icon"><Icon size={18} /></span>
+                <span className="suggestion-copy">
+                  <small>{eyebrow}</small>
+                  <strong>{title}</strong>
+                </span>
+                <ArrowUp size={16} />
+              </button>
+            );
+          })}
+        </div>
+      </section>
     </section>
-  );
-}
-
-function NumericCitation({ citation, children, onOpenSource }) {
-  const tooltipId = `numeric-source-${useId().replaceAll(":", "")}`;
-  const buttonRef = useRef(null);
-  const popoverRef = useRef(null);
-  const hideTimer = useRef(null);
-  const copyTimer = useRef(null);
-  const [hovered, setHovered] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [position, setPosition] = useState(null);
-  const visible = hovered || pinned;
-  const sourceName = String(citation.file || "Documento")
-    .split(/[\\/]/)
-    .filter(Boolean)
-    .at(-1);
-  const tableEvidence = citation.content_type === "table"
-    ? parseTabularSnippet(citation.snippet)
-    : null;
-  const tableConcept = tableEvidence
-    ? conceptualizeTabularSnippet(tableEvidence, citation.value)
-    : null;
-  const cleanClaim = String(citation.claim || "")
-    .replace(/^…|…$/g, "")
-    .replace(/[*_`#]/g, "")
-    .trim();
-  const generatedExplanation = String(citation.explanation || "").trim();
-  const fallbackConceptText = cleanClaim && !cleanClaim.includes("|")
-    ? cleanClaim
-    : tableConcept
-      ? `${citation.value} é o valor registrado para ${tableConcept.subject}.`
-      : `O valor confirmado nesta fonte é ${citation.value}.`;
-  const conceptText = generatedExplanation || fallbackConceptText;
-  const conceptQualifiers = (tableConcept?.qualifiers || [])
-    .filter(({ label, value }) => label && value && !/^coluna \d+$/i.test(label))
-    .slice(0, 4);
-
-  function highlightValue(text) {
-    const value = String(text || "");
-    const index = value.indexOf(citation.value);
-    if (index < 0) return value;
-    return (
-      <>
-        {value.slice(0, index)}
-        <mark>{citation.value}</mark>
-        {value.slice(index + citation.value.length)}
-      </>
-    );
-  }
-
-  function highlightTableNumbers(text) {
-    const value = String(text || "");
-    const pattern = /[-−]?(?:\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?)(?:\s*%|\s*p\.p\.)?/gi;
-    const parts = [];
-    let cursor = 0;
-    let match;
-    while ((match = pattern.exec(value)) !== null) {
-      if (match.index > cursor) parts.push(value.slice(cursor, match.index));
-      const number = match[0];
-      parts.push(
-        number.trim() === citation.value.trim()
-          ? <mark key={`${match.index}-${number}`}>{number}</mark>
-          : <span className="numeric-table-value" key={`${match.index}-${number}`}>{number}</span>,
-      );
-      cursor = match.index + number.length;
-    }
-    if (cursor === 0) return value;
-    if (cursor < value.length) parts.push(value.slice(cursor));
-    return parts;
-  }
-
-  const updatePosition = useCallback(() => {
-    const button = buttonRef.current;
-    if (!button) return;
-    const rect = button.getBoundingClientRect();
-    const mobile = window.innerWidth <= 680;
-    if (mobile) {
-      setPosition({
-        mobile: true,
-        left: 8,
-        bottom: Math.max(8, Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--safe-bottom"), 10) || 8),
-        width: window.innerWidth - 16,
-      });
-      return;
-    }
-    const width = Math.min(410, Math.max(300, window.innerWidth - 32));
-    const left = Math.min(
-      window.innerWidth - width - 16,
-      Math.max(16, rect.left + rect.width / 2 - width / 2),
-    );
-    const below = rect.top < 250;
-    setPosition({
-      mobile: false,
-      below,
-      left,
-      top: below ? rect.bottom + 12 : rect.top - 12,
-      width,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!visible) return undefined;
-    const reposition = () => updatePosition();
-    window.addEventListener("resize", reposition);
-    document.addEventListener("scroll", reposition, true);
-    return () => {
-      window.removeEventListener("resize", reposition);
-      document.removeEventListener("scroll", reposition, true);
-    };
-  }, [updatePosition, visible]);
-
-  useEffect(() => {
-    if (!pinned) return undefined;
-    const close = (event) => {
-      if (
-        !buttonRef.current?.contains(event.target)
-        && !popoverRef.current?.contains(event.target)
-      ) {
-        setPinned(false);
-      }
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [pinned]);
-
-  useEffect(() => () => {
-    window.clearTimeout(hideTimer.current);
-    window.clearTimeout(copyTimer.current);
-  }, []);
-
-  const cancelHide = () => {
-    window.clearTimeout(hideTimer.current);
-    hideTimer.current = null;
-  };
-
-  const scheduleHide = () => {
-    cancelHide();
-    hideTimer.current = window.setTimeout(() => setHovered(false), 180);
-  };
-
-  const show = () => {
-    cancelHide();
-    updatePosition();
-    setHovered(true);
-  };
-
-  async function copyEvidence() {
-    const evidence = String(citation.snippet || conceptText || "").trim();
-    if (!evidence || !navigator.clipboard?.writeText) return;
-    try {
-      await navigator.clipboard.writeText(evidence);
-      setCopied(true);
-      window.clearTimeout(copyTimer.current);
-      copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  return (
-    <span className="numeric-citation-wrap">
-      <button
-        ref={buttonRef}
-        type="button"
-        className={`numeric-citation ${pinned ? "is-pinned" : ""}`}
-        data-citation-value={citation.value}
-        aria-describedby={visible ? tooltipId : undefined}
-        aria-expanded={pinned}
-        aria-label={`Ver fonte do valor ${citation.value}`}
-        onMouseEnter={show}
-        onMouseLeave={scheduleHide}
-        onFocus={show}
-        onBlur={scheduleHide}
-        onClick={() => {
-          updatePosition();
-          setPinned((current) => !current);
-        }}
-      >
-        <span>{children}</span>
-        <sup>{Number(citation.source_index) + 1}</sup>
-      </button>
-      {visible && position && createPortal(
-        <div
-          ref={popoverRef}
-          id={tooltipId}
-          role={pinned ? "dialog" : "tooltip"}
-          aria-label={`Fonte do valor ${citation.value}`}
-          className={`numeric-source-tooltip ${position.below ? "is-below" : ""} ${position.mobile ? "is-mobile" : ""}`}
-          style={{
-            left: position.left,
-            top: position.top ?? "auto",
-            bottom: position.bottom ?? "auto",
-            width: position.width,
-          }}
-          onMouseEnter={show}
-          onMouseLeave={scheduleHide}
-          onFocus={show}
-          onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) scheduleHide();
-          }}
-        >
-          <header>
-            <span className="numeric-source-heading">
-              <span><CheckCircle2 size={17} /></span>
-              <span><small>Dado verificado</small><strong>{citation.value}</strong></span>
-            </span>
-            <button
-              type="button"
-              className="numeric-source-close"
-              aria-label="Fechar fonte"
-              onClick={() => {
-                setPinned(false);
-                setHovered(false);
-              }}
-            >
-              <X size={15} />
-            </button>
-          </header>
-          <div className={`numeric-source-excerpt ${tableEvidence ? "is-table" : ""}`}>
-            <div className="numeric-source-concept">
-              <small>O que esse dado mostra</small>
-              <p>{highlightValue(conceptText)}</p>
-              {conceptQualifiers.length > 0 && (
-                <div className="numeric-source-context">
-                  {conceptQualifiers.map(({ label, value }, index) => (
-                    <span key={`${label}-${index}`}>
-                      <small>{label}</small>
-                      <strong>{highlightTableNumbers(value)}</strong>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="numeric-source-origin">
-              <span className="numeric-source-file-icon"><FileText size={16} /></span>
-              <span className="numeric-source-file">
-                <small>Fonte</small>
-                <strong title={citation.file}>{sourceName}</strong>
-              </span>
-              <div className="numeric-source-meta">
-                <span>{citation.page != null ? `p. ${citation.page}` : "Sem página"}</span>
-                {Number.isFinite(Number(citation.score)) && <span>{Math.round(Number(citation.score) * 100)}% relevante</span>}
-              </div>
-            </div>
-
-            {citation.snippet && (
-              <details className="numeric-source-raw">
-                <summary>
-                  <span>{tableEvidence ? "Ver dados de origem" : "Ver trecho usado"}</span>
-                  <ChevronDown size={15} />
-                </summary>
-                {tableEvidence ? (
-                  <div className={`numeric-source-table ${tableEvidence.kind === "key-value" ? "is-key-value" : ""}`}>
-                    <table>
-                      <thead>
-                        <tr>{tableEvidence.headers.map((header, index) => <th key={`${header}-${index}`}>{header}</th>)}</tr>
-                      </thead>
-                      <tbody>
-                        {tableEvidence.rows.map((row, rowIndex) => (
-                          <tr key={`row-${rowIndex}`}>
-                            {row.map((cell, cellIndex) => (
-                              <td
-                                className={/\d/.test(cell) ? "has-number" : ""}
-                                key={`cell-${rowIndex}-${cellIndex}`}
-                              >
-                                {highlightTableNumbers(cell)}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p>{highlightValue(citation.snippet)}</p>
-                )}
-              </details>
-            )}
-          </div>
-          <footer>
-            <button
-              type="button"
-              className="numeric-source-copy"
-              onClick={copyEvidence}
-              disabled={!citation.snippet && !conceptText}
-            >
-              {copied ? <Check size={15} /> : <Copy size={15} />}
-              {copied ? "Copiado" : "Copiar trecho"}
-            </button>
-            <button
-              type="button"
-              className="numeric-source-open"
-              onClick={() => {
-                setPinned(false);
-                setHovered(false);
-                onOpenSource?.();
-              }}
-            >
-              <PanelRightOpen size={15} /> Ver fonte completa
-            </button>
-          </footer>
-        </div>,
-        document.body,
-      )}
-    </span>
   );
 }
 
 function Message({ message, onInspect, onExport, onOpenDrawer }) {
   const isUser = message.role === "user";
-  const numericCitations = (message.meta?.numeric_citations || [])
-    .filter((citation) => !isCalendarYearCitation(citation?.value));
-  const annotatedContent = annotateNumericCitations(message.content, numericCitations);
   return (
     <article className={`message message--${message.role}`}>
       <div className="message-avatar">{isUser ? "Você" : <BrandMark />}</div>
@@ -717,27 +425,8 @@ function Message({ message, onInspect, onExport, onOpenDrawer }) {
           <p className="user-copy">{message.content}</p>
         ) : (
           <div className="markdown-body">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                a: ({ href, children, ...props }) => {
-                  const match = href?.match(/^#numeric-citation-(\d+)$/);
-                  const citation = match ? numericCitations[Number(match[1])] : null;
-                  if (citation) {
-                    return (
-                      <NumericCitation
-                        citation={citation}
-                        onOpenSource={() => onInspect(message.meta, citation.source_index)}
-                      >
-                        {children}
-                      </NumericCitation>
-                    );
-                  }
-                  return <a href={href} {...props} target="_blank" rel="noreferrer">{children}</a>;
-                },
-              }}
-            >
-              {annotatedContent}
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content}
             </ReactMarkdown>
           </div>
         )}
@@ -748,14 +437,14 @@ function Message({ message, onInspect, onExport, onOpenDrawer }) {
               <button type="button" onClick={() => navigator.clipboard.writeText(message.content)}>
                 <Copy size={14} /> Copiar
               </button>
-              <button type="button" onClick={() => onInspect(message.meta)}>
-                <PanelRightOpen size={14} /> Ver evidências
-              </button>
               {message.meta.sources && message.meta.sources.length > 0 && (
-                <button type="button" onClick={() => onOpenDrawer?.(message.meta)}>
+                <button className="is-primary" type="button" onClick={() => onOpenDrawer?.(message.meta)}>
                   <Database size={14} /> Fontes ({message.meta.sources.length})
                 </button>
               )}
+              <button type="button" onClick={() => onInspect?.(message.meta)}>
+                <PanelRightOpen size={14} /> Detalhes
+              </button>
               <button type="button" onClick={() => onExport?.(message)}>
                 <Download size={14} /> Exportar
               </button>
@@ -1002,13 +691,30 @@ function InfoBlock({ icon: Icon, label, value }) {
 
 function SettingsDialog({ open, onClose, endpoints, setEndpoints, apiKey, setApiKey, developerMode, setDeveloperMode }) {
   const [draft, setDraft] = useState(endpoints[ACTIVE_RAG_TYPE] || "");
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousFocus = document.activeElement;
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus?.();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <header>
           <div><small>Preferências</small><h2 id="settings-title">Configurações</h2></div>
-          <button className="icon-button" onClick={onClose}><X size={18} /></button>
+          <button ref={closeButtonRef} className="icon-button" onClick={onClose} aria-label="Fechar configurações"><X size={18} /></button>
         </header>
         <div className="dialog-body">
           <label>
@@ -1054,6 +760,37 @@ export default function App() {
   const [healthState, setHealthState] = useState("checking");
   const [healthError, setHealthError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("nadia.sidebar.collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("nadia.sidebar.collapsed", String(next));
+      } catch {
+        // A persistência é opcional; a interação continua válida nesta sessão.
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebarCollapse();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleSidebarCollapse]);
+
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState("sources");
@@ -1086,21 +823,6 @@ export default function App() {
     });
   }
 
-  function handleJumpToCitation(citation) {
-    setSourcesDrawerState(null);
-    setInspectorOpen(false);
-    setTimeout(() => {
-      const el =
-        document.querySelector(`[data-citation-value="${citation.value}"]`) ||
-        document.querySelector(`[aria-label="Ver fonte do valor ${citation.value}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("citation-target-highlight");
-        setTimeout(() => el.classList.remove("citation-target-highlight"), 2400);
-      }
-    }, 120);
-  }
-
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     writeStorage(globalThis.localStorage, STORAGE.theme, theme);
@@ -1118,7 +840,7 @@ export default function App() {
   }, [conversations]);
   useEffect(() => {
     const container = messageScroll.current;
-    if (!container) return undefined;
+    if (!container || (messages.length === 0 && !loading)) return undefined;
     const frame = window.requestAnimationFrame(() => {
       container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
     });
@@ -1270,7 +992,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${inspectorOpen ? "has-inspector" : ""}`} id="top">
+    <div className={`app-shell ${inspectorOpen ? "has-inspector" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`} id="top">
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -1284,6 +1006,7 @@ export default function App() {
         onConversationPick={openConversation}
         onOpenSettings={() => setSettingsOpen(true)}
         onClearHistory={clearHistory}
+        onToggleCollapse={toggleSidebarCollapse}
       />
 
       <main className="main-area">
@@ -1296,7 +1019,21 @@ export default function App() {
         </div>
         <header className="topbar">
           <div className="topbar-left">
-            <button className="icon-button menu-button" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu"><Menu size={20} /></button>
+            <button
+              type="button"
+              className={`icon-button menu-button ${sidebarCollapsed ? "is-collapsed-trigger" : ""}`}
+              onClick={() => {
+                if (window.innerWidth <= 980) {
+                  setSidebarOpen(true);
+                } else {
+                  toggleSidebarCollapse();
+                }
+              }}
+              aria-label={sidebarCollapsed ? "Expandir histórico" : "Abrir menu"}
+              title={sidebarCollapsed ? "Expandir histórico (Ctrl+B)" : "Abrir menu"}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <Menu size={20} />}
+            </button>
             <div><small>Nadia · Assistente Seade</small><strong>{ASSISTANT_MODE_LABEL}</strong></div>
             <span
               className={`top-status top-status--${healthState}`}
@@ -1314,7 +1051,7 @@ export default function App() {
 
         <div className="conversation">
           <div className="message-scroll" ref={messageScroll}>
-            <div className="message-column">
+            <div className={`message-column ${messages.length === 0 ? "is-empty" : ""}`}>
               {messages.length === 0 ? (
                 <EmptyState
                   onPick={submitQuestion}
@@ -1350,7 +1087,6 @@ export default function App() {
         onClose={() => setSourcesDrawerState(null)}
         sources={sourcesDrawerState?.sources || []}
         numericCitations={sourcesDrawerState?.numericCitations || []}
-        onJumpToCitation={handleJumpToCitation}
       />
 
       <ExportModal

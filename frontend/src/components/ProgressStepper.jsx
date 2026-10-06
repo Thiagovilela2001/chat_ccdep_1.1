@@ -36,13 +36,16 @@ export function ProgressStepper({ active = true }) {
   const activeIndex = currentStepIndex === -1 ? STEPS.length - 1 : currentStepIndex;
 
   return (
-    <div className="progress-stepper-container" role="status" aria-live="polite">
+    <div className="progress-stepper-container">
+      <span className="sr-only" role="status" aria-live="polite">
+        Etapa atual: {STEPS[activeIndex].label}
+      </span>
       <div className="progress-stepper-header">
         <div className="progress-stepper-title">
           <Sparkles className="progress-sparkle-icon spin-slow" size={16} />
           <span>Processando análise documental</span>
         </div>
-        <div className="progress-stepper-timer">
+        <div className="progress-stepper-timer" aria-hidden="true">
           <Clock3 size={14} />
           <span>{seconds}s</span>
         </div>

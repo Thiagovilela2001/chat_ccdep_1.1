@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Database, FileText, Filter, Search, Sparkles, X } from "lucide-react";
 
 export function SourcesDrawer({
@@ -6,10 +6,25 @@ export function SourcesDrawer({
   onClose,
   sources = [],
   numericCitations = [],
-  onJumpToCitation,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState("all"); // "all" | "cited" | "context"
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previousFocus = document.activeElement;
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus?.();
+    };
+  }, [isOpen, onClose]);
 
   const citedFiles = useMemo(() => {
     const set = new Set();
@@ -64,6 +79,7 @@ export function SourcesDrawer({
             <span className="sources-count-badge">{sources.length}</span>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             className="sources-drawer-close-btn"
             onClick={onClose}
@@ -81,6 +97,7 @@ export function SourcesDrawer({
               type="text"
               className="sources-search-input"
               placeholder="Buscar em arquivos, páginas ou trechos..."
+              aria-label="Buscar nas fontes documentais"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -89,6 +106,7 @@ export function SourcesDrawer({
                 type="button"
                 className="sources-search-clear"
                 onClick={() => setSearchQuery("")}
+                aria-label="Limpar busca de fontes"
               >
                 <X size={12} />
               </button>
@@ -100,6 +118,7 @@ export function SourcesDrawer({
               type="button"
               className={`sources-tab-btn ${filterMode === "all" ? "active" : ""}`}
               onClick={() => setFilterMode("all")}
+              aria-pressed={filterMode === "all"}
             >
               Todas ({sources.length})
             </button>
@@ -107,6 +126,7 @@ export function SourcesDrawer({
               type="button"
               className={`sources-tab-btn ${filterMode === "cited" ? "active" : ""}`}
               onClick={() => setFilterMode("cited")}
+              aria-pressed={filterMode === "cited"}
             >
               Citadas ({sources.filter((s) => citedFiles.has(String(s.file).toLowerCase())).length})
             </button>
@@ -114,6 +134,7 @@ export function SourcesDrawer({
               type="button"
               className={`sources-tab-btn ${filterMode === "context" ? "active" : ""}`}
               onClick={() => setFilterMode("context")}
+              aria-pressed={filterMode === "context"}
             >
               Contexto ({sources.filter((s) => !citedFiles.has(String(s.file).toLowerCase())).length})
             </button>
@@ -176,7 +197,7 @@ export function SourcesDrawer({
                     </div>
                   </div>
 
-                  {/* Badges de números citados que ligam direto de volta ao texto */}
+                  {/* Valores citados permanecem informativos; o texto da resposta é deliberadamente limpo. */}
                   {matchingCitations.length > 0 && (
                     <div className="source-cited-numbers-wrap">
                       <span className="source-cited-label">
@@ -184,16 +205,13 @@ export function SourcesDrawer({
                       </span>
                       <div className="source-cited-pills">
                         {matchingCitations.map((cit, cIdx) => (
-                          <button
+                          <span
                             key={`${cit.value}-${cIdx}`}
-                            type="button"
-                            className="source-jump-pill"
-                            title={`Localizar "${cit.value}" no texto da resposta`}
-                            onClick={() => onJumpToCitation?.(cit)}
+                            className="source-data-pill"
+                            title={`Valor citado na resposta: ${cit.value}`}
                           >
                             <strong>{cit.value}</strong>
-                            <span className="jump-hint">→ no texto</span>
-                          </button>
+                          </span>
                         ))}
                       </div>
                     </div>
