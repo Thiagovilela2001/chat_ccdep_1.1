@@ -68,7 +68,7 @@ const STORAGE = {
 const ACTIVE_RAG_TYPE = "principal";
 const ASSISTANT_MODE_LABEL = "Análise documental";
 
-const CLIENT_DIAGNOSTIC_URL = "http://127.0.0.1:8501/client-error";
+const CLIENT_DIAGNOSTIC_URL = "/client-error";
 
 function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -622,11 +622,12 @@ function Inspector({ open, onClose, meta, tab, setTab, developerMode, sourceRequ
                               {verifiedValues.map((value) => <b key={value}>{value}</b>)}
                             </div>
                           )}
-                          <p>{source.excerpt || "O texto deste trecho não está disponível em respostas salvas anteriormente. Faça uma nova consulta para visualizá-lo."}</p>
-                          {source.excerpt && verifiedValues.length > 0 && (
+                          {source.excerpt && verifiedValues.length > 0 ? (
                             <p className="source-excerpt-highlighted">
                               {highlightVerifiedValues(source.excerpt, verifiedValues)}
                             </p>
+                          ) : (
+                            <p>{source.excerpt || "O texto deste trecho não está disponível em respostas salvas anteriormente. Faça uma nova consulta para visualizá-lo."}</p>
                           )}
                         </div>
                       )}
@@ -857,12 +858,6 @@ export default function App() {
       const nextState = isBackendReady(payload) ? "ready" : "initializing";
       setHealth(payload);
       setHealthState(nextState);
-      reportClientDiagnostic({
-        kind: "health-check",
-        activeUrl,
-        result: nextState,
-        payload,
-      });
     } catch (error) {
       const detail = error?.name === "AbortError"
         ? `Tempo esgotado ao consultar ${activeUrl}/health`

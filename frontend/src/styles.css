@@ -519,7 +519,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .source-excerpt { display: grid; gap: 6px; padding: 0 12px 13px 53px; animation: fade-in 160ms ease both; }
 .source-excerpt small { font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
 .source-excerpt p { max-height: 240px; margin: 0; padding: 10px; overflow-y: auto; color: var(--ink-soft); font-size: 9px; line-height: 1.6; white-space: pre-wrap; background: var(--surface-soft); border-left: 2px solid var(--success); border-radius: 0 8px 8px 0; }
-.source-excerpt.has-verified-values > p:not(.source-excerpt-highlighted) { display: none; }
 .source-excerpt .source-excerpt-highlighted { color: var(--ink); border-left-color: var(--brand); }
 .source-excerpt mark.verified-source-value { padding: 1px 4px; color: #4b3600; font-weight: 850; background: color-mix(in srgb, var(--warning) 52%, #fff); border-radius: 4px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--warning) 55%, transparent); }
 .verified-source-values { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }

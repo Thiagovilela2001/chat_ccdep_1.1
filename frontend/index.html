@@ -33,7 +33,7 @@
     </div>
     <script>
       (() => {
-        const reportUrl = "http://127.0.0.1:8501/client-error";
+        const reportUrl = "/client-error";
 
         function errorText(value) {
           if (value instanceof Error) return value.stack || value.message;
