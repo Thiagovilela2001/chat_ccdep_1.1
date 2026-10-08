@@ -212,20 +212,21 @@ def test_factory_configura_lote_maior_e_repeticao_menor():
 def test_context_top_k_bounds(monkeypatch):
     from rag_core.text_retriever import context_top_k
     monkeypatch.delenv("RAG_CONTEXT_TOP_K", raising=False)
-    assert context_top_k() == 10
+    assert context_top_k() == 20
 
     monkeypatch.setenv("RAG_CONTEXT_TOP_K", "3")
     assert context_top_k() == 5
 
-    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "30")
-    assert context_top_k() == 25
+    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "70")
+    assert context_top_k() == 60
 
-    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "15")
-    assert context_top_k() == 15
+    monkeypatch.setenv("RAG_CONTEXT_TOP_K", "25")
+    assert context_top_k() == 25
 
 
 def test_analysis_engine_global_rerank_and_prune():
     import asyncio
+    from rag_core.text_retriever import context_top_k
     from rag_principal.src.analysis_engine import AnalysisEngine
     from unittest.mock import MagicMock
     from llama_index.core.schema import NodeWithScore, TextNode
@@ -235,11 +236,11 @@ def test_analysis_engine_global_rerank_and_prune():
 
     text_nodes = [
         NodeWithScore(node=TextNode(text=f"Texto {i}", id_=f"txt_{i}"), score=0.1 * i)
-        for i in range(10)
+        for i in range(20)
     ]
     table_nodes = [
         NodeWithScore(node=TextNode(text=f"Tabela {i}", id_=f"tbl_{i}"), score=0.5 * i)
-        for i in range(5)
+        for i in range(10)
     ]
 
     mock_text = MagicMock()
@@ -269,7 +270,7 @@ def test_analysis_engine_global_rerank_and_prune():
     )
 
     assert mock_reranker.postprocess_nodes.called
-    assert len(nodes) <= 10
+    assert len(nodes) == context_top_k()
     assert nodes[0].node.id_ == table_nodes[-1].node.id_
 
 

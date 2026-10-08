@@ -53,27 +53,27 @@ def query_fusion_queries() -> int:
 
 
 def rerank_candidate_limit() -> int:
-    return bounded_int("RAG_RERANK_CANDIDATE_LIMIT", 40, 10, 100)
+    return bounded_int("RAG_RERANK_CANDIDATE_LIMIT", 60, 10, 120)
 
 
 def rerank_top_n() -> int:
-    return bounded_int("RAG_RERANK_TOP_N", 24, 5, 50)
+    return bounded_int("RAG_RERANK_TOP_N", 30, 5, 80)
 
 
 def context_top_k() -> int:
-    return bounded_int("RAG_CONTEXT_TOP_K", 10, 5, 25)
+    return bounded_int("RAG_CONTEXT_TOP_K", 20, 5, 60)
 
 
 def text_top_n() -> int:
-    return bounded_int("RAG_TEXT_TOP_N", 12, 5, 40)
+    return bounded_int("RAG_TEXT_TOP_N", 20, 5, 80)
 
 
 def structured_top_n() -> int:
-    return bounded_int("RAG_STRUCTURED_TOP_N", 8, 3, 20)
+    return bounded_int("RAG_STRUCTURED_TOP_N", 12, 3, 40)
 
 
 def max_chunks_per_document() -> int:
-    return bounded_int("RAG_MAX_CHUNKS_PER_DOCUMENT", 3, 1, 10)
+    return bounded_int("RAG_MAX_CHUNKS_PER_DOCUMENT", 4, 1, 15)
 
 
 def complete_coverage_chunks_per_document() -> int:
