@@ -215,6 +215,7 @@ def make_llm(
     temperature: float = 0.0,
     timeout: float = 60.0,
     model: str | None = None,
+    max_retries: int | None = None,
 ):
     """
     Cria o LLM do LlamaIndex para o provedor configurado.
@@ -243,6 +244,7 @@ def make_llm(
 
     effort = reasoning_effort(eff_role)
     adicional: dict = {"reasoning_effort": effort} if effort else {}
+    retries: dict = {} if max_retries is None else {"max_retries": max_retries}
 
     if cfg["base_url"]:
         # Provedor compatível (Maritaca): registra o modelo e aponta a base URL.
@@ -254,6 +256,7 @@ def make_llm(
             temperature=temperature,
             timeout=timeout,
             additional_kwargs=adicional,
+            **retries,
         )
 
     return OpenAI(
@@ -262,4 +265,22 @@ def make_llm(
         temperature=temperature,
         timeout=timeout,
         additional_kwargs=adicional,
+        **retries,
+    )
+
+
+def make_rerank_llm():
+    """LLM do rerank: falha rápido, sem retentativa do cliente.
+
+    O rerank roda na frente da síntese e o TolerantLLMReranker já devolve a
+    ordem híbrida quando um lote falha. Com o timeout de 30 s e as 3
+    retentativas padrão do interp_llm, um único lote chegou a travar 32 s.
+    """
+    from .runtime import bounded_float
+
+    return make_llm(
+        interp=True,
+        temperature=0.0,
+        timeout=bounded_float("RAG_RERANK_TIMEOUT", 10.0, 2.0, 60.0),
+        max_retries=0,
     )

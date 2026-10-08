@@ -58,6 +58,64 @@ def test_limites_de_iteracao_sao_saturados(monkeypatch):
     assert _max_retries() == 2
 
 
+@pytest.mark.parametrize(
+    ("interpreted", "expected"),
+    [
+        (["text", "tables"], ["text", "tables", "timeseries"]),
+        (["text"], ["text"]),
+    ],
+)
+def test_tabelas_sempre_levam_series_junto(monkeypatch, interpreted, expected):
+    # O TablesRetriever descarta tabelas temporais; sem o retriever de séries,
+    # dados trimestrais/mensais (ex.: PNAD) sumiam sem aviso.
+    monkeypatch.setenv("RAG_ANSWER_RETRIES", "0")
+    received = []
+
+    class Engine:
+        async def answer(self, *, sources, **_kwargs):
+            received.append(list(sources))
+            return "Sem números.", []
+
+    def interpreter(question, _llm):
+        return {"sources": interpreted, "rewritten_query": question, "is_labor_market": False}
+
+    asyncio.run(execute_engine_query(
+        question="Qual foi a taxa no trimestre mais recente?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+    assert received == [expected]
+
+
+def test_recusa_confirmada_pela_busca_ampliada_encerra_sem_terceira_tentativa():
+    # Pergunta fora do domínio: a primeira tentativa recusa, a busca ampliada
+    # recusa de novo; a terceira tentativa só repetia a recusa (~6 s a mais).
+    node = SimpleNamespace(metadata={"source_file": "boletim.pdf"}, score=0.1, get_content=lambda: "Outro tema.")
+    attempts = []
+
+    class Engine:
+        async def answer(self, **kwargs):
+            attempts.append(kwargs["sources"])
+            return REFUSAL_TEXT, [node]
+
+    def interpreter(question, _llm):
+        return {"sources": ["text"], "rewritten_query": question, "is_labor_market": False}
+
+    response, _ = asyncio.run(execute_engine_query(
+        question="Quem ganhou a Copa de 2022?",
+        engine=Engine(),
+        interp_llm=object(),
+        interpreter=interpreter,
+        rag_type="test",
+        rag_label="Test RAG",
+    ))
+    assert len(attempts) == 2
+    assert response.answer == REFUSAL_TEXT
+
+
 def test_servico_compartilhado_preserva_contrato_http(monkeypatch):
     node = SimpleNamespace(
         metadata={"source_file": "boletim.pdf", "page": 2},

@@ -8,7 +8,7 @@ import os
 
 from llama_index.core import Settings
 
-from rag_core.llm import make_llm, require_api_key
+from rag_core.llm import make_llm, make_rerank_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.index_bootstrap import ensure_portable_index
 from rag_core.index_manifest import (
@@ -64,7 +64,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[SelfRAGEngin
     table_retriever = build_hybrid_retriever(
         index, bm25_nodes, node_type="table", llm=interp_llm
     )
-    reranker = build_llm_reranker(interp_llm)
+    reranker = build_llm_reranker(make_rerank_llm())
 
     text_ret   = TextRetriever(text_retriever, reranker)
     tables_ret = TablesRetriever(table_retriever, reranker, extract_llm)

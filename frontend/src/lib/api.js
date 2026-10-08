@@ -129,3 +129,5 @@ export function isBackendReady(health) {
   if (typeof health.orchestrator_ready === "boolean") return health.orchestrator_ready;
   return Boolean(health.engine_ready);
 }
+
+export const ACTIVE_RAG_TYPE = "principal";

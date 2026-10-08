@@ -90,6 +90,18 @@ def _requires_complete_coverage(question: str) -> bool:
     return bool(_COMPLETE_COVERAGE_RE.search(question or ""))
 
 
+def _with_temporal_tables(sources: list[str]) -> list[str]:
+    """Inclui séries sempre que tabelas forem pedidas.
+
+    O TablesRetriever descarta tabelas temporais (mensais, trimestrais, anuais),
+    que só chegam pelo retriever de séries. Quando o interpretador escolhia
+    tabelas sem séries, esses dados sumiam sem aviso (ex.: PNAD trimestral).
+    """
+    if "tables" in sources and "timeseries" not in sources:
+        return [*sources, "timeseries"]
+    return list(sources)
+
+
 def _coverage_score(attempt: "_EngineAttempt") -> tuple[int, int, int]:
     sentences = len([
         match for match in _SENTENCE_RE.finditer(attempt.answer or "")
@@ -324,7 +336,7 @@ async def execute_engine_query(
     interp = await asyncio.to_thread(interpreter, contextual_question, interp_llm)
     complete_coverage = _requires_complete_coverage(question)
     engine_question = contextual_question
-    selected_sources = interp["sources"]
+    selected_sources = _with_temporal_tables(interp["sources"])
     rewritten_query = interp["rewritten_query"]
     if complete_coverage:
         engine_question += _COMPLETE_COVERAGE_INSTRUCTION
@@ -347,6 +359,7 @@ async def execute_engine_query(
             or (complete_coverage and _looks_incomplete(attempt))
         )
     )
+    recovery_refused = False
     if needs_recovery:
         log.warning(
             "Tentando recuperar lacunas de suporte com busca ampliada",
@@ -370,6 +383,7 @@ async def execute_engine_query(
             rewritten_query=rewritten_query,
             is_labor_market=interp.get("is_labor_market", False),
         )
+        recovery_refused = recovery.answer == REFUSAL_TEXT
         recovery_is_preferred = (
             (attempt.answer == REFUSAL_TEXT and recovery.answer != REFUSAL_TEXT)
             or (
@@ -388,8 +402,14 @@ async def execute_engine_query(
         if recovery_is_preferred:
             attempt = recovery
 
-    # Recusas ou respostas sem afirmações numéricas ainda recebem nova síntese.
-    if _answer_retries_enabled() and _needs_qualitative_retry(attempt):
+    # Recusas ou respostas sem afirmações numéricas ainda recebem nova síntese —
+    # exceto a recusa que a busca ampliada já confirmou: repetir só a repetia.
+    refusal_confirmed = attempt.answer == REFUSAL_TEXT and recovery_refused
+    if (
+        _answer_retries_enabled()
+        and _needs_qualitative_retry(attempt)
+        and not refusal_confirmed
+    ):
         pre_qualitative_attempt = attempt
         log.warning(
             "Tentando nova resposta com os valores numericos validados",

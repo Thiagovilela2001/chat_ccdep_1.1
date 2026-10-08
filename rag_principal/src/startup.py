@@ -8,7 +8,7 @@ import os
 
 from llama_index.core import Settings
 
-from rag_core.llm import make_llm, require_api_key
+from rag_core.llm import make_llm, make_rerank_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.index_bootstrap import ensure_portable_index
 from rag_core.index_manifest import resolve_data_dir, resolve_db_dir
@@ -104,7 +104,7 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     if llm_reranking_enabled():
         # Em provedores com janela/latência adequadas, o LLM refina os
         # candidatos híbridos em lotes controlados.
-        reranker = build_llm_reranker(interp_llm)
+        reranker = build_llm_reranker(make_rerank_llm())
     else:
         # Ollama local: preserva o score híbrido e evita prompts maiores que a
         # janela ativa do modelo, além de eliminar uma chamada lenta por busca.

@@ -1,67 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
-  AlertTriangle,
-  ArrowUp,
-  Baby,
-  BookOpen,
-  Briefcase,
-  Building2,
-  ChartLine,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  CircleStop,
-  Clock3,
-  Code2,
-  Copy,
-  Database,
-  Download,
-  Factory,
-  FileText,
-  Gauge,
-  HandHeart,
-  HeartPulse,
-  History,
-  Hourglass,
-  ListChecks,
-  MapPin,
   Menu,
-  MessageSquarePlus,
   Moon,
-  PanelLeftClose,
   PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
-  RefreshCw,
-  Route,
-  Scale,
-  Search,
-  Settings,
-  ShieldCheck,
   Sun,
-  Users,
-  X,
 } from "lucide-react";
 
 import {
+  ACTIVE_RAG_TYPE,
   apiUrls,
   checkHealth,
   isBackendReady,
   queryBackend,
 } from "./lib/api";
-import {
-  isCalendarYearCitation,
-} from "./lib/numericCitations";
 import { upsertConversation, validStoredConversations } from "./lib/conversations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
 import { rotateFeaturedQuestions } from "./lib/suggestions";
 
-import { ProgressStepper } from "./components/ProgressStepper";
-import { SourcesDrawer } from "./components/SourcesDrawer";
+import { Composer } from "./components/Composer";
+import { EmptyState } from "./components/EmptyState";
 import { ExportModal } from "./components/ExportModal";
+import { Inspector } from "./components/Inspector";
+import { LoadingMessage, Message } from "./components/Message";
+import { SettingsDialog } from "./components/SettingsDialog";
+import { Sidebar } from "./components/Sidebar";
+import { SourcesDrawer } from "./components/SourcesDrawer";
 
 const STORAGE = {
   messages: "nadia.messages.v1",
@@ -72,14 +35,9 @@ const STORAGE = {
   conversationId: "nadia.conversationId.v1",
 };
 
-const ACTIVE_RAG_TYPE = "principal";
 const ASSISTANT_MODE_LABEL = "Análise documental";
 
 const CLIENT_DIAGNOSTIC_URL = "/client-error";
-
-function escapeRegExp(value) {
-  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 function reportClientDiagnostic(detail) {
   fetch(CLIENT_DIAGNOSTIC_URL, {
@@ -93,36 +51,6 @@ function reportClientDiagnostic(detail) {
     }),
   }).catch(() => {});
 }
-
-function highlightVerifiedValues(text, values = []) {
-  const content = String(text || "");
-  const uniqueValues = [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))]
-    .sort((left, right) => right.length - left.length);
-  if (!content || uniqueValues.length === 0) return content;
-
-  const pattern = new RegExp(`(${uniqueValues.map(escapeRegExp).join("|")})`, "g");
-  const parts = content.split(pattern);
-  return parts.map((part, index) => (
-    uniqueValues.includes(part)
-      ? <mark className="verified-source-value" key={`${part}-${index}`}>{part}</mark>
-      : part
-  ));
-}
-
-const SUGGESTION_ICONS = {
-  labor: Briefcase,
-  social: HandHeart,
-  activity: Factory,
-  comparison: Scale,
-  demography: Users,
-  "demography-aging": Hourglass,
-  "demography-fertility": Baby,
-  "demography-longevity": HeartPulse,
-  "demography-migration": Route,
-  "demography-projections": ChartLine,
-  investment: Building2,
-  regional: MapPin,
-};
 
 const uid = () =>
   globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -155,639 +83,6 @@ function storedEndpoints() {
   );
 }
 
-function formatMs(value) {
-  if (!Number.isFinite(Number(value))) return "—";
-  const ms = Number(value);
-  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
-}
-
-function relativeTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "agora";
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function MetricChip({ icon: Icon, children, tone = "neutral" }) {
-  return (
-    <span className={`metric-chip metric-chip--${tone}`}>
-      <Icon size={13} aria-hidden="true" />
-      {children}
-    </span>
-  );
-}
-
-function AnswerMetrics({ meta }) {
-  const elapsed = meta?.timings?.total_ms ?? meta?._client_roundtrip_ms;
-  if (elapsed == null) return null;
-  return (
-    <div className="answer-metrics">
-      <MetricChip icon={Clock3}>{formatMs(elapsed)}</MetricChip>
-    </div>
-  );
-}
-
-function BrandMark() {
-  return (
-    <div className="brand-mark" aria-hidden="true">
-      <span>n</span>
-    </div>
-  );
-}
-
-function ClearHistoryButton({ onClearHistory }) {
-  const [confirming, setConfirming] = useState(false);
-  const timerRef = useRef(null);
-
-  function handleClick() {
-    if (!confirming) {
-      setConfirming(true);
-      timerRef.current = setTimeout(() => setConfirming(false), 3000);
-    } else {
-      clearTimeout(timerRef.current);
-      setConfirming(false);
-      onClearHistory();
-    }
-  }
-
-  useEffect(() => () => clearTimeout(timerRef.current), []);
-
-  return (
-    <button
-      className={`clear-history-btn ${confirming ? "is-confirming" : ""}`}
-      onClick={handleClick}
-      aria-label={confirming ? "Confirmar limpeza do histórico" : "Limpar histórico de conversas"}
-    >
-      <X size={13} />
-      {confirming ? "Confirmar limpeza" : "Limpar histórico"}
-    </button>
-  );
-}
-
-function Sidebar({
-  open,
-  onClose,
-  health,
-  healthState,
-  healthError,
-  onRefresh,
-  conversations,
-  activeConversationId,
-  onNewChat,
-  onConversationPick,
-  onOpenSettings,
-  onClearHistory,
-  onToggleCollapse,
-}) {
-  const [historyCollapsed, setHistoryCollapsed] = useState(false);
-  const history = [...conversations].sort(
-    (left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0),
-  );
-  const ready = isBackendReady(health);
-
-  return (
-    <>
-      <button
-        className={`mobile-scrim ${open ? "is-open" : ""}`}
-        onClick={onClose}
-        aria-label="Fechar menu"
-      />
-      <aside className={`sidebar ${open ? "is-open" : ""}`}>
-        <div className="sidebar-government">
-          <span>SP</span>
-          <strong>Governo do Estado de São Paulo</strong>
-        </div>
-        <div className="sidebar-head">
-          <a className="brand" href="#top" aria-label="Nadia — início">
-            <span className="seade-wordmark">SEADE</span>
-            <span>
-              <strong>Nadia</strong>
-              <small>Assistente de dados</small>
-            </span>
-          </a>
-          <div className="sidebar-head-actions">
-            <button
-              type="button"
-              className="icon-button sidebar-collapse-btn"
-              onClick={onToggleCollapse}
-              aria-label="Recolher histórico"
-              title="Recolher barra lateral (Ctrl+B)"
-            >
-              <PanelLeftClose size={18} />
-            </button>
-            <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu">
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        <button className="new-chat" onClick={onNewChat}>
-          <MessageSquarePlus size={18} />
-          Nova análise
-        </button>
-
-        <section className="sidebar-section history-section">
-          <button
-            type="button"
-            className="sidebar-label sidebar-label-toggle"
-            onClick={() => setHistoryCollapsed((prev) => !prev)}
-            aria-expanded={!historyCollapsed}
-            aria-label={historyCollapsed ? "Expandir histórico de conversas" : "Recolher histórico de conversas"}
-            title={historyCollapsed ? "Expandir histórico" : "Recolher histórico"}
-          >
-            <span className="sidebar-label-main">
-              <History size={14} />
-              <span>Histórico</span>
-              {history.length > 0 && (
-                <span className="history-count-badge">{history.length}</span>
-              )}
-            </span>
-            <span className="sidebar-label-chevron">
-              {historyCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-            </span>
-          </button>
-          <div className={`history-list ${historyCollapsed ? "is-collapsed" : ""}`}>
-            {history.length === 0 ? (
-              <p className="history-empty">Suas análises aparecerão aqui.</p>
-            ) : (
-              history.map((conversation) => (
-                <button
-                  className={conversation.id === activeConversationId ? "is-active" : ""}
-                  key={conversation.id}
-                  onClick={() => onConversationPick(conversation)}
-                  aria-current={conversation.id === activeConversationId ? "page" : undefined}
-                >
-                  <span>{conversation.title}</span>
-                  <small>{relativeTime(conversation.createdAt)}</small>
-                </button>
-              ))
-            )}
-          </div>
-          {!historyCollapsed && history.length > 0 && (
-            <ClearHistoryButton onClearHistory={onClearHistory} />
-          )}
-        </section>
-
-        <div className="sidebar-foot">
-          <button className="connection-card" onClick={onRefresh} disabled={healthState === "checking"}>
-            <span className={`status-orb status-orb--${ready ? "ready" : healthState}`} />
-            <span>
-              <strong>{ready ? "Sistema operacional" : healthState === "checking" ? "Verificando" : "Indisponível"}</strong>
-              <small title={healthError || undefined}>
-                {healthError || "Base documental"}
-              </small>
-            </span>
-            <RefreshCw size={15} className={healthState === "checking" ? "is-spinning" : ""} />
-          </button>
-          <button className="settings-button" onClick={onOpenSettings}>
-            <Settings size={17} />
-            Configurações
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-function EmptyState({ onPick, input, setInput, onSubmit, suggestions }) {
-  const visibleSuggestions = suggestions.slice(0, 6);
-
-  return (
-    <section className="empty-state">
-      <div className="hero-intro">
-        <div className="welcome-mark">
-          <BrandMark />
-          <span>
-            <small>Inteligência pública aplicada</small>
-            Nadia · Fundação Seade
-          </span>
-        </div>
-        <h1>Transforme dados de São Paulo em decisões mais claras.</h1>
-        <p>
-          Investigue trabalho, economia e sociedade em linguagem natural. A Nadia cruza
-          documentos oficiais e apresenta cada resposta com fontes rastreáveis.
-        </p>
-      </div>
-      <Composer
-        value={input}
-        setValue={setInput}
-        onSubmit={onSubmit}
-        loading={false}
-        onCancel={() => {}}
-      />
-      <div className="trust-row" aria-label="Compromissos da resposta">
-        <span><ShieldCheck size={15} /> Fontes oficiais</span>
-        <span><CheckCircle2 size={15} /> Números conferidos</span>
-        <span><ListChecks size={15} /> Síntese objetiva</span>
-      </div>
-
-      <section className="suggestion-section" aria-labelledby="suggestion-title">
-        <div className="suggestion-label">
-          <span>
-            <small>Comece por uma pergunta</small>
-            <strong id="suggestion-title">Explore os dados do Estado</strong>
-          </span>
-          <div className="theme-ribbon" aria-label="Áreas de conhecimento">
-            <span><Briefcase size={14} /> Trabalho</span>
-            <span><ChartLine size={14} /> Economia</span>
-            <span><Users size={14} /> Sociedade</span>
-          </div>
-        </div>
-        <div className="suggestion-carousel" aria-label="Perguntas sugeridas">
-          {visibleSuggestions.map(({ id, eyebrow, title }) => {
-            const isDemography = id.startsWith("demography");
-            const Icon = SUGGESTION_ICONS[id] || BookOpen;
-            return (
-              <button
-                type="button"
-                className={`suggestion-card ${isDemography ? "is-demography" : ""}`}
-                key={id}
-                onClick={() => onPick(title)}
-              >
-                <span className="suggestion-icon"><Icon size={18} /></span>
-                <span className="suggestion-copy">
-                  <small>{eyebrow}</small>
-                  <strong>{title}</strong>
-                </span>
-                <ArrowUp size={16} />
-              </button>
-            );
-          })}
-        </div>
-      </section>
-    </section>
-  );
-}
-
-function CopyButton({ text }) {
-  const [status, setStatus] = useState("idle");
-  const timerRef = useRef(null);
-
-  useEffect(() => () => clearTimeout(timerRef.current), []);
-
-  async function handleClick() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus("copied");
-    } catch {
-      setStatus("failed");
-    }
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setStatus("idle"), 2000);
-  }
-
-  return (
-    <button type="button" onClick={handleClick} aria-live="polite">
-      {status === "copied" ? <Check size={14} /> : <Copy size={14} />}
-      {status === "copied" ? "Copiado" : status === "failed" ? "Falha ao copiar" : "Copiar"}
-    </button>
-  );
-}
-
-function Message({ message, onInspect, onExport, onOpenDrawer, onRetry }) {
-  const isUser = message.role === "user";
-  return (
-    <article className={`message message--${message.role}`}>
-      <div className="message-avatar">{isUser ? "Você" : <BrandMark />}</div>
-      <div className="message-content">
-        <div className="message-heading">
-          <strong>{isUser ? "Você" : "Nadia"}</strong>
-          <time>{relativeTime(message.createdAt)}</time>
-        </div>
-        {message.error ? (
-          <>
-            <div className="error-card"><AlertTriangle size={18} /> {message.content}</div>
-            {onRetry && (
-              <div className="answer-actions">
-                <button className="is-primary" type="button" onClick={() => onRetry(message)}>
-                  <RefreshCw size={14} /> Tentar novamente
-                </button>
-              </div>
-            )}
-          </>
-        ) : isUser ? (
-          <p className="user-copy">{message.content}</p>
-        ) : (
-          <div className="markdown-body">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {message.content}
-            </ReactMarkdown>
-          </div>
-        )}
-        {!isUser && !message.error && message.meta && (
-          <>
-            <AnswerMetrics meta={message.meta} />
-            <div className="answer-actions">
-              <CopyButton text={message.content} />
-              {message.meta.sources && message.meta.sources.length > 0 && (
-                <button className="is-primary" type="button" onClick={() => onOpenDrawer?.(message.meta)}>
-                  <Database size={14} /> Fontes ({message.meta.sources.length})
-                </button>
-              )}
-              <button type="button" onClick={() => onInspect?.(message.meta)}>
-                <PanelRightOpen size={14} /> Detalhes
-              </button>
-              <button type="button" onClick={() => onExport?.(message)}>
-                <Download size={14} /> Exportar
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function LoadingMessage() {
-  return (
-    <article className="message message--assistant">
-      <div className="message-avatar"><BrandMark /></div>
-      <div className="message-content">
-        <div className="message-heading"><strong>Nadia</strong><span>Analisando</span></div>
-        <ProgressStepper active={true} />
-        <div className="thinking-card">
-          <span className="thinking-mark"><Search size={17} /></span>
-          <div>
-            <strong>Consultando as melhores fontes</strong>
-            <small>Recuperando documentos, comparando evidências e validando os números.</small>
-          </div>
-          <i /><i /><i />
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function Composer({ value, setValue, onSubmit, loading, onCancel }) {
-  const textarea = useRef(null);
-
-  useEffect(() => {
-    const element = textarea.current;
-    if (!element) return;
-    element.style.height = "0px";
-    element.style.height = `${Math.min(element.scrollHeight, 160)}px`;
-  }, [value]);
-
-  function handleKeyDown(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      if (!loading && value.trim()) onSubmit(value);
-    }
-  }
-
-  return (
-    <div className="composer-wrap">
-      <form
-        className="composer"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!loading && value.trim()) onSubmit(value);
-        }}
-      >
-        <textarea
-          ref={textarea}
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Pergunte alguma coisa sobre São Paulo"
-          rows="1"
-          maxLength="4000"
-          aria-label="Digite sua pergunta"
-        />
-        <div className="composer-bottom">
-          <span><BookOpen size={14} /> Resposta com fontes do Seade</span>
-          {loading ? (
-            <button className="send-button is-stop" type="button" onClick={onCancel} aria-label="Cancelar consulta">
-              <CircleStop size={18} />
-            </button>
-          ) : (
-            <button className="send-button" type="submit" disabled={!value.trim()} aria-label="Enviar pergunta">
-              <ArrowUp size={19} />
-            </button>
-          )}
-        </div>
-      </form>
-      <small className="composer-note">A Nadia pode cometer erros. Confirme informações importantes nas fontes.</small>
-    </div>
-  );
-}
-
-function Inspector({ open, onClose, meta, tab, setTab, developerMode, sourceRequest }) {
-  const requestedSourceIndex = sourceRequest?.meta === meta ? sourceRequest.index : null;
-  const allSources = meta?.sources || [];
-  const sources = requestedSourceIndex == null
-    ? allSources
-    : allSources
-      .map((source, index) => ({ source, originalIndex: index }))
-      .filter(({ originalIndex }) => originalIndex === Number(requestedSourceIndex));
-  const numericCitations = (meta?.numeric_citations || [])
-    .filter((citation) => !isCalendarYearCitation(citation?.value));
-  const validation = meta?.validation || {};
-  const route = meta?.route || {};
-  const timings = meta?.timings || {};
-  const [expandedSource, setExpandedSource] = useState(null);
-  const requestedIndex = requestedSourceIndex == null ? null : 0;
-  const expandedIndex = (
-    expandedSource?.meta === meta
-    && expandedSource?.requestId === sourceRequest?.id
-  ) ? expandedSource.index : requestedIndex;
-
-  return (
-    <aside className={`inspector ${open ? "is-open" : ""}`}>
-      <header>
-        <div>
-          <small>Evidências da resposta</small>
-          <strong>Transparência</strong>
-        </div>
-        <button className="icon-button" onClick={onClose} aria-label="Fechar painel">
-          <PanelRightClose size={18} />
-        </button>
-      </header>
-      {!meta ? (
-        <div className="inspector-empty">
-          <Database size={22} />
-          <strong>Nenhuma resposta selecionada</strong>
-          <p>As fontes, validações e detalhes do pipeline aparecem aqui após uma consulta.</p>
-        </div>
-      ) : (
-        <>
-          <nav className="inspector-tabs">
-            <button className={tab === "sources" ? "is-active" : ""} onClick={() => setTab("sources")}>Fontes</button>
-            <button className={tab === "validation" ? "is-active" : ""} onClick={() => setTab("validation")}>Validação</button>
-            {developerMode && <button className={tab === "pipeline" ? "is-active" : ""} onClick={() => setTab("pipeline")}>Pipeline</button>}
-          </nav>
-
-          <div className="inspector-body">
-            {tab === "sources" && (
-              <section>
-                {meta.rewritten_query && (
-                  <div className="rewritten-query">
-                    <Search size={15} />
-                    <span><small>Consulta reescrita</small>{meta.rewritten_query}</span>
-                  </div>
-                )}
-                <div className="section-title"><span>Trechos recuperados</span><b>{sources.length}</b></div>
-                <div className="source-cards">
-                  {sources.length === 0 ? <p className="muted">Nenhuma fonte detalhada retornada.</p> : sources.map((sourceEntry, index) => {
-                    const source = sourceEntry?.source || sourceEntry;
-                    const sourceIndex = sourceEntry?.originalIndex ?? index;
-                    const verifiedValues = numericCitations
-                      .filter((citation) => Number(citation.source_index) === sourceIndex)
-                      .map((citation) => citation.value);
-                    return (
-                    <article className={expandedIndex === index ? "is-expanded" : ""} key={`${source.file || "source"}-${index}`}>
-                      <button
-                        type="button"
-                        className="source-card-trigger"
-                        aria-expanded={expandedIndex === index}
-                        aria-controls={`source-excerpt-${index}`}
-                        onClick={() => setExpandedSource({
-                          meta,
-                          requestId: sourceRequest?.id,
-                          index: expandedIndex === index ? null : index,
-                        })}
-                      >
-                        <span className="file-icon"><FileText size={17} /></span>
-                        <span className="source-card-summary">
-                          <strong>{source.file || `Fonte ${index + 1}`}</strong>
-                          <small>{source.page != null ? `Página/aba ${source.page}` : "Localização não informada"}</small>
-                          <span className="score-line"><i style={{ width: `${Math.round((source.score || 0) * 100)}%` }} /><span>{Math.round((source.score || 0) * 100)}%</span></span>
-                        </span>
-                        <ChevronDown className="source-card-chevron" size={15} aria-hidden="true" />
-                      </button>
-                      {expandedIndex === index && (
-                        <div className={`source-excerpt ${verifiedValues.length > 0 ? "has-verified-values" : ""}`} id={`source-excerpt-${index}`}>
-                          <small>Trecho utilizado</small>
-                          {verifiedValues.length > 0 && (
-                            <div className="verified-source-values" aria-label="Dados verificados nesta fonte">
-                              <span>Dados verificados</span>
-                              {verifiedValues.map((value) => <b key={value}>{value}</b>)}
-                            </div>
-                          )}
-                          {source.excerpt && verifiedValues.length > 0 ? (
-                            <p className="source-excerpt-highlighted">
-                              {highlightVerifiedValues(source.excerpt, verifiedValues)}
-                            </p>
-                          ) : (
-                            <p>{source.excerpt || "O texto deste trecho não está disponível em respostas salvas anteriormente. Faça uma nova consulta para visualizá-lo."}</p>
-                          )}
-                        </div>
-                      )}
-                    </article>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {tab === "validation" && (
-              <section className="validation-panel">
-                <ValidationCard title="Validação numérica" icon={CheckCircle2} data={validation} />
-              </section>
-            )}
-
-            {tab === "pipeline" && developerMode && (
-              <section className="pipeline-panel">
-                <InfoBlock icon={Route} label="Engine escolhida" value={route.engine_label || route.engine || meta.rag_label || "—"} />
-                <InfoBlock icon={Gauge} label="Confiança" value={Number.isFinite(route.confidence) ? `${Math.round(route.confidence * 100)}%` : "—"} />
-                <InfoBlock icon={Clock3} label="Tempo total" value={formatMs(timings.total_ms ?? meta._client_roundtrip_ms)} />
-                {route.reasoning && <div className="reasoning"><small>Motivo do roteamento</small><p>{route.reasoning}</p></div>}
-                <details>
-                  <summary><Code2 size={15} /> Resposta técnica completa</summary>
-                  <pre>{JSON.stringify(meta, null, 2)}</pre>
-                </details>
-              </section>
-            )}
-          </div>
-        </>
-      )}
-    </aside>
-  );
-}
-
-function ValidationCard({ title, icon: Icon, data }) {
-  const total = Number(data?.total || 0);
-  const verified = Number(data?.verified || 0);
-  const complete = total > 0 && verified === total;
-  const percentage = total ? Math.round((verified / total) * 100) : 0;
-  return (
-    <article className={`validation-card ${complete ? "is-complete" : ""}`}>
-      <div className="validation-top">
-        <span><Icon size={18} /></span>
-        <div><small>{title}</small><strong>{total ? `${verified} de ${total}` : "Sem ocorrências"}</strong></div>
-        {total > 0 && <b>{percentage}%</b>}
-      </div>
-      {total > 0 && <div className="validation-bar"><i style={{ width: `${percentage}%` }} /></div>}
-      {data?.unverified?.length > 0 ? (
-        <div className="unverified-values">
-          <small>Itens não localizados</small>
-          {data.unverified.map((value, index) => <code key={`${value}-${index}`}>{String(value)}</code>)}
-        </div>
-      ) : total > 0 ? <p><Check size={14} /> Todos os itens conferem com as fontes.</p> : null}
-    </article>
-  );
-}
-
-function InfoBlock({ icon: Icon, label, value }) {
-  return <div className="info-block"><span><Icon size={16} /></span><div><small>{label}</small><strong>{value}</strong></div></div>;
-}
-
-function SettingsDialog({ open, onClose, endpoints, setEndpoints, apiKey, setApiKey, developerMode, setDeveloperMode }) {
-  const [draft, setDraft] = useState(endpoints[ACTIVE_RAG_TYPE] || "");
-  const closeButtonRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const previousFocus = document.activeElement;
-    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      document.removeEventListener("keydown", handleKeyDown);
-      previousFocus?.focus?.();
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-  return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-        <header>
-          <div><small>Preferências</small><h2 id="settings-title">Configurações</h2></div>
-          <button ref={closeButtonRef} className="icon-button" onClick={onClose} aria-label="Fechar configurações"><X size={18} /></button>
-        </header>
-        <div className="dialog-body">
-          <label>
-            <span>Endpoint do assistente</span>
-            <input value={draft} onChange={(event) => setDraft(event.target.value)} spellCheck="false" />
-            <small>O endereço é salvo somente neste navegador.</small>
-          </label>
-          <label>
-            <span>Chave da API</span>
-            <input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Opcional" autoComplete="off" />
-            <small>A chave fica apenas na sessão atual e nunca é persistida no histórico.</small>
-          </label>
-          <label className="toggle-row">
-            <span><strong>Modo desenvolvedor</strong><small>Exibe roteamento, tempos e o JSON técnico.</small></span>
-            <input type="checkbox" checked={developerMode} onChange={(event) => setDeveloperMode(event.target.checked)} />
-            <i />
-          </label>
-        </div>
-        <footer>
-          <button className="secondary-button" onClick={onClose}>Cancelar</button>
-          <button className="primary-button" onClick={() => { setEndpoints({ ...endpoints, [ACTIVE_RAG_TYPE]: draft.trim().replace(/\/+$/, "") }); onClose(); }}>Salvar alterações</button>
-        </footer>
-      </section>
-    </div>
-  );
-}
 export default function App() {
   const [messages, setMessages] = useState(storedMessages);
   const [conversations, setConversations] = useState(storedConversations);
@@ -852,7 +147,7 @@ export default function App() {
   const endpoints = useMemo(() => apiUrls(endpointOverrides), [endpointOverrides]);
   const activeUrl = endpoints[ACTIVE_RAG_TYPE];
 
-  function handleExport(message) {
+  const handleExport = useCallback((message) => {
     const messageIndex = messages.indexOf(message);
     const userMsg = messages.slice(0, messageIndex).reverse().find((m) => m.role === "user");
     setExportModalState({
@@ -862,15 +157,15 @@ export default function App() {
       sources: message.meta?.sources || [],
       numericCitations: message.meta?.numeric_citations || [],
     });
-  }
+  }, [messages]);
 
-  function handleOpenDrawer(meta) {
+  const handleOpenDrawer = useCallback((meta) => {
     setSourcesDrawerState({
       isOpen: true,
       sources: meta?.sources || [],
       numericCitations: meta?.numeric_citations || [],
     });
-  }
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1042,12 +337,12 @@ export default function App() {
     submitQuestion(errorMessage.question, messages.slice(0, Math.max(index - 1, 0)));
   }
 
-  function inspect(meta, sourceIndex = null) {
+  const inspect = useCallback((meta, sourceIndex = null) => {
     setSelectedMeta(meta);
     setSourceRequest({ id: uid(), meta, index: sourceIndex });
     setInspectorOpen(true);
     setInspectorTab("sources");
-  }
+  }, []);
 
   return (
     <div className={`app-shell ${inspectorOpen ? "has-inspector" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`} id="top">

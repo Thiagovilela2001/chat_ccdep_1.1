@@ -169,6 +169,23 @@ def _provedor_local(monkeypatch, server, **env):
         monkeypatch.setenv(name, value)
 
 
+def test_llm_do_rerank_falha_rapido_sem_retentativa(monkeypatch):
+    # Com o timeout de 30 s e 3 retentativas do interp_llm, um lote de rerank
+    # chegou a travar 32 s; o reranker tolerante já cai na ordem híbrida.
+    monkeypatch.setenv("RAG_LLM_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setenv("RAG_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("RAG_INTERP_MODEL", "modelo-interprete")
+    monkeypatch.delenv("RAG_RERANK_TIMEOUT", raising=False)
+
+    rerank_llm = llm.make_rerank_llm()
+    assert rerank_llm.model == "modelo-interprete"
+    assert rerank_llm.timeout == 10.0
+    assert rerank_llm.max_retries == 0
+
+    monkeypatch.setenv("RAG_RERANK_TIMEOUT", "4")
+    assert llm.make_rerank_llm().timeout == 4.0
+
+
 def test_make_llm_rejeita_papeis_conflitantes():
     import pytest
     with pytest.raises(ValueError, match="mutuamente exclusivos"):

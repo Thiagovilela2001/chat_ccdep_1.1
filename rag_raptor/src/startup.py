@@ -33,7 +33,7 @@ from rag_core.indexing import (
 )
 from rag_core.ingestion import load_documents
 from rag_core.domain_skills import DomainSkillRegistry
-from rag_core.llm import interp_model, make_llm, require_api_key
+from rag_core.llm import interp_model, make_llm, make_rerank_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.processing import process_documents
 from .raptor_engine import RaptorEngine
@@ -156,7 +156,7 @@ def initialize(base_dir: str, data_dir: str | None = None) -> tuple[RaptorEngine
     table_retriever = build_hybrid_retriever(
         index, all_nodes, node_type="table", llm=interp_llm
     )
-    reranker = build_llm_reranker(interp_llm)
+    reranker = build_llm_reranker(make_rerank_llm())
 
     text_ret   = TextRetriever(text_retriever, reranker)
     tables_ret = TablesRetriever(table_retriever, reranker, extract_llm)
