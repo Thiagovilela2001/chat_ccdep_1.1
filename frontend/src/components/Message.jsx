@@ -11,6 +11,7 @@ import {
   PanelRightOpen,
   RefreshCw,
   Search,
+  Sparkles,
 } from "lucide-react";
 
 import { formatMs, relativeTime } from "../lib/format";
@@ -117,21 +118,55 @@ export const Message = memo(function Message({ message, onInspect, onExport, onO
   );
 });
 
-export function LoadingMessage() {
+export function LoadingMessage({ developerMode = false }) {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getThinkingPhase = (s) => {
+    if (s < 4) return "Consultando documentos do acervo...";
+    if (s < 10) return "Analisando dados e evidências...";
+    return "Estruturando resposta fundamentada...";
+  };
+
   return (
     <article className="message message--assistant">
       <div className="message-avatar"><BrandMark /></div>
       <div className="message-content">
-        <div className="message-heading"><strong>Nadia</strong><span>Analisando</span></div>
-        <ProgressStepper active={true} />
-        <div className="thinking-card">
-          <span className="thinking-mark"><Search size={17} /></span>
-          <div>
-            <strong>Consultando as melhores fontes</strong>
-            <small>Recuperando documentos, comparando evidências e validando os números.</small>
+        <div className="message-heading"><strong>Nadia</strong><span>Pensando...</span></div>
+        {developerMode ? (
+          <>
+            <ProgressStepper active={true} />
+            <div className="thinking-card">
+              <span className="thinking-mark"><Search size={17} /></span>
+              <div>
+                <strong>Consultando as melhores fontes</strong>
+                <small>Recuperando documentos, comparando evidências e validando os números.</small>
+              </div>
+              <i /><i /><i />
+            </div>
+          </>
+        ) : (
+          <div className="thinking-card" role="status" aria-live="polite">
+            <span className="thinking-mark">
+              <Sparkles size={16} className="spin-slow" />
+            </span>
+            <div>
+              <strong>Pensando...</strong>
+              <small>{getThinkingPhase(seconds)}</small>
+            </div>
+            <span className="thinking-timer" aria-label={`Tempo decorrido: ${seconds} segundos`}>
+              <Clock3 size={12} />
+              <span>{seconds}s</span>
+            </span>
+            <i /><i /><i />
           </div>
-          <i /><i /><i />
-        </div>
+        )}
       </div>
     </article>
   );

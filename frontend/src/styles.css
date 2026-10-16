@@ -2347,3 +2347,30 @@ h1, h2, h3, .empty-state h1, .message-heading strong, .section-title,
   white-space: nowrap;
 }
 .sidebar .brand small { white-space: normal; line-height: 1.2; }
+
+/* Estado de pensamento elegante (Thinking Indicator) */
+.thinking-card strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.thinking-card small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+.thinking-mark {
+  border-radius: 8px;
+}
+.thinking-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  margin-right: 2px;
+}

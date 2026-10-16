@@ -430,7 +430,7 @@ export default function App() {
                   />
                 ))
               )}
-              {loading && <LoadingMessage />}
+              {loading && <LoadingMessage developerMode={developerMode} />}
             </div>
           </div>
           {(messages.length > 0 || loading) && (
