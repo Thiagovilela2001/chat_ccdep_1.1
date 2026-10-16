@@ -15,7 +15,6 @@ import {
 } from "./lib/api";
 import { upsertConversation, validStoredConversations } from "./lib/conversations";
 import { readStorage, readStoredJson, writeStorage } from "./lib/storage";
-import { rotateFeaturedQuestions } from "./lib/suggestions";
 
 import { Composer } from "./components/Composer";
 import { EmptyState } from "./components/EmptyState";
@@ -86,9 +85,6 @@ function storedEndpoints() {
 export default function App() {
   const [messages, setMessages] = useState(storedMessages);
   const [conversations, setConversations] = useState(storedConversations);
-  const [featuredQuestions] = useState(
-    () => rotateFeaturedQuestions(globalThis.localStorage),
-  );
   const [theme, setTheme] = useState(storedTheme);
   const [endpointOverrides, setEndpointOverrides] = useState(storedEndpoints);
   const [apiKey, setApiKey] = useState(() => readStorage(globalThis.sessionStorage, STORAGE.apiKey));
@@ -414,11 +410,9 @@ export default function App() {
             <div className={`message-column ${messages.length === 0 ? "is-empty" : ""}`}>
               {messages.length === 0 ? (
                 <EmptyState
-                  onPick={submitQuestion}
                   input={input}
                   setInput={setInput}
                   onSubmit={submitQuestion}
-                  suggestions={featuredQuestions}
                 />
               ) : (
                 messages.map((message, index) => (

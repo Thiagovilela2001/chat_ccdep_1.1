@@ -43,8 +43,9 @@ describe("inicialização da interface", () => {
 
     expect(container.textContent).toContain("Nadia");
     expect(container.textContent).not.toContain("⌘ K");
-    expect(container.textContent).toContain("Mercado de trabalho");
+    expect(container.textContent).toContain("Fontes oficiais");
     expect(container.textContent).toContain("Análise documental");
+    expect(container.querySelector(".suggestion-card")).toBeNull();
     expect(container.textContent).not.toContain("Metodologia");
     expect(container.textContent).not.toContain("Meta RAG");
     expect(container.textContent).not.toContain("Agentic");
