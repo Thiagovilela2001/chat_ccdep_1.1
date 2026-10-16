@@ -222,6 +222,14 @@ def _run_metadata(args) -> dict:
 
 
 def _ragas_judge_llm():
+    model, client = judge_client()
+    return model, llm_factory(
+        model, client=client, max_tokens=8192, temperature=0
+    )
+
+
+def judge_client() -> tuple[str, OpenAIClient]:
+    """Modelo e cliente OpenAI-compatível do judge, resolvidos pelo ambiente."""
     model = os.getenv("RAGAS_JUDGE_MODEL", RAGAS_JUDGE_MODEL)
     base_url = os.getenv("RAGAS_JUDGE_BASE_URL", RAGAS_JUDGE_BASE_URL)
     provider = _derive_judge_provider(base_url)
@@ -241,10 +249,7 @@ def _ragas_judge_llm():
         raise EnvironmentError(
             f"Defina RAGAS_JUDGE_API_KEY ou a chave para {provider} ({provider.upper()}_API_KEY) para executar o judge RAGAS."
         )
-    client = OpenAIClient(api_key=api_key, base_url=base_url)
-    return model, llm_factory(
-        model, client=client, max_tokens=8192, temperature=0
-    )
+    return model, OpenAIClient(api_key=api_key, base_url=base_url)
 
 
 def load_dataset(path: str, ids: set[str] | None = None) -> list[dict]:
