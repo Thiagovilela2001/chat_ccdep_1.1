@@ -60,6 +60,7 @@ index_artifacts/
 # Resultados de avaliação: mudam a cada rodada de evaluate.py — o dataset de
 # referência (golden_dataset.json) continua versionado.
 evaluation/results*.json
+evaluation/runs/
 
 # Artefatos locais de agentes/skills gerados fora da raiz versionada
 rag_principal/.agents/
