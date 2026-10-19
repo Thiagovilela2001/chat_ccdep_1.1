@@ -73,6 +73,9 @@ cru), então trocar de LLM é só configuração:
 | `RAG_POPUP_MODEL` | `sabiazinho-4` (maritaca) | Explicações curtas dos popups numéricos |
 | `RAG_NUMERIC_VALIDATION` | `1` | Validação numérica e cards flutuantes (`1`=ativo, `0`=desativado) |
 | `RAG_ANSWER_RETRIES` | `1` | Novas tentativas para recusa com fontes e cobertura incompleta (`1`=ativo, `0`=desativado) |
+| `RAG_STRICT_INFERENCE` | `1` | Disciplina inferencial no guia de escrita (`rag_core/answer_style.py`); `0` volta ao fechamento "integrador" |
+| `RAG_DIRECTION_CHECK` | `1` | Reescreve frase "de X para Y" com verbo de direção contrário aos valores (`rag_core/direction_check.py`) |
+| `RAG_ARTICLE_REASONING_EFFORT` | `low` | Raciocínio da síntese no **modo artigo** (`article_mode` no `POST /query`, botão "Modo artigo" no frontend; só `rag_principal`). O modo também pede título `## ...` e anexa `*Fonte: ...*` sob cada tabela (`rag_core/table_sources.py`) |
 | `RAG_LLM_BASE_URL` / `RAG_LLM_API_KEY` | — | Sobrescrevem base/chave (provedor custom) |
 
 Chaves: Maritaca usa `MARITACA_API_KEY`; OpenAI usa `OPENAI_API_KEY`.

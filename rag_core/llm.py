@@ -147,6 +147,11 @@ def extract_reasoning_effort() -> str | None:
     return _parse_reasoning_effort("RAG_EXTRACT_REASONING_EFFORT")
 
 
+def article_reasoning_effort() -> str:
+    """Esforço da síntese no modo artigo (`RAG_ARTICLE_REASONING_EFFORT`, padrão `low`)."""
+    return _parse_reasoning_effort("RAG_ARTICLE_REASONING_EFFORT") or "low"
+
+
 def reasoning_effort(role: str = "main") -> str | None:
     """
     Esforço de raciocínio por papel: 'main' (síntese), 'interp' (interpretação)
@@ -216,6 +221,7 @@ def make_llm(
     timeout: float = 60.0,
     model: str | None = None,
     max_retries: int | None = None,
+    reasoning: str | None = None,
 ):
     """
     Cria o LLM do LlamaIndex para o provedor configurado.
@@ -224,6 +230,7 @@ def make_llm(
     - síntese (padrão): model=main_model(), reasoning=RAG_LLM_REASONING_EFFORT
     - interp=True / role='interp': model=interp_model(), reasoning=RAG_INTERP_REASONING_EFFORT
     - extract=True / role='extract': model=extract_model(), reasoning=RAG_EXTRACT_REASONING_EFFORT
+    `reasoning` sobrescreve o esforço do papel (ex.: LLM do modo artigo).
     """
     if interp and extract:
         raise ValueError("interp=True e extract=True são mutuamente exclusivos.")
@@ -242,7 +249,7 @@ def make_llm(
     else:
         mdl = cfg["main_model"]
 
-    effort = reasoning_effort(eff_role)
+    effort = reasoning or reasoning_effort(eff_role)
     adicional: dict = {"reasoning_effort": effort} if effort else {}
     retries: dict = {} if max_retries is None else {"max_retries": max_retries}
 

@@ -11,7 +11,14 @@ Restrições respeitadas pelo guia (não relaxar sem revisar os consumidores):
   confere cada número da resposta contra os chunks de origem, e um valor
   arredondado ("cerca de 650 mil" para "649 mil") reprova na verificação;
 - a frase de recusa compartilhada fica em rag_core/answer_policy.py.
+
+`RAG_STRICT_INFERENCE` (padrão `1`; `0` desliga) troca o fechamento "integrador" por uma síntese que
+só recombina o que já foi dito e acrescenta a disciplina inferencial
+(direção, comparabilidade, causalidade, estabilidade, recordes). Motivação:
+evaluation/scientific_eval.py mediu inferência como o critério mais fraco
+(0,75) mesmo com números corretos.
 """
+import os
 
 ANALYST_WRITING_GUIDE = """\
 COMO ESCREVER A RESPOSTA
@@ -118,3 +125,45 @@ O que a resposta NÃO deve conter (guardrail)
 O texto final deve ler-se como um relatório de conjuntura escrito por um
 pesquisador — natural, técnico e fluido — mantendo rigor integral: nenhum
 fato, número ou relação causal que as fontes não sustentem."""
+
+INTEGRATIVE_CLOSE = """\
+- Feche com um parágrafo analítico integrador que contextualize o comportamento
+  geral segundo as explicações macroeconômicas e setoriais trazidas pelas fontes."""
+
+_SYNTHESIS_CLOSE = """\
+- Feche com um parágrafo de síntese que apenas recombine o que já foi
+  demonstrado acima. O fechamento não introduz conclusão, explicação, causa,
+  comparação ou número que não tenha aparecido antes na resposta."""
+
+INFERENCE_DISCIPLINE = """\
+DISCIPLINA INFERENCIAL (rigor de artigo científico)
+- Direção: antes de escrever alta, queda, avanço, recuo, ganho, perda, aumento
+  ou redução, compare os dois valores citados; o verbo concorda com o sinal da
+  diferença. Vale também para participações e percentuais (de 48% para 57% é
+  aumento de participação, mesmo que o valor absoluto tenha caído).
+- Comparabilidade: só compare valores do mesmo indicador, unidade, universo e
+  base temporal (mês com mês, acumulado com acumulado, ano com ano, quatro
+  trimestres com quatro trimestres). Se as bases diferem, apresente os valores
+  separadamente e não tire conclusão comparativa.
+- Diferença entre taxas é em pontos percentuais (p.p.); variação relativa é em %.
+- Causalidade e explicação: só atribua causa, motivação ou efeito quando a fonte
+  o fizer, com o mesmo grau de certeza dela. Coincidência temporal não é causa.
+- Estabilidade: não afirme que algo "se manteve", "não se alterou" ou
+  "permaneceu" sem valores dos dois períodos.
+- Extremos: "maior da série", "recorde", "menor patamar" ou "inédito" só com
+  afirmação literal da fonte.
+- Expressões como "isso indica", "reflete", "evidencia" ou "decorre de" exigem
+  um trecho que sustente exatamente essa leitura.
+- Entre uma conclusão mais forte e uma mais fraca, escreva a mais fraca que os
+  dados sustentam."""
+
+
+def strict_inference_enabled() -> bool:
+    return os.getenv("RAG_STRICT_INFERENCE", "1").strip().lower() not in {"", "0", "false", "no", "off"}
+
+
+if strict_inference_enabled():
+    ANALYST_WRITING_GUIDE = (
+        ANALYST_WRITING_GUIDE.replace(INTEGRATIVE_CLOSE, _SYNTHESIS_CLOSE)
+        + "\n\n" + INFERENCE_DISCIPLINE
+    )

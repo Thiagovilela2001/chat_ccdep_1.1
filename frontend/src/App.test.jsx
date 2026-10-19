@@ -57,6 +57,31 @@ describe("inicialização da interface", () => {
     );
   });
 
+  it("modo artigo liga no botão, persiste e vai para a API", async () => {
+    globalThis.fetch = vi.fn((url) => Promise.resolve(String(url).endsWith("/query")
+      ? { ok: true, json: async () => ({ answer: "Resposta rigorosa.", sources: [] }) }
+      : { ok: true, json: async () => ({ engine_ready: true }) }));
+    await act(async () => root.render(<App />));
+
+    const toggle = container.querySelector(".mode-toggle");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    await act(async () => toggle.click());
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    expect(localStorage.getItem("nadia.articleMode.v1")).toBe("true");
+    expect(container.textContent).toContain("Modo artigo ligado");
+
+    const textarea = container.querySelector("textarea");
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+    await act(async () => {
+      setValue.call(textarea, "Como evoluiu o emprego?");
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => container.querySelector("form.composer").requestSubmit());
+
+    const queryCall = globalThis.fetch.mock.calls.find(([url]) => String(url).endsWith("/query"));
+    expect(JSON.parse(queryCall[1].body)).toMatchObject({ question: "Como evoluiu o emprego?", article_mode: true });
+  });
+
   it("agrupa perguntas da mesma análise em uma única entrada do histórico", async () => {
     localStorage.setItem("nadia.conversationId.v1", "conversation-1");
     localStorage.setItem("nadia.messages.v1", JSON.stringify([

@@ -61,6 +61,20 @@ describe("configuração da API", () => {
     fetchMock.mockRestore();
   });
 
+  it("envia article_mode só quando o modo artigo está ligado", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({ answer: "Resposta rigorosa." }),
+    });
+
+    await queryBackend("https://rag.example", "Pergunta?", "", { articleMode: true });
+    await queryBackend("https://rag.example", "Pergunta?");
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ question: "Pergunta?", article_mode: true });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ question: "Pergunta?" });
+    fetchMock.mockRestore();
+  });
+
   it("explica em português as falhas que o usuário pode resolver", async () => {
     const cases = [
       [401, /chave válida/i],

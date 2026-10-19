@@ -8,7 +8,7 @@ import os
 
 from llama_index.core import Settings
 
-from rag_core.llm import make_llm, make_rerank_llm, require_api_key
+from rag_core.llm import article_reasoning_effort, make_llm, make_rerank_llm, require_api_key
 from rag_core.logger import get_logger, setup_logging
 from rag_core.index_bootstrap import ensure_portable_index
 from rag_core.index_manifest import resolve_data_dir, resolve_db_dir
@@ -91,6 +91,8 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
     # Extração estruturada é passo mecânico (JSON a partir do contexto): pode usar
     # um modelo mais leve que o da síntese sem perder a resposta final.
     extract_llm = make_llm(extract=True, temperature=0.0, timeout=60.0)
+    # Modo artigo: mesma síntese com raciocínio do modelo; o raciocínio alonga a chamada.
+    article_llm = make_llm(temperature=0.0, timeout=150.0, reasoning=article_reasoning_effort())
 
     # 5. Retriever híbrido compartilhado + reranker
     log.info("[4] Inicializando retrievers")
@@ -143,6 +145,7 @@ def initialize(base_dir: str, data_dir: str | None = None, use_graph: bool = Fal
         domain_skills=domain_skills,
         graph_retriever=graph_ret,
         reranker=reranker,
+        article_llm=article_llm,
     )
 
     log.info("Sistema pronto")

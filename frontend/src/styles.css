@@ -288,6 +288,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .composer-bottom { display: flex; align-items: center; justify-content: space-between; }
 .composer-bottom > span { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-faint); }.composer-bottom > span svg { color: var(--accent); }
 .send-button { display: grid; place-items: center; cursor: pointer; border: 0; }.send-button:disabled { cursor: default; }
+.composer-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
+.composer-bottom { gap: 8px; }.composer-bottom > span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mode-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; color: var(--ink-faint); font: inherit; font-size: 11px; cursor: pointer; background: transparent; border: 1px solid var(--line); border-radius: 999px; transition: color 160ms ease, background 160ms ease, border-color 160ms ease; }
+.mode-toggle:hover:not(:disabled) { color: var(--ink); border-color: var(--line-strong); }
+.mode-toggle.is-on { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.mode-toggle:disabled { cursor: default; opacity: .6; }
 .composer-note { display: block; }
 
 .inspector { position: relative; z-index: 20; display: flex; min-width: 0; flex-direction: column; overflow: hidden; visibility: hidden; pointer-events: none; opacity: 0; transform: translateX(20px); transition: opacity 190ms ease, transform 190ms ease, visibility 0s linear 200ms; }

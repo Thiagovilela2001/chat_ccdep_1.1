@@ -7,7 +7,7 @@ import {
 import { BrandMark } from "./BrandMark";
 import { Composer } from "./Composer";
 
-export function EmptyState({ input, setInput, onSubmit }) {
+export function EmptyState({ input, setInput, onSubmit, articleMode, setArticleMode }) {
   return (
     <section className="empty-state">
       <div className="hero-intro">
@@ -30,6 +30,8 @@ export function EmptyState({ input, setInput, onSubmit }) {
         onSubmit={onSubmit}
         loading={false}
         onCancel={() => {}}
+        articleMode={articleMode}
+        setArticleMode={setArticleMode}
       />
       <div className="trust-row" aria-label="Compromissos da resposta">
         <span><ShieldCheck size={15} /> Fontes oficiais</span>

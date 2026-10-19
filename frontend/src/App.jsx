@@ -32,6 +32,7 @@ const STORAGE = {
   endpoints: "nadia.endpoints.v1",
   apiKey: "nadia.apiKey.v1",
   conversationId: "nadia.conversationId.v1",
+  articleMode: "nadia.articleMode.v1",
 };
 
 const ASSISTANT_MODE_LABEL = "Análise documental";
@@ -93,6 +94,9 @@ export default function App() {
   );
   const [developerMode, setDeveloperMode] = useState(false);
   const [input, setInput] = useState("");
+  const [articleMode, setArticleMode] = useState(
+    () => readStorage(globalThis.localStorage, STORAGE.articleMode) === "true",
+  );
   const [loading, setLoading] = useState(false);
   const [health, setHealth] = useState(null);
   const [healthState, setHealthState] = useState("checking");
@@ -177,6 +181,7 @@ export default function App() {
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.endpoints, JSON.stringify(endpointOverrides)), [endpointOverrides]);
   useEffect(() => writeStorage(globalThis.sessionStorage, STORAGE.apiKey, apiKey), [apiKey]);
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.conversationId, conversationId), [conversationId]);
+  useEffect(() => writeStorage(globalThis.localStorage, STORAGE.articleMode, String(articleMode)), [articleMode]);
   useEffect(() => writeStorage(globalThis.localStorage, STORAGE.messages, JSON.stringify(messages.slice(-40))), [messages]);
   useEffect(() => {
     setConversations((current) => upsertConversation(current, conversationId, messages));
@@ -301,6 +306,7 @@ export default function App() {
         signal: controller.signal,
         conversationId,
         history,
+        articleMode,
       });
       const assistantMessage = {
         id: uid(),
@@ -413,6 +419,8 @@ export default function App() {
                   input={input}
                   setInput={setInput}
                   onSubmit={submitQuestion}
+                  articleMode={articleMode}
+                  setArticleMode={setArticleMode}
                 />
               ) : (
                 messages.map((message, index) => (
@@ -434,7 +442,7 @@ export default function App() {
             </div>
           </div>
           {(messages.length > 0 || loading) && (
-            <Composer value={input} setValue={setInput} onSubmit={submitQuestion} loading={loading} onCancel={() => activeController.current?.abort()} />
+            <Composer value={input} setValue={setInput} onSubmit={submitQuestion} loading={loading} onCancel={() => activeController.current?.abort()} articleMode={articleMode} setArticleMode={setArticleMode} />
           )}
         </div>
       </main>

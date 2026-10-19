@@ -79,7 +79,7 @@ export async function queryBackend(
   baseUrl,
   question,
   apiKey = "",
-  { signal, conversationId, history = [] } = {},
+  { signal, conversationId, history = [], articleMode = false } = {},
 ) {
   const startedAt = performance.now();
   const headers = { Accept: "application/json", "Content-Type": "application/json" };
@@ -92,6 +92,7 @@ export async function queryBackend(
       question,
       ...(conversationId ? { conversation_id: conversationId } : {}),
       ...(history.length ? { history } : {}),
+      ...(articleMode ? { article_mode: true } : {}),
     }),
     signal,
   });

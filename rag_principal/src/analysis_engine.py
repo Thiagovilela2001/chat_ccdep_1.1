@@ -10,6 +10,9 @@ import asyncio
 
 from rag_core.answer_policy import REFUSAL_TEXT, sanitize_answer
 from rag_core.answer_style import ANALYST_WRITING_GUIDE
+from rag_core.direction_check import (
+    REVISION_INSTRUCTION, direction_check_enabled, find_direction_conflicts,
+)
 from rag_core.domain_skills import build_domain_prompt_block
 from rag_core.logger import get_logger
 from rag_core.runtime import limit_context, request_timeout_seconds
@@ -74,6 +77,16 @@ Pergunta: {question}
 
 Resposta:"""
 
+_ARTICLE_MODE_INSTRUCTION = """
+
+FORMATO DE ARTIGO
+- A primeira linha da resposta é um título no formato `## <título>`: até 12
+  palavras, informativo (diz o achado principal, não repete a pergunta), sem
+  ponto final.
+- Quando apresentar dados em tabela Markdown, não escreva a fonte: ela é
+  anexada automaticamente sob a tabela."""
+
+
 def _build_context_block(
     text_nodes: list,
     tables_data: str | None,
@@ -129,7 +142,9 @@ class AnalysisEngine:
         labor_market_skill=None,
         graph_retriever=None,
         reranker=None,
+        article_llm=None,
     ):
+        self._article_llm = article_llm
         self._text = text_retriever
         self._tables = tables_retriever
         self._ts = timeseries_retriever
@@ -139,17 +154,28 @@ class AnalysisEngine:
         self._graph = graph_retriever
         self._reranker = reranker
 
+    @property
+    def supports_article_mode(self) -> bool:
+        return self._article_llm is not None
+
     async def answer(
         self,
         question: str,
         sources: list[str],
         rewritten_query: str,
         is_labor_market: bool = False,
+        article_mode: bool = False,
     ) -> tuple[str, list]:
         """
         Executa os retrievers necessários em paralelo e retorna
         (resposta_texto, all_source_nodes).
+
+        `article_mode` troca só o LLM da síntese pelo de raciocínio: a avaliação
+        científica mediu inferência 0,84 → 0,95 a ~2× a latência.
         """
+        synth_llm = self._article_llm if article_mode and self._article_llm is not None else self._llm
+        # Só o prompt de síntese recebe a instrução; o reranker continua com a pergunta pura.
+        prompt_question = question + _ARTICLE_MODE_INSTRUCTION if article_mode else question
         # Monta corrotinas apenas para as fontes selecionadas
         keys: list[str] = []
         coros = []
@@ -265,9 +291,27 @@ class AnalysisEngine:
         prompt = _SYNTHESIS_PROMPT.format(
             skill_block=skill_block,
             context_block=context_block,
-            question=question,
+            question=prompt_question,
         )
-        response = await asyncio.to_thread(self._llm.complete, prompt)
+        response = await asyncio.to_thread(synth_llm.complete, prompt)
+        answer = sanitize_answer(response.text, question=question)
 
-        return sanitize_answer(response.text, question=question), all_source_nodes
+        # Número certo, direção errada ("de 48% para 57%" chamado de redução):
+        # uma única reescrita, mantida só se reduzir os conflitos.
+        conflicts = find_direction_conflicts(answer) if direction_check_enabled() else []
+        if conflicts:
+            log.info("Checagem de direção: %d frase(s) em conflito; reescrevendo", len(conflicts))
+            revision_prompt = _SYNTHESIS_PROMPT.format(
+                skill_block=skill_block,
+                context_block=context_block,
+                question=prompt_question + REVISION_INSTRUCTION.format(
+                    conflicts="\n".join(f"- {c}" for c in conflicts)
+                ),
+            )
+            revised = await asyncio.to_thread(synth_llm.complete, revision_prompt)
+            revised_answer = sanitize_answer(revised.text, question=question)
+            if len(find_direction_conflicts(revised_answer)) < len(conflicts):
+                answer = revised_answer
+
+        return answer, all_source_nodes
 

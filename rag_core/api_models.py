@@ -20,6 +20,9 @@ class QueryRequest(BaseModel):
         pattern=r"^[A-Za-z0-9_-]+$",
     )
     history: list[ChatMessage] = Field(default_factory=list, max_length=12)
+    # Modo artigo: síntese com raciocínio do modelo (mais rigor inferencial, ~2× latência).
+    # Engines sem suporte ignoram o campo.
+    article_mode: bool = False
 
 
 class SourceInfo(BaseModel):

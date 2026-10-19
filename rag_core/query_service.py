@@ -20,6 +20,7 @@ from .citation_validator import validate_citations
 from .conversation_memory import conversation_memory
 from .logger import get_logger
 from .numerical_validator import validate_numbers
+from .table_sources import annotate_table_sources
 from .metrics import record_estimated_usage
 from .popup_explanations import generate_popup_explanations
 from .provenance import relevance_score, source_file, source_page
@@ -130,12 +131,18 @@ def _trim_unsupported_answer(
     checks: list,
     unsupported_arguments: list[str],
 ) -> str:
-    """Preserva frases com números, mesmo quando a validação falha."""
+    """Preserva frases com números, mesmo quando a validação falha.
+
+    Remove só os trechos descartados, no lugar: juntar as frases restantes com
+    espaço apagava títulos, quebras de linha e tabelas Markdown.
+    """
     if not answer:
         return ""
 
     unsupported = {sentence.strip() for sentence in unsupported_arguments}
-    kept: list[str] = []
+    pieces: list[str] = []
+    last = 0
+    kept_any = False
     for match in _SENTENCE_RE.finditer(answer):
         sentence = match.group(0).strip()
         if not sentence:
@@ -148,12 +155,15 @@ def _trim_unsupported_answer(
             for check in checks
         )
         if sentence in unsupported and not has_number:
+            pieces.append(answer[last:match.start()])
+            last = match.end()
             continue
-        kept.append(sentence)
+        kept_any = True
+    pieces.append(answer[last:])
 
-    if not kept:
+    if not kept_any:
         return ""
-    return sanitize_answer(" ".join(kept))
+    return sanitize_answer("".join(pieces))
 
 
 @dataclass(frozen=True)
@@ -281,13 +291,17 @@ async def _run_engine_attempt(
     sources: list[str],
     rewritten_query: str,
     is_labor_market: bool,
+    article_mode: bool = False,
 ) -> _EngineAttempt:
+    # Só a engine que declara suporte recebe o argumento; as demais mantêm a assinatura.
+    mode = {"article_mode": True} if article_mode and getattr(engine, "supports_article_mode", False) else {}
     answer, source_nodes = await asyncio.wait_for(
         engine.answer(
             question=question,
             sources=sources,
             rewritten_query=rewritten_query,
             is_labor_market=is_labor_market,
+            **mode,
         ),
         timeout=request_timeout_seconds(),
     )
@@ -327,6 +341,7 @@ async def execute_engine_query(
     rag_label: str,
     conversation_id: str | None = None,
     history: list | None = None,
+    article_mode: bool = False,
 ) -> tuple[QueryResponse, QueryDiagnostics]:
     """Interpreta, executa, valida e serializa uma consulta de engine."""
     conversation_id = conversation_id or conversation_memory.new_id()
@@ -350,6 +365,7 @@ async def execute_engine_query(
         sources=selected_sources,
         rewritten_query=rewritten_query,
         is_labor_market=interp.get("is_labor_market", False),
+        article_mode=article_mode,
     )
     needs_recovery = bool(
         _answer_retries_enabled()
@@ -382,6 +398,7 @@ async def execute_engine_query(
             sources=_RECOVERY_SOURCES,
             rewritten_query=rewritten_query,
             is_labor_market=interp.get("is_labor_market", False),
+            article_mode=article_mode,
         )
         recovery_refused = recovery.answer == REFUSAL_TEXT
         recovery_is_preferred = (
@@ -430,6 +447,7 @@ async def execute_engine_query(
             sources=_RECOVERY_SOURCES,
             rewritten_query=rewritten_query,
             is_labor_market=interp.get("is_labor_market", False),
+            article_mode=article_mode,
         )
         retry_kept_required_numbers = bool(qualitative.checks) or not verified_values
         retry_has_complete_numeric_support = bool(
@@ -515,6 +533,8 @@ async def execute_engine_query(
             },
         )
         answer = REFUSAL_TEXT
+    elif article_mode:
+        answer, checks = annotate_table_sources(answer, checks, source_nodes)
     citation_checks = await asyncio.to_thread(validate_citations, answer, source_nodes)
     unverified_citations = [
         check.citation for check in citation_checks if not check.verified
