@@ -39,6 +39,7 @@ from ragas.metrics._context_precision import ContextPrecision
 from ragas.metrics._context_recall import ContextRecall
 from openai import OpenAI as OpenAIClient
 from ragas.llms import llm_factory
+from rag_core import token_usage
 from rag_core.answer_policy import sanitize_answer
 from rag_core.numerical_validator import validate_numbers
 
@@ -214,6 +215,8 @@ def _run_metadata(args) -> dict:
             "extract": os.getenv("RAG_EXTRACT_REASONING_EFFORT"),
         },
         "query_fusion_queries": os.getenv("RAG_QUERY_FUSION_QUERIES"),
+        "strict_inference": os.getenv("RAG_STRICT_INFERENCE"),
+        "direction_check": os.getenv("RAG_DIRECTION_CHECK"),
         "rerank_enabled": os.getenv("RAG_LLM_RERANK"),
         "ragas_judge_model": judge_model,
         "ragas_judge_provider": judge_provider,
@@ -301,6 +304,7 @@ def generate_split(
 
         print(f"  [{i}/{len(dataset)}] ({q_type}) {question[:70]}...")
         started = time.perf_counter()
+        usage_before = token_usage.snapshot()
         try:
             answer, source_nodes, interp = run_question(question, engine, interp_llm, interpret_query)
             contexts = [n.get_content() for n in source_nodes]
@@ -343,6 +347,7 @@ def generate_split(
                 "latency_ms": round((time.perf_counter() - started) * 1000, 1),
                 "numeric_precision": None,
             })
+        diagnostics[-1]["token_usage"] = token_usage.diff(token_usage.snapshot(), usage_before)
 
     return records, diagnostics
 
@@ -521,6 +526,7 @@ def run_adversarial_split(dataset: list[dict], engine, interp_llm, interpret_que
         question = item["question"]
         print(f"  [{i}/{len(dataset)}] {question[:70]}...")
         started = time.perf_counter()
+        usage_before = token_usage.snapshot()
         try:
             answer, _, _interp = run_question(question, engine, interp_llm, interpret_query)
             refused = is_refusal(answer)
@@ -540,6 +546,7 @@ def run_adversarial_split(dataset: list[dict], engine, interp_llm, interpret_que
             "response":   answer,
             "refused":    refused,
             "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+            "token_usage": token_usage.diff(token_usage.snapshot(), usage_before),
         })
 
     refusal_accuracy = refusals / len(dataset) if dataset else 0.0
@@ -575,6 +582,7 @@ def save_results(
         "status":    "completed" if success else "failed",
         "run":       _RUN_METADATA,
         "summary":   scores_dict,
+        "token_usage": token_usage.merge(*(d.get("token_usage") for d in details)),
         "details":   details,
     }
     _atomic_write_json(path, output)
@@ -618,6 +626,7 @@ def run_ragas_split(
         "status": "generated",
         "run": _RUN_METADATA,
         "summary": checkpoint_summary,
+        "token_usage": token_usage.merge(*(d.get("token_usage") for d in checkpoint_details)),
         "details": checkpoint_details,
     })
     print(f"  Checkpoint da geração gravado em: {checkpoint_path}")
@@ -729,6 +738,7 @@ def main():
         parser.error("--limit deve ser maior ou igual a 1")
 
     load_dotenv()
+    token_usage.install()
     random.seed(args.seed)
     try:
         import numpy as np
