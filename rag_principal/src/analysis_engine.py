@@ -84,7 +84,12 @@ FORMATO DE ARTIGO
   palavras, informativo (diz o achado principal, não repete a pergunta), sem
   ponto final.
 - Quando apresentar dados em tabela Markdown, não escreva a fonte: ela é
-  anexada automaticamente sob a tabela."""
+  anexada automaticamente sob a tabela.
+- Profundidade: o rigor inferencial restringe o que se conclui, não a extensão
+  da análise. Não resuma nem condense. Desenvolva cada item, período e
+  dimensão sustentados no contexto em parágrafo próprio, com seus números e
+  a leitura que as fontes dão a eles. Uma tabela complementa o texto
+  analítico, não o substitui."""
 
 
 def _build_context_block(
